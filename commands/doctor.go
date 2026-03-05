@@ -84,7 +84,9 @@ func runDoctor(ctx context.Context, opts *options.DoctorOptions) error {
 	doctor := diagnostics.New(cfg, client)
 
 	// Run diagnostics
-	printInfoln("Running diagnostics...")
+	if !opts.JSON {
+		printInfoln("Running diagnostics...")
+	}
 	report, err := doctor.Run(ctx)
 	if err != nil {
 		logger.LogCommandError(ctx, "doctor", err, nil)

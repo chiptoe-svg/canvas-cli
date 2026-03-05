@@ -458,6 +458,12 @@ func runAssignmentsCreate(ctx context.Context, client *api.Client, cmd *cobra.Co
 		return fmt.Errorf("failed to create assignment: %w", err)
 	}
 
+	logger.LogCommandComplete(ctx, "assignments.create", 1)
+
+	if isStructuredOutput() {
+		return formatOutput(assignment, nil)
+	}
+
 	printInfo("Assignment created successfully!\n")
 	printInfo("  ID: %d\n", assignment.ID)
 	printInfo("  Name: %s\n", assignment.Name)
@@ -471,7 +477,6 @@ func runAssignmentsCreate(ctx context.Context, client *api.Client, cmd *cobra.Co
 		printInfo("  Status: Unpublished\n")
 	}
 
-	logger.LogCommandComplete(ctx, "assignments.create", 1)
 	return nil
 }
 
@@ -588,6 +593,12 @@ func runAssignmentsUpdate(ctx context.Context, client *api.Client, cmd *cobra.Co
 		return fmt.Errorf("failed to update assignment: %w", err)
 	}
 
+	logger.LogCommandComplete(ctx, "assignments.update", 1)
+
+	if isStructuredOutput() {
+		return formatOutput(assignment, nil)
+	}
+
 	printInfo("Assignment updated successfully!\n")
 	printInfo("  ID: %d\n", assignment.ID)
 	printInfo("  Name: %s\n", assignment.Name)
@@ -601,7 +612,6 @@ func runAssignmentsUpdate(ctx context.Context, client *api.Client, cmd *cobra.Co
 		printInfo("  Status: Unpublished\n")
 	}
 
-	logger.LogCommandComplete(ctx, "assignments.update", 1)
 	return nil
 }
 

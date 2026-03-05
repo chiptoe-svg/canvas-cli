@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -68,7 +69,7 @@ func (s *AutoRefreshTokenSource) Token() (*oauth2.Token, error) {
 	// Save the refreshed token
 	if err := s.store.Save(s.instanceName, newToken); err != nil {
 		// Log but don't fail - token is still valid for this session
-		fmt.Printf("Warning: failed to save refreshed token: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Warning: failed to save refreshed token: %v\n", err)
 	}
 
 	s.token = newToken

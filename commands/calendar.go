@@ -339,15 +339,9 @@ func runCalendarList(ctx context.Context, client *api.Client, opts *options.Cale
 		return fmt.Errorf("failed to list calendar events: %w", err)
 	}
 
-	if len(events) == 0 {
-		fmt.Println("No calendar events found")
-		logger.LogCommandComplete(ctx, "calendar.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d calendar events:\n\n", len(events))
 	logger.LogCommandComplete(ctx, "calendar.list", len(events))
-	return formatOutput(events, nil)
+	return formatEmptyOrOutput(events, "No calendar events found")
 }
 
 func runCalendarGet(ctx context.Context, client *api.Client, opts *options.CalendarGetOptions) error {

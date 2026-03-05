@@ -466,15 +466,9 @@ func runDiscussionsList(ctx context.Context, client *api.Client, opts *options.D
 		return fmt.Errorf("failed to list discussions: %w", err)
 	}
 
-	if len(topics) == 0 {
-		fmt.Println("No discussion topics found")
-		logger.LogCommandComplete(ctx, "discussions.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d discussion topics:\n\n", len(topics))
 	logger.LogCommandComplete(ctx, "discussions.list", len(topics))
-	return formatOutput(topics, nil)
+	return formatEmptyOrOutput(topics, "No discussion topics found")
 }
 
 func runDiscussionsGet(ctx context.Context, client *api.Client, opts *options.DiscussionsGetOptions) error {
@@ -639,15 +633,9 @@ func runDiscussionsEntries(ctx context.Context, client *api.Client, opts *option
 		return fmt.Errorf("failed to list entries: %w", err)
 	}
 
-	if len(entries) == 0 {
-		fmt.Println("No entries found")
-		logger.LogCommandComplete(ctx, "discussions.entries", 0)
-		return nil
-	}
-
 	printVerbose("Found %d entries:\n\n", len(entries))
 	logger.LogCommandComplete(ctx, "discussions.entries", len(entries))
-	return formatOutput(entries, nil)
+	return formatEmptyOrOutput(entries, "No entries found")
 }
 
 func runDiscussionsPost(ctx context.Context, client *api.Client, opts *options.DiscussionsPostOptions) error {

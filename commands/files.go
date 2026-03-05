@@ -304,16 +304,9 @@ func runFilesList(ctx context.Context, client *api.Client, opts *options.FilesLi
 		return fmt.Errorf("failed to list files: %w", err)
 	}
 
-	if len(files) == 0 {
-		fmt.Println("No files found")
-		logger.LogCommandComplete(ctx, "files.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d files:\n\n", len(files))
-
 	logger.LogCommandComplete(ctx, "files.list", len(files))
-	return formatOutput(files, nil)
+	return formatEmptyOrOutput(files, "No files found")
 }
 
 func runFilesGet(ctx context.Context, client *api.Client, opts *options.FilesGetOptions) error {

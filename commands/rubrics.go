@@ -320,15 +320,9 @@ func runRubricsList(ctx context.Context, client *api.Client, opts *options.Rubri
 		return fmt.Errorf("failed to list rubrics: %w", err)
 	}
 
-	if len(rubrics) == 0 {
-		fmt.Println("No rubrics found")
-		logger.LogCommandComplete(ctx, "rubrics.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d rubrics:\n\n", len(rubrics))
 	logger.LogCommandComplete(ctx, "rubrics.list", len(rubrics))
-	return formatOutput(rubrics, nil)
+	return formatEmptyOrOutput(rubrics, "No rubrics found")
 }
 
 func runRubricsGet(ctx context.Context, client *api.Client, opts *options.RubricsGetOptions) error {
