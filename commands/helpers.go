@@ -220,25 +220,33 @@ func getConfig() (*config.Config, error) {
 	return config.Load()
 }
 
-// printVerbose prints a message only in verbose mode
+// printVerbose prints a message only in verbose mode.
+// Output goes to stderr to avoid contaminating structured output (JSON/YAML/CSV).
 func printVerbose(format string, args ...interface{}) {
 	if verbose {
-		fmt.Printf(format, args...)
+		fmt.Fprintf(os.Stderr, format, args...)
 	}
 }
 
-// printInfo prints an informational message unless --quiet is set.
+// isStructuredOutput returns true if the current output format is JSON, YAML, or CSV.
+// Use this to suppress human-readable messages that would contaminate structured output.
+func isStructuredOutput() bool {
+	format := output.FormatType(outputFormat)
+	return format == output.FormatJSON || format == output.FormatYAML || format == output.FormatCSV
+}
+
+// printInfo prints an informational message unless --quiet is set or structured output is active.
 // Use this for success messages and status output that should not appear
 // when the user is piping or scripting.
 func printInfo(format string, args ...interface{}) {
-	if !quiet {
+	if !quiet && !isStructuredOutput() {
 		fmt.Printf(format, args...)
 	}
 }
 
-// printInfoln prints an informational line unless --quiet is set.
+// printInfoln prints an informational line unless --quiet is set or structured output is active.
 func printInfoln(a ...interface{}) {
-	if !quiet {
+	if !quiet && !isStructuredOutput() {
 		fmt.Println(a...)
 	}
 }

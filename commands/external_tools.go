@@ -348,15 +348,9 @@ func runExtToolsList(ctx context.Context, client *api.Client, cmd *cobra.Command
 		return fmt.Errorf("failed to list external tools: %w", err)
 	}
 
-	if len(tools) == 0 {
-		fmt.Println("No external tools found")
-		logger.LogCommandComplete(ctx, "external_tools.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d external tools:\n\n", len(tools))
 	logger.LogCommandComplete(ctx, "external_tools.list", len(tools))
-	return formatOutput(tools, nil)
+	return formatEmptyOrOutput(tools, "No external tools found")
 }
 
 func runExtToolsGet(ctx context.Context, client *api.Client, opts *options.ExternalToolsGetOptions) error {

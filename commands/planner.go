@@ -405,16 +405,9 @@ func runPlannerItems(ctx context.Context, client *api.Client, opts *options.Plan
 		return fmt.Errorf("failed to list planner items: %w", err)
 	}
 
-	if len(items) == 0 {
-		fmt.Println("No planner items found")
-		logger.LogCommandComplete(ctx, "planner.items", 0)
-		return nil
-	}
-
 	printVerbose("Found %d planner items:\n\n", len(items))
-
 	logger.LogCommandComplete(ctx, "planner.items", len(items))
-	return formatOutput(items, nil)
+	return formatEmptyOrOutput(items, "No planner items found")
 }
 
 func runPlannerNotesList(ctx context.Context, client *api.Client, opts *options.PlannerNotesListOptions) error {
@@ -439,16 +432,9 @@ func runPlannerNotesList(ctx context.Context, client *api.Client, opts *options.
 		return fmt.Errorf("failed to list planner notes: %w", err)
 	}
 
-	if len(notes) == 0 {
-		fmt.Println("No planner notes found")
-		logger.LogCommandComplete(ctx, "planner.notes.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d planner notes:\n\n", len(notes))
-
 	logger.LogCommandComplete(ctx, "planner.notes.list", len(notes))
-	return formatOutput(notes, nil)
+	return formatEmptyOrOutput(notes, "No planner notes found")
 }
 
 func runPlannerNotesGet(ctx context.Context, client *api.Client, opts *options.PlannerNotesGetOptions) error {
@@ -598,10 +584,8 @@ func runPlannerComplete(ctx context.Context, client *api.Client, opts *options.P
 		return fmt.Errorf("failed to mark as complete: %w", err)
 	}
 
-	fmt.Printf("Marked %s %d as complete!\n", override.PlannableType, override.PlannableID)
-
 	logger.LogCommandComplete(ctx, "planner.complete", 1)
-	return nil
+	return formatSuccessOutput(override, fmt.Sprintf("Marked %s %d as complete!", override.PlannableType, override.PlannableID))
 }
 
 func runPlannerDismiss(ctx context.Context, client *api.Client, opts *options.PlannerDismissOptions) error {
@@ -632,10 +616,8 @@ func runPlannerDismiss(ctx context.Context, client *api.Client, opts *options.Pl
 		return fmt.Errorf("failed to dismiss: %w", err)
 	}
 
-	fmt.Printf("Dismissed %s %d from planner\n", override.PlannableType, override.PlannableID)
-
 	logger.LogCommandComplete(ctx, "planner.dismiss", 1)
-	return nil
+	return formatSuccessOutput(override, fmt.Sprintf("Dismissed %s %d from planner", override.PlannableType, override.PlannableID))
 }
 
 func runPlannerOverrides(ctx context.Context, client *api.Client, opts *options.PlannerOverridesOptions) error {
@@ -661,14 +643,7 @@ func runPlannerOverrides(ctx context.Context, client *api.Client, opts *options.
 		return fmt.Errorf("failed to list overrides: %w", err)
 	}
 
-	if len(overrides) == 0 {
-		fmt.Println("No planner overrides found")
-		logger.LogCommandComplete(ctx, "planner.overrides", 0)
-		return nil
-	}
-
 	printVerbose("Found %d planner overrides:\n\n", len(overrides))
-
 	logger.LogCommandComplete(ctx, "planner.overrides", len(overrides))
-	return formatOutput(overrides, nil)
+	return formatEmptyOrOutput(overrides, "No planner overrides found")
 }

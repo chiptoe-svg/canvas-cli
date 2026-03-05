@@ -382,15 +382,9 @@ func runBlueprintAssociationsList(ctx context.Context, client *api.Client, opts 
 		return fmt.Errorf("failed to list associated courses: %w", err)
 	}
 
-	if len(courses) == 0 {
-		fmt.Println("No associated courses found")
-		logger.LogCommandComplete(ctx, "blueprint.associations.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d associated courses:\n\n", len(courses))
 	logger.LogCommandComplete(ctx, "blueprint.associations.list", len(courses))
-	return formatOutput(courses, nil)
+	return formatEmptyOrOutput(courses, "No associated courses found")
 }
 
 func runBlueprintAssociationsAdd(ctx context.Context, client *api.Client, opts *options.BlueprintAssociationsAddOptions) error {
@@ -551,15 +545,9 @@ func runBlueprintMigrationsList(ctx context.Context, client *api.Client, opts *o
 		return fmt.Errorf("failed to list migrations: %w", err)
 	}
 
-	if len(migrations) == 0 {
-		fmt.Println("No migrations found")
-		logger.LogCommandComplete(ctx, "blueprint.migrations.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d migrations:\n\n", len(migrations))
 	logger.LogCommandComplete(ctx, "blueprint.migrations.list", len(migrations))
-	return formatOutput(migrations, nil)
+	return formatEmptyOrOutput(migrations, "No migrations found")
 }
 
 func runBlueprintMigrationsGet(ctx context.Context, client *api.Client, opts *options.BlueprintMigrationsGetOptions) error {

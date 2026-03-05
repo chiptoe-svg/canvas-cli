@@ -423,15 +423,9 @@ func runAdminsList(ctx context.Context, client *api.Client, opts *options.Admins
 		return fmt.Errorf("failed to list admins: %w", err)
 	}
 
-	if len(admins) == 0 {
-		fmt.Println("No admins found")
-		logger.LogCommandComplete(ctx, "admins.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d admins:\n\n", len(admins))
 	logger.LogCommandComplete(ctx, "admins.list", len(admins))
-	return formatOutput(admins, nil)
+	return formatEmptyOrOutput(admins, "No admins found")
 }
 
 func runAdminsAdd(ctx context.Context, client *api.Client, opts *options.AdminsAddOptions) error {
@@ -521,15 +515,9 @@ func runRolesList(ctx context.Context, client *api.Client, opts *options.RolesLi
 		return fmt.Errorf("failed to list roles: %w", err)
 	}
 
-	if len(roles) == 0 {
-		fmt.Println("No roles found")
-		logger.LogCommandComplete(ctx, "roles.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d roles:\n\n", len(roles))
 	logger.LogCommandComplete(ctx, "roles.list", len(roles))
-	return formatOutput(roles, nil)
+	return formatEmptyOrOutput(roles, "No roles found")
 }
 
 func runRolesGet(ctx context.Context, client *api.Client, opts *options.RolesGetOptions) error {

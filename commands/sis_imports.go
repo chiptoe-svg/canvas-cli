@@ -314,15 +314,9 @@ func runSISList(ctx context.Context, client *api.Client, opts *options.SISImport
 		return fmt.Errorf("failed to list SIS imports: %w", err)
 	}
 
-	if len(imports) == 0 {
-		fmt.Println("No SIS imports found")
-		logger.LogCommandComplete(ctx, "sis_imports.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d SIS imports:\n\n", len(imports))
 	logger.LogCommandComplete(ctx, "sis_imports.list", len(imports))
-	return formatOutput(imports, nil)
+	return formatEmptyOrOutput(imports, "No SIS imports found")
 }
 
 func runSISGet(ctx context.Context, client *api.Client, opts *options.SISImportsGetOptions) error {

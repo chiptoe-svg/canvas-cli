@@ -255,15 +255,9 @@ func runAnalyticsActivity(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to get course activity: %w", err)
 	}
 
-	if len(activity) == 0 {
-		fmt.Println("No activity data found")
-		logger.LogCommandComplete(ctx, "analytics.activity", 0)
-		return nil
-	}
-
 	printVerbose("Course activity data (%d days):\n\n", len(activity))
 	logger.LogCommandComplete(ctx, "analytics.activity", len(activity))
-	return formatOutput(activity, nil)
+	return formatEmptyOrOutput(activity, "No activity data found")
 }
 
 func runAnalyticsAssignments(ctx context.Context, client *api.Client, opts *options.AnalyticsAssignmentsOptions) error {
@@ -282,15 +276,9 @@ func runAnalyticsAssignments(ctx context.Context, client *api.Client, opts *opti
 		return fmt.Errorf("failed to get assignment analytics: %w", err)
 	}
 
-	if len(assignments) == 0 {
-		fmt.Println("No assignment data found")
-		logger.LogCommandComplete(ctx, "analytics.assignments", 0)
-		return nil
-	}
-
 	printVerbose("Assignment analytics (%d assignments):\n\n", len(assignments))
 	logger.LogCommandComplete(ctx, "analytics.assignments", len(assignments))
-	return formatOutput(assignments, nil)
+	return formatEmptyOrOutput(assignments, "No assignment data found")
 }
 
 func runAnalyticsStudents(ctx context.Context, client *api.Client, opts *options.AnalyticsStudentsOptions) error {
@@ -314,15 +302,9 @@ func runAnalyticsStudents(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to get student summaries: %w", err)
 	}
 
-	if len(summaries) == 0 {
-		fmt.Println("No student data found")
-		logger.LogCommandComplete(ctx, "analytics.students", 0)
-		return nil
-	}
-
 	printVerbose("Student summaries (%d students):\n\n", len(summaries))
 	logger.LogCommandComplete(ctx, "analytics.students", len(summaries))
-	return formatOutput(summaries, nil)
+	return formatEmptyOrOutput(summaries, "No student data found")
 }
 
 func runAnalyticsUser(ctx context.Context, client *api.Client, opts *options.AnalyticsUserOptions) error {
@@ -346,13 +328,8 @@ func runAnalyticsUser(ctx context.Context, client *api.Client, opts *options.Ana
 			})
 			return fmt.Errorf("failed to get user activity: %w", err)
 		}
-		if len(activity) == 0 {
-			fmt.Println("No activity data found")
-			logger.LogCommandComplete(ctx, "analytics.user", 0)
-			return nil
-		}
 		logger.LogCommandComplete(ctx, "analytics.user", len(activity))
-		return formatOutput(activity, nil)
+		return formatEmptyOrOutput(activity, "No activity data found")
 
 	case "assignments":
 		assignments, err := service.GetUserAssignments(ctx, opts.CourseID, opts.UserID)
@@ -364,13 +341,8 @@ func runAnalyticsUser(ctx context.Context, client *api.Client, opts *options.Ana
 			})
 			return fmt.Errorf("failed to get user assignments: %w", err)
 		}
-		if len(assignments) == 0 {
-			fmt.Println("No assignment data found")
-			logger.LogCommandComplete(ctx, "analytics.user", 0)
-			return nil
-		}
 		logger.LogCommandComplete(ctx, "analytics.user", len(assignments))
-		return formatOutput(assignments, nil)
+		return formatEmptyOrOutput(assignments, "No assignment data found")
 
 	case "communication":
 		communication, err := service.GetUserCommunication(ctx, opts.CourseID, opts.UserID)
@@ -432,13 +404,8 @@ func runAnalyticsDepartment(ctx context.Context, client *api.Client, opts *optio
 			})
 			return fmt.Errorf("failed to get department activity: %w", err)
 		}
-		if len(activity) == 0 {
-			fmt.Println("No activity data found")
-			logger.LogCommandComplete(ctx, "analytics.department", 0)
-			return nil
-		}
 		logger.LogCommandComplete(ctx, "analytics.department", len(activity))
-		return formatOutput(activity, nil)
+		return formatEmptyOrOutput(activity, "No activity data found")
 
 	case "grades":
 		grades, err := service.GetDepartmentGrades(ctx, opts.AccountID, apiOpts)
@@ -449,13 +416,8 @@ func runAnalyticsDepartment(ctx context.Context, client *api.Client, opts *optio
 			})
 			return fmt.Errorf("failed to get department grades: %w", err)
 		}
-		if len(grades) == 0 {
-			fmt.Println("No grade data found")
-			logger.LogCommandComplete(ctx, "analytics.department", 0)
-			return nil
-		}
 		logger.LogCommandComplete(ctx, "analytics.department", len(grades))
-		return formatOutput(grades, nil)
+		return formatEmptyOrOutput(grades, "No grade data found")
 
 	default:
 		logger.LogCommandError(ctx, "analytics.department", fmt.Errorf("invalid analytics type"), map[string]interface{}{
