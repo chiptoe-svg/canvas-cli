@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
+  <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
   <a href="https://github.com/jjuanrivvera/canvas-cli/releases"><img src="https://img.shields.io/github/v/release/jjuanrivvera/canvas-cli" alt="Release"></a>
   <a href="https://goreportcard.com/report/github.com/jjuanrivvera/canvas-cli"><img src="https://goreportcard.com/badge/github.com/jjuanrivvera/canvas-cli" alt="Go Report Card"></a>
@@ -29,6 +29,7 @@
 - **Multiple Outputs** - Table, JSON, YAML, and CSV formats
 - **Interactive Mode** - REPL shell with command history and completion
 - **280+ Commands** - Full coverage of Canvas LMS resources
+- **MCP Server** - Use as an AI agent tool via Model Context Protocol
 
 ## Installation
 
@@ -40,6 +41,8 @@ brew install canvas-cli
 ```
 
 ### Go Install
+
+Requires Go 1.25+ (or Go 1.24+ with automatic toolchain download).
 
 ```bash
 go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
@@ -108,6 +111,32 @@ settings:
 ```
 
 See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-started/authentication/) for detailed setup.
+
+## MCP Server Mode
+
+Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing all 253 commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot).
+
+```bash
+# Start as STDIO MCP server
+canvas mcp start
+
+# Start as HTTP MCP server
+canvas mcp stream --port 8080
+
+# Export all tool schemas to JSON
+canvas mcp tools
+
+# Auto-configure in your editor
+canvas mcp claude enable
+canvas mcp vscode enable
+canvas mcp cursor enable
+```
+
+The same binary, two interfaces. When used as an MCP server, each CLI command becomes an MCP tool with typed parameters derived from the command's flags. Required flags become required schema properties. All output goes through structured JSON.
+
+Sensitive flags (`--show-token`, `--config`) are automatically excluded from MCP exposure.
+
+> **Note for `go install` users**: MCP support requires Go 1.25+ due to the [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk) dependency. Homebrew and binary downloads are not affected by this requirement.
 
 ## Contributing
 
