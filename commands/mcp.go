@@ -9,9 +9,9 @@ func init() {
 		ToolNamePrefix: "canvas",
 		Selectors: []ophis.Selector{
 			{
-				// Exclude sensitive flags from all commands
-				LocalFlagSelector:     ophis.ExcludeFlags("show-token"),
-				InheritedFlagSelector: ophis.ExcludeFlags("config"),
+				// Exclude sensitive inherited flags from MCP exposure
+				// show-token and config are PersistentFlags (inherited)
+				InheritedFlagSelector: ophis.ExcludeFlags("show-token", "config"),
 			},
 		},
 	}))
