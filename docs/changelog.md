@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-04-29
+
+### Added
+
+- **MCP Server Mode**: Run Canvas CLI as a Model Context Protocol server for AI tools and editors.
+  - Added `canvas mcp` command group for server startup, tool export, and editor integration.
+  - Added MCP command discovery and schema generation via `ophis`.
+- **CLI Runtime Utilities**: Added shared terminal and parsing utilities.
+  - Added signal-aware command execution via `ExecuteContext`.
+  - Added shell-style alias parsing support with `internal/shellparse`.
+
+### Changed
+
+- **Toolchain Baseline**: Updated minimum Go version to 1.25.0 and aligned CI accordingly.
+- **Structured Output Behavior**: Improved command output helpers to better preserve parseable JSON/YAML/CSV in scripts.
+
+### Fixed
+
+- **Canvas Soft Error Detection**: Detect API error bodies returned with HTTP 200 and surface them as errors instead of successful responses.
+- **Safety for API Command Flags**: Removed global `-q` shorthand from `--quiet` to avoid collision with `canvas api --query/-q`.
+
 ## [1.7.0] - 2026-01-25
 
 ### Added

@@ -113,7 +113,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&globalLimit, "limit", 0, "Limit number of results for list operations (0 = unlimited)")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print curl commands instead of executing requests")
 	rootCmd.PersistentFlags().BoolVar(&showToken, "show-token", false, "Show actual token in dry-run output (default: redacted)")
-	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress informational messages, only output data and errors")
+	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Suppress informational messages, only output data and errors")
 
 	// Output filtering flags
 	rootCmd.PersistentFlags().StringVar(&filterText, "filter", "", "Filter results by text (case-insensitive substring match)")
