@@ -376,15 +376,9 @@ func runPagesList(ctx context.Context, client *api.Client, opts *options.PagesLi
 		return fmt.Errorf("failed to list pages: %w", err)
 	}
 
-	if len(pages) == 0 {
-		logger.LogCommandComplete(ctx, "pages.list", 0)
-		fmt.Println("No pages found")
-		return nil
-	}
-
 	printVerbose("Found %d pages:\n\n", len(pages))
 	logger.LogCommandComplete(ctx, "pages.list", len(pages))
-	return formatOutput(pages, nil)
+	return formatEmptyOrOutput(pages, "No pages found")
 }
 
 func runPagesGet(ctx context.Context, client *api.Client, opts *options.PagesGetOptions) error {
@@ -538,7 +532,7 @@ func runPagesDelete(ctx context.Context, client *api.Client, opts *options.Pages
 	}
 
 	logger.LogCommandComplete(ctx, "pages.delete", 1)
-	fmt.Printf("Page '%s' deleted successfully\n", opts.URLOrID)
+	printInfo("Page '%s' deleted successfully\n", opts.URLOrID)
 	return nil
 }
 
@@ -582,15 +576,9 @@ func runPagesRevisions(ctx context.Context, client *api.Client, opts *options.Pa
 		return fmt.Errorf("failed to list revisions: %w", err)
 	}
 
-	if len(revisions) == 0 {
-		logger.LogCommandComplete(ctx, "pages.revisions", 0)
-		fmt.Println("No revisions found")
-		return nil
-	}
-
 	printVerbose("Found %d revisions:\n\n", len(revisions))
 	logger.LogCommandComplete(ctx, "pages.revisions", len(revisions))
-	return formatOutput(revisions, nil)
+	return formatEmptyOrOutput(revisions, "No revisions found")
 }
 
 func runPagesRevert(ctx context.Context, client *api.Client, opts *options.PagesRevertOptions) error {

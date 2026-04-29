@@ -304,16 +304,9 @@ func runFilesList(ctx context.Context, client *api.Client, opts *options.FilesLi
 		return fmt.Errorf("failed to list files: %w", err)
 	}
 
-	if len(files) == 0 {
-		fmt.Println("No files found")
-		logger.LogCommandComplete(ctx, "files.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d files:\n\n", len(files))
-
 	logger.LogCommandComplete(ctx, "files.list", len(files))
-	return formatOutput(files, nil)
+	return formatEmptyOrOutput(files, "No files found")
 }
 
 func runFilesGet(ctx context.Context, client *api.Client, opts *options.FilesGetOptions) error {
@@ -385,11 +378,11 @@ func runFilesUpload(ctx context.Context, client *api.Client, opts *options.Files
 		return fmt.Errorf("failed to upload file: %w", err)
 	}
 
-	fmt.Printf("✅ File uploaded successfully\n\n")
-	fmt.Printf("   ID: %d\n", uploadedFile.ID)
-	fmt.Printf("   Name: %s\n", uploadedFile.DisplayName)
-	fmt.Printf("   Size: %s\n", formatFileSize(uploadedFile.Size))
-	fmt.Printf("   URL: %s\n", uploadedFile.URL)
+	printInfo("✅ File uploaded successfully\n\n")
+	printInfo("   ID: %d\n", uploadedFile.ID)
+	printInfo("   Name: %s\n", uploadedFile.DisplayName)
+	printInfo("   Size: %s\n", formatFileSize(uploadedFile.Size))
+	printInfo("   URL: %s\n", uploadedFile.URL)
 
 	logger.LogCommandComplete(ctx, "files.upload", 1)
 	return nil
@@ -466,7 +459,7 @@ func runFilesDelete(ctx context.Context, client *api.Client, opts *options.Files
 		return fmt.Errorf("failed to delete file: %w", err)
 	}
 
-	fmt.Printf("✅ File %d deleted successfully\n", opts.FileID)
+	printInfo("✅ File %d deleted successfully\n", opts.FileID)
 
 	logger.LogCommandComplete(ctx, "files.delete", 1)
 	return nil

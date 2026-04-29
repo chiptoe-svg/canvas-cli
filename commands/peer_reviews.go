@@ -175,15 +175,9 @@ func runPeerReviewsList(ctx context.Context, client *api.Client, opts *options.P
 		return fmt.Errorf("failed to list peer reviews: %w", err)
 	}
 
-	if len(reviews) == 0 {
-		fmt.Println("No peer reviews found")
-		logger.LogCommandComplete(ctx, "peer_reviews.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d peer reviews:\n\n", len(reviews))
 	logger.LogCommandComplete(ctx, "peer_reviews.list", len(reviews))
-	return formatOutput(reviews, nil)
+	return formatEmptyOrOutput(reviews, "No peer reviews found")
 }
 
 func runPeerReviewsCreate(ctx context.Context, client *api.Client, opts *options.PeerReviewsCreateOptions) error {
@@ -212,11 +206,8 @@ func runPeerReviewsCreate(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to create peer review: %w", err)
 	}
 
-	fmt.Printf("Peer review created (ID: %d)\n", review.ID)
-	fmt.Printf("Assessor ID: %d\n", review.AssessorID)
-	fmt.Printf("State: %s\n", review.WorkflowState)
 	logger.LogCommandComplete(ctx, "peer_reviews.create", 1)
-	return nil
+	return formatSuccessOutput(review, fmt.Sprintf("Peer review created (ID: %d, Assessor: %d, State: %s)", review.ID, review.AssessorID, review.WorkflowState))
 }
 
 func runPeerReviewsDelete(ctx context.Context, client *api.Client, opts *options.PeerReviewsDeleteOptions) error {
@@ -241,7 +232,7 @@ func runPeerReviewsDelete(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to delete peer review: %w", err)
 	}
 
-	fmt.Println("Peer review deleted successfully")
+	printInfoln("Peer review deleted successfully")
 	logger.LogCommandComplete(ctx, "peer_reviews.delete", 1)
 	return nil
 }

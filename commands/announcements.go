@@ -266,15 +266,9 @@ func runAnnouncementsList(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to list announcements: %w", err)
 	}
 
-	if len(announcements) == 0 {
-		fmt.Println("No announcements found")
-		logger.LogCommandComplete(ctx, "announcements.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d announcements:\n\n", len(announcements))
 	logger.LogCommandComplete(ctx, "announcements.list", len(announcements))
-	return formatOutput(announcements, nil)
+	return formatEmptyOrOutput(announcements, "No announcements found")
 }
 
 func runAnnouncementsGet(ctx context.Context, client *api.Client, opts *options.AnnouncementsGetOptions) error {
@@ -381,7 +375,7 @@ func runAnnouncementsDelete(ctx context.Context, client *api.Client, opts *optio
 		return fmt.Errorf("failed to delete announcement: %w", err)
 	}
 
-	fmt.Printf("Announcement %d deleted successfully\n", opts.AnnouncementID)
+	printInfo("Announcement %d deleted successfully\n", opts.AnnouncementID)
 	logger.LogCommandComplete(ctx, "announcements.delete", 1)
 	return nil
 }

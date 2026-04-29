@@ -284,15 +284,9 @@ func runContentMigrationsList(ctx context.Context, client *api.Client, opts *opt
 		return fmt.Errorf("failed to list content migrations: %w", err)
 	}
 
-	if len(migrations) == 0 {
-		fmt.Println("No content migrations found")
-		logger.LogCommandComplete(ctx, "content_migrations.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d content migrations:\n\n", len(migrations))
 	logger.LogCommandComplete(ctx, "content_migrations.list", len(migrations))
-	return formatOutput(migrations, nil)
+	return formatEmptyOrOutput(migrations, "No content migrations found")
 }
 
 func runContentMigrationsGet(ctx context.Context, client *api.Client, opts *options.ContentMigrationsGetOptions) error {

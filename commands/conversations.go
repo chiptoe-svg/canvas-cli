@@ -486,15 +486,9 @@ func runConversationsList(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to list conversations: %w", err)
 	}
 
-	if len(conversations) == 0 {
-		fmt.Println("No conversations found")
-		logger.LogCommandComplete(ctx, "conversations.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d conversations:\n\n", len(conversations))
 	logger.LogCommandComplete(ctx, "conversations.list", len(conversations))
-	return formatOutput(conversations, nil)
+	return formatEmptyOrOutput(conversations, "No conversations found")
 }
 
 func runConversationsGet(ctx context.Context, client *api.Client, opts *options.ConversationsGetOptions) error {
@@ -585,7 +579,7 @@ func runConversationsReply(ctx context.Context, client *api.Client, opts *option
 
 	logger.LogCommandComplete(ctx, "conversations.reply", 1)
 
-	fmt.Printf("Reply added successfully (conversation ID: %d)\n", conversation.ID)
+	printInfo("Reply added successfully (conversation ID: %d)\n", conversation.ID)
 	return formatOutput(conversation, nil)
 }
 

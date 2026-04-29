@@ -423,15 +423,9 @@ func runAdminsList(ctx context.Context, client *api.Client, opts *options.Admins
 		return fmt.Errorf("failed to list admins: %w", err)
 	}
 
-	if len(admins) == 0 {
-		fmt.Println("No admins found")
-		logger.LogCommandComplete(ctx, "admins.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d admins:\n\n", len(admins))
 	logger.LogCommandComplete(ctx, "admins.list", len(admins))
-	return formatOutput(admins, nil)
+	return formatEmptyOrOutput(admins, "No admins found")
 }
 
 func runAdminsAdd(ctx context.Context, client *api.Client, opts *options.AdminsAddOptions) error {
@@ -464,7 +458,7 @@ func runAdminsAdd(ctx context.Context, client *api.Client, opts *options.AdminsA
 		return fmt.Errorf("failed to add admin: %w", err)
 	}
 
-	fmt.Printf("Admin added successfully (User ID: %d)\n", admin.UserID)
+	printInfo("Admin added successfully (User ID: %d)\n", admin.UserID)
 	logger.LogCommandComplete(ctx, "admins.add", 1)
 	return nil
 }
@@ -493,7 +487,7 @@ func runAdminsRemove(ctx context.Context, client *api.Client, opts *options.Admi
 		return fmt.Errorf("failed to remove admin: %w", err)
 	}
 
-	fmt.Printf("Admin removed successfully (User ID: %d)\n", admin.UserID)
+	printInfo("Admin removed successfully (User ID: %d)\n", admin.UserID)
 	logger.LogCommandComplete(ctx, "admins.remove", 1)
 	return nil
 }
@@ -521,15 +515,9 @@ func runRolesList(ctx context.Context, client *api.Client, opts *options.RolesLi
 		return fmt.Errorf("failed to list roles: %w", err)
 	}
 
-	if len(roles) == 0 {
-		fmt.Println("No roles found")
-		logger.LogCommandComplete(ctx, "roles.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d roles:\n\n", len(roles))
 	logger.LogCommandComplete(ctx, "roles.list", len(roles))
-	return formatOutput(roles, nil)
+	return formatEmptyOrOutput(roles, "No roles found")
 }
 
 func runRolesGet(ctx context.Context, client *api.Client, opts *options.RolesGetOptions) error {
@@ -578,7 +566,7 @@ func runRolesCreate(ctx context.Context, client *api.Client, opts *options.Roles
 		return fmt.Errorf("failed to create role: %w", err)
 	}
 
-	fmt.Printf("Role created successfully (ID: %d)\n", role.ID)
+	printInfo("Role created successfully (ID: %d)\n", role.ID)
 	logger.LogCommandComplete(ctx, "roles.create", 1)
 	return nil
 }
@@ -607,7 +595,7 @@ func runRolesUpdate(ctx context.Context, client *api.Client, opts *options.Roles
 		return fmt.Errorf("failed to update role: %w", err)
 	}
 
-	fmt.Printf("Role updated successfully (ID: %d)\n", role.ID)
+	printInfo("Role updated successfully (ID: %d)\n", role.ID)
 	logger.LogCommandComplete(ctx, "roles.update", 1)
 	return nil
 }

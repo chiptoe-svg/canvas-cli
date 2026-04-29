@@ -432,16 +432,9 @@ func runGradesHistory(ctx context.Context, client *api.Client, opts *options.Gra
 		return fmt.Errorf("failed to get gradebook history: %w", err)
 	}
 
-	if len(days) == 0 {
-		fmt.Println("No gradebook history found")
-		logger.LogCommandComplete(ctx, "grades.history", 0)
-		return nil
-	}
-
 	printVerbose("Found %d history days:\n\n", len(days))
-
 	logger.LogCommandComplete(ctx, "grades.history", len(days))
-	return formatOutput(days, nil)
+	return formatEmptyOrOutput(days, "No gradebook history found")
 }
 
 func runGradesFeed(ctx context.Context, client *api.Client, opts *options.GradesFeedOptions) error {
@@ -469,16 +462,9 @@ func runGradesFeed(ctx context.Context, client *api.Client, opts *options.Grades
 		return fmt.Errorf("failed to get gradebook feed: %w", err)
 	}
 
-	if len(entries) == 0 {
-		fmt.Println("No gradebook entries found")
-		logger.LogCommandComplete(ctx, "grades.feed", 0)
-		return nil
-	}
-
 	printVerbose("Found %d feed entries:\n\n", len(entries))
-
 	logger.LogCommandComplete(ctx, "grades.feed", len(entries))
-	return formatOutput(entries, nil)
+	return formatEmptyOrOutput(entries, "No gradebook entries found")
 }
 
 func runGradesColumnsList(ctx context.Context, client *api.Client, opts *options.GradesColumnsListOptions) error {
@@ -502,16 +488,9 @@ func runGradesColumnsList(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to list custom columns: %w", err)
 	}
 
-	if len(columns) == 0 {
-		fmt.Println("No custom columns found")
-		logger.LogCommandComplete(ctx, "grades.columns.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d custom columns:\n\n", len(columns))
-
 	logger.LogCommandComplete(ctx, "grades.columns.list", len(columns))
-	return formatOutput(columns, nil)
+	return formatEmptyOrOutput(columns, "No custom columns found")
 }
 
 func runGradesColumnsGet(ctx context.Context, client *api.Client, opts *options.GradesColumnsGetOptions) error {
@@ -562,7 +541,7 @@ func runGradesColumnsCreate(ctx context.Context, client *api.Client, opts *optio
 		return fmt.Errorf("failed to create custom column: %w", err)
 	}
 
-	fmt.Printf("Custom column created successfully (ID: %d)\n", column.ID)
+	printInfo("Custom column created successfully (ID: %d)\n", column.ID)
 
 	logger.LogCommandComplete(ctx, "grades.columns.create", 1)
 	return formatOutput(column, nil)
@@ -604,7 +583,7 @@ func runGradesColumnsUpdate(ctx context.Context, client *api.Client, opts *optio
 		return fmt.Errorf("failed to update custom column: %w", err)
 	}
 
-	fmt.Printf("Custom column updated successfully (ID: %d)\n", column.ID)
+	printInfo("Custom column updated successfully (ID: %d)\n", column.ID)
 
 	logger.LogCommandComplete(ctx, "grades.columns.update", 1)
 	return formatOutput(column, nil)
@@ -665,16 +644,9 @@ func runGradesColumnsDataList(ctx context.Context, client *api.Client, opts *opt
 		return fmt.Errorf("failed to get column data: %w", err)
 	}
 
-	if len(data) == 0 {
-		fmt.Println("No column data found")
-		logger.LogCommandComplete(ctx, "grades.columns.data.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d data entries:\n\n", len(data))
-
 	logger.LogCommandComplete(ctx, "grades.columns.data.list", len(data))
-	return formatOutput(data, nil)
+	return formatEmptyOrOutput(data, "No column data found")
 }
 
 func runGradesColumnsDataSet(ctx context.Context, client *api.Client, opts *options.GradesColumnsDataSetOptions) error {
@@ -697,8 +669,6 @@ func runGradesColumnsDataSet(ctx context.Context, client *api.Client, opts *opti
 		return fmt.Errorf("failed to set column data: %w", err)
 	}
 
-	fmt.Printf("Column data set for user %d\n", datum.UserID)
-
 	logger.LogCommandComplete(ctx, "grades.columns.data.set", 1)
-	return formatOutput(datum, nil)
+	return formatSuccessOutput(datum, fmt.Sprintf("Column data set for user %d", datum.UserID))
 }

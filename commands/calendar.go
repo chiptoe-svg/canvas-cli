@@ -339,15 +339,9 @@ func runCalendarList(ctx context.Context, client *api.Client, opts *options.Cale
 		return fmt.Errorf("failed to list calendar events: %w", err)
 	}
 
-	if len(events) == 0 {
-		fmt.Println("No calendar events found")
-		logger.LogCommandComplete(ctx, "calendar.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d calendar events:\n\n", len(events))
 	logger.LogCommandComplete(ctx, "calendar.list", len(events))
-	return formatOutput(events, nil)
+	return formatEmptyOrOutput(events, "No calendar events found")
 }
 
 func runCalendarGet(ctx context.Context, client *api.Client, opts *options.CalendarGetOptions) error {
@@ -492,7 +486,7 @@ func runCalendarDelete(ctx context.Context, client *api.Client, opts *options.Ca
 		return fmt.Errorf("failed to delete calendar event: %w", err)
 	}
 
-	fmt.Printf("Calendar event %d deleted successfully\n", opts.EventID)
+	printInfo("Calendar event %d deleted successfully\n", opts.EventID)
 	logger.LogCommandComplete(ctx, "calendar.delete", 1)
 	return nil
 }

@@ -539,7 +539,7 @@ func TestOAuthFlow_startLocalServer_MissingCode(t *testing.T) {
 	config := &OAuthFlowConfig{
 		BaseURL:      "https://canvas.example.com",
 		ClientID:     "test-client-id",
-		CallbackPort: 8788,
+		CallbackPort: 18788,
 		Mode:         OAuthModeLocal,
 	}
 
@@ -558,18 +558,22 @@ func TestOAuthFlow_startLocalServer_MissingCode(t *testing.T) {
 		resultChan <- err
 	}()
 
-	// Give the server time to start
-	time.Sleep(100 * time.Millisecond)
-
-	// Make a request with correct state but missing code
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d%s?state=%s", flow.config.CallbackPort, callbackPath, flow.state))
-	if err != nil {
-		t.Logf("Request failed (expected if server not ready): %v", err)
-	} else {
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected 400 Bad Request for missing code, got %d", resp.StatusCode)
+	// Wait for server to be ready with retry
+	var resp *http.Response
+	url := fmt.Sprintf("http://localhost:%d%s?state=%s", flow.config.CallbackPort, callbackPath, flow.state)
+	for i := 0; i < 20; i++ {
+		time.Sleep(50 * time.Millisecond)
+		resp, err = http.Get(url)
+		if err == nil {
+			break
 		}
+	}
+	if err != nil {
+		t.Fatalf("Server never became ready: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request for missing code, got %d", resp.StatusCode)
 	}
 
 	// Wait for result or timeout

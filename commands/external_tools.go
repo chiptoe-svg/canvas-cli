@@ -348,15 +348,9 @@ func runExtToolsList(ctx context.Context, client *api.Client, cmd *cobra.Command
 		return fmt.Errorf("failed to list external tools: %w", err)
 	}
 
-	if len(tools) == 0 {
-		fmt.Println("No external tools found")
-		logger.LogCommandComplete(ctx, "external_tools.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d external tools:\n\n", len(tools))
 	logger.LogCommandComplete(ctx, "external_tools.list", len(tools))
-	return formatOutput(tools, nil)
+	return formatEmptyOrOutput(tools, "No external tools found")
 }
 
 func runExtToolsGet(ctx context.Context, client *api.Client, opts *options.ExternalToolsGetOptions) error {
@@ -455,7 +449,7 @@ func runExtToolsCreate(ctx context.Context, client *api.Client, opts *options.Ex
 		return fmt.Errorf("failed to create external tool: %w", err)
 	}
 
-	fmt.Printf("External tool created successfully (ID: %d)\n", tool.ID)
+	printInfo("External tool created successfully (ID: %d)\n", tool.ID)
 	logger.LogCommandComplete(ctx, "external_tools.create", 1)
 	return formatOutput(tool, nil)
 }
@@ -512,7 +506,7 @@ func runExtToolsUpdate(ctx context.Context, client *api.Client, opts *options.Ex
 		return fmt.Errorf("failed to update external tool: %w", err)
 	}
 
-	fmt.Printf("External tool updated successfully (ID: %d)\n", tool.ID)
+	printInfo("External tool updated successfully (ID: %d)\n", tool.ID)
 	logger.LogCommandComplete(ctx, "external_tools.update", 1)
 	return formatOutput(tool, nil)
 }
@@ -556,7 +550,7 @@ func runExtToolsDelete(ctx context.Context, client *api.Client, opts *options.Ex
 		return fmt.Errorf("failed to delete external tool: %w", err)
 	}
 
-	fmt.Printf("External tool %d deleted successfully\n", opts.ToolID)
+	printInfo("External tool %d deleted successfully\n", opts.ToolID)
 	logger.LogCommandComplete(ctx, "external_tools.delete", 1)
 	return nil
 }

@@ -458,20 +458,25 @@ func runAssignmentsCreate(ctx context.Context, client *api.Client, cmd *cobra.Co
 		return fmt.Errorf("failed to create assignment: %w", err)
 	}
 
-	fmt.Printf("Assignment created successfully!\n")
-	fmt.Printf("  ID: %d\n", assignment.ID)
-	fmt.Printf("  Name: %s\n", assignment.Name)
-	fmt.Printf("  Points: %.1f\n", assignment.PointsPossible)
-	if !assignment.DueAt.IsZero() {
-		fmt.Printf("  Due: %s\n", assignment.DueAt.Format("2006-01-02 15:04"))
-	}
-	if assignment.Published {
-		fmt.Printf("  Status: Published\n")
-	} else {
-		fmt.Printf("  Status: Unpublished\n")
+	logger.LogCommandComplete(ctx, "assignments.create", 1)
+
+	if isStructuredOutput() {
+		return formatOutput(assignment, nil)
 	}
 
-	logger.LogCommandComplete(ctx, "assignments.create", 1)
+	printInfo("Assignment created successfully!\n")
+	printInfo("  ID: %d\n", assignment.ID)
+	printInfo("  Name: %s\n", assignment.Name)
+	printInfo("  Points: %.1f\n", assignment.PointsPossible)
+	if !assignment.DueAt.IsZero() {
+		printInfo("  Due: %s\n", assignment.DueAt.Format("2006-01-02 15:04"))
+	}
+	if assignment.Published {
+		printInfo("  Status: Published\n")
+	} else {
+		printInfo("  Status: Unpublished\n")
+	}
+
 	return nil
 }
 
@@ -588,20 +593,25 @@ func runAssignmentsUpdate(ctx context.Context, client *api.Client, cmd *cobra.Co
 		return fmt.Errorf("failed to update assignment: %w", err)
 	}
 
-	fmt.Printf("Assignment updated successfully!\n")
-	fmt.Printf("  ID: %d\n", assignment.ID)
-	fmt.Printf("  Name: %s\n", assignment.Name)
-	fmt.Printf("  Points: %.1f\n", assignment.PointsPossible)
-	if !assignment.DueAt.IsZero() {
-		fmt.Printf("  Due: %s\n", assignment.DueAt.Format("2006-01-02 15:04"))
-	}
-	if assignment.Published {
-		fmt.Printf("  Status: Published\n")
-	} else {
-		fmt.Printf("  Status: Unpublished\n")
+	logger.LogCommandComplete(ctx, "assignments.update", 1)
+
+	if isStructuredOutput() {
+		return formatOutput(assignment, nil)
 	}
 
-	logger.LogCommandComplete(ctx, "assignments.update", 1)
+	printInfo("Assignment updated successfully!\n")
+	printInfo("  ID: %d\n", assignment.ID)
+	printInfo("  Name: %s\n", assignment.Name)
+	printInfo("  Points: %.1f\n", assignment.PointsPossible)
+	if !assignment.DueAt.IsZero() {
+		printInfo("  Due: %s\n", assignment.DueAt.Format("2006-01-02 15:04"))
+	}
+	if assignment.Published {
+		printInfo("  Status: Published\n")
+	} else {
+		printInfo("  Status: Unpublished\n")
+	}
+
 	return nil
 }
 
@@ -667,7 +677,7 @@ func runAssignmentsDelete(ctx context.Context, client *api.Client, opts *options
 		return fmt.Errorf("failed to delete assignment: %w", err)
 	}
 
-	fmt.Printf("Assignment %d deleted successfully.\n", opts.AssignmentID)
+	printInfo("Assignment %d deleted successfully.\n", opts.AssignmentID)
 
 	logger.LogCommandComplete(ctx, "assignments.delete", 1)
 	return nil

@@ -125,7 +125,7 @@ func runContextSet(ctx context.Context, opts *options.ContextSetOptions) error {
 	}
 
 	logger.LogCommandComplete(ctx, "context.set", 1)
-	fmt.Printf("Context %s set to %d\n", contextType, opts.ID)
+	printInfo("Context %s set to %d\n", contextType, opts.ID)
 	return nil
 }
 
@@ -159,6 +159,11 @@ func runContextShow(ctx context.Context, opts *options.ContextShowOptions) error
 	}
 
 	ctxVal := cfg.GetContext()
+
+	if isStructuredOutput() {
+		logger.LogCommandComplete(ctx, "context.show", 1)
+		return formatOutput(ctxVal, nil)
+	}
 
 	// Check if any context is set
 	if ctxVal.CourseID == 0 && ctxVal.AssignmentID == 0 && ctxVal.UserID == 0 && ctxVal.AccountID == 0 {
@@ -237,7 +242,7 @@ func runContextClear(ctx context.Context, opts *options.ContextClearOptions) err
 			return fmt.Errorf("failed to clear context: %w", err)
 		}
 		logger.LogCommandComplete(ctx, "context.clear", 1)
-		fmt.Println("Context cleared.")
+		printInfoln("Context cleared.")
 		return nil
 	}
 
@@ -266,7 +271,7 @@ func runContextClear(ctx context.Context, opts *options.ContextClearOptions) err
 	}
 
 	logger.LogCommandComplete(ctx, "context.clear", 1)
-	fmt.Printf("Context %s cleared.\n", contextType)
+	printInfo("Context %s cleared.\n", contextType)
 	return nil
 }
 

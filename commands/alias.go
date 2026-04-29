@@ -106,7 +106,7 @@ func runAliasSet(ctx context.Context, opts *options.AliasSetOptions) error {
 	}
 
 	logger.LogCommandComplete(ctx, "alias.set", 1)
-	fmt.Printf("Alias %q set to: %s\n", opts.Name, opts.Expansion)
+	printInfo("Alias %q set to: %s\n", opts.Name, opts.Expansion)
 	return nil
 }
 
@@ -141,6 +141,10 @@ func runAliasList(ctx context.Context, opts *options.AliasListOptions) error {
 
 	aliases := cfg.ListAliases()
 	if len(aliases) == 0 {
+		if isStructuredOutput() {
+			logger.LogCommandComplete(ctx, "alias.list", 0)
+			return formatOutput([]struct{}{}, nil)
+		}
 		fmt.Println("No aliases configured.")
 		fmt.Println("\nCreate one with: canvas alias set <name> <command>")
 		logger.LogCommandComplete(ctx, "alias.list", 0)
@@ -211,7 +215,7 @@ func runAliasDelete(ctx context.Context, opts *options.AliasDeleteOptions) error
 	}
 
 	logger.LogCommandComplete(ctx, "alias.delete", 1)
-	fmt.Printf("Alias %q deleted.\n", opts.Name)
+	printInfo("Alias %q deleted.\n", opts.Name)
 	return nil
 }
 

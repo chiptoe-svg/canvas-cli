@@ -314,15 +314,9 @@ func runSISList(ctx context.Context, client *api.Client, opts *options.SISImport
 		return fmt.Errorf("failed to list SIS imports: %w", err)
 	}
 
-	if len(imports) == 0 {
-		fmt.Println("No SIS imports found")
-		logger.LogCommandComplete(ctx, "sis_imports.list", 0)
-		return nil
-	}
-
 	printVerbose("Found %d SIS imports:\n\n", len(imports))
 	logger.LogCommandComplete(ctx, "sis_imports.list", len(imports))
-	return formatOutput(imports, nil)
+	return formatEmptyOrOutput(imports, "No SIS imports found")
 }
 
 func runSISGet(ctx context.Context, client *api.Client, opts *options.SISImportsGetOptions) error {
@@ -401,8 +395,8 @@ func runSISCreate(ctx context.Context, client *api.Client, opts *options.SISImpo
 		return fmt.Errorf("failed to create SIS import: %w", err)
 	}
 
-	fmt.Printf("SIS import created successfully (ID: %d)\n", sisImport.ID)
-	fmt.Printf("Workflow state: %s\n", sisImport.WorkflowState)
+	printInfo("SIS import created successfully (ID: %d)\n", sisImport.ID)
+	printInfo("Workflow state: %s\n", sisImport.WorkflowState)
 	logger.LogCommandComplete(ctx, "sis_imports.create", 1)
 	return nil
 }
