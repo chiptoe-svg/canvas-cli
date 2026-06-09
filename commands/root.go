@@ -35,6 +35,17 @@ var (
 
 	// Auto-updater instance
 	autoUpdater *update.AutoUpdater
+
+	// disableAutoUpdate skips the background auto-update check. It exists as a
+	// test seam: tests dispatch through rootCmd repeatedly, and the async update
+	// check (a real network call) would both slow them down and race on shared
+	// updater state under `go test -race`. A real CLI process runs rootCmd once.
+	disableAutoUpdate bool
+
+	// testRetryBackoff, when > 0, overrides the API client's retry initial
+	// backoff. Test seam only: it lets the suite exercise retryable-error paths
+	// without spending ~7s per test sleeping through the 1s/2s/4s backoff.
+	testRetryBackoff time.Duration
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -53,6 +64,9 @@ Examples:
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if disableAutoUpdate {
+			return
+		}
 		// Initialize and run auto-updater asynchronously
 		initAutoUpdater()
 		if autoUpdater != nil {
@@ -60,6 +74,9 @@ Examples:
 		}
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		if disableAutoUpdate {
+			return
+		}
 		// Print any update notifications after command completes
 		if autoUpdater != nil {
 			// Wait for async update check to complete (with timeout to avoid blocking forever)
