@@ -92,16 +92,7 @@ have been removed.
    - **Files/Areas:** `internal/output/`
    - **Priority:** Low
 
-8. **Two Command Test Frameworks Coexist**
-   - **Problem:** The older `commands/testing` framework coexists with the
-     newer `commands/internal/testing` package.
-   - **Impact:** Confusing for contributors; duplicate maintenance.
-   - **Status:** Planned
-   - **Next Steps:** Remove `commands/testing` in favor of
-     `commands/internal/testing` once no tests depend on it.
-   - **Priority:** Low
-
-9. **Benchmark Test Suite**
+8. **Benchmark Test Suite**
    - **Problem:** No automated performance regression detection.
    - **Impact:** Performance changes not caught until production.
    - **Status:** Planned
@@ -109,7 +100,7 @@ have been removed.
      limiter, cache).
    - **Priority:** Low
 
-10. **Additional Platform Coverage in Auth Tests**
+9. **Additional Platform Coverage in Auth Tests**
     - **Problem:** Platform-specific auth code (macOS ioreg, Windows
       PowerShell) has limited coverage on Linux CI.
     - **Impact:** Some platform-specific code paths only exercised by the
@@ -133,6 +124,9 @@ have been removed.
   ERROR_HANDLING_AUDIT.md was removed in June 2026 as stale.
 - **Overall coverage** raised to ~82% with a CI coverage gate (June 2026,
   #31).
+- **Misleading `commands/testing` framework removed** (June 2026) — the package
+  never wired `getAPIClient()` to its mock server, making it a trap for
+  contributors. Deleted in favour of `commands/internal/testing`.
 
 ---
 
