@@ -177,8 +177,8 @@ func (s *FilesService) UploadToUser(ctx context.Context, userID int64, filePath 
 // Step 2: Upload file to the provided URL using multipart/form-data with upload_params
 // Step 3: Confirm upload (follow redirect or parse response)
 func (s *FilesService) upload(ctx context.Context, uploadPath, filePath string, params *UploadParams) (*Attachment, error) {
-	// Open the file to upload
-	file, err := os.Open(filePath)
+	// Open the file to upload — filePath comes from the --file flag, user-controlled by design.
+	file, err := os.Open(filePath) // #nosec G304 -- filePath is provided by the user via --file flag
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
@@ -396,8 +396,8 @@ func (s *FilesService) Download(ctx context.Context, fileID int64, destPath stri
 		return fmt.Errorf("file has no download URL")
 	}
 
-	// Create the destination file
-	out, err := os.Create(destPath)
+	// Create the destination file — destPath comes from the --destination flag, user-controlled by design.
+	out, err := os.Create(destPath) // #nosec G304 -- destPath is provided by the user via --destination flag
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}

@@ -252,13 +252,13 @@ func clearExpiredEntries(dir string) error {
 		path := filepath.Join(dir, entry.Name())
 
 		// Read and check expiration
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path is constructed from the cache directory joined with a directory entry name, not user input
 		if err != nil {
 			continue
 		}
 
 		if isExpiredCacheFile(data) {
-			os.Remove(path)
+			os.Remove(path) // #nosec G104 -- best-effort cleanup; failure to remove an expired cache file is non-critical
 		}
 	}
 

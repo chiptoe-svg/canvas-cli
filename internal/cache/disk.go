@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 -- MD5 is used only for cache filename hashing, not for any cryptographic purpose
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -57,8 +57,8 @@ type diskItem struct {
 func (c *DiskCache) Get(key string) []byte {
 	path := c.keyPath(key)
 
-	// Read the file
-	data, err := os.ReadFile(path)
+	// Read the file — path is derived from an MD5 hash of the cache key, not from user input.
+	data, err := os.ReadFile(path) // #nosec G304 -- path is constructed from MD5 hash of cache key, not from user input
 	if err != nil {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (c *DiskCache) Get(key string) []byte {
 	// Check if expired
 	if time.Now().After(item.Expiration) {
 		// Delete expired file
-		os.Remove(path)
+		os.Remove(path) // #nosec G104 -- best-effort cleanup of expired cache file
 		return nil
 	}
 
@@ -146,7 +146,7 @@ func (c *DiskCache) Clear() error {
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			os.Remove(filepath.Join(c.dir, entry.Name()))
+			os.Remove(filepath.Join(c.dir, entry.Name())) // #nosec G104 -- best-effort cache invalidation; remove error is non-critical
 		}
 	}
 
@@ -189,8 +189,8 @@ func (c *DiskCache) removeExpired() {
 
 		path := filepath.Join(c.dir, entry.Name())
 
-		// Read the file
-		data, err := os.ReadFile(path)
+		// Read the file — path is constructed from the cache directory joined with a directory entry name.
+		data, err := os.ReadFile(path) // #nosec G304 -- path is the cache dir joined with an entry name from os.ReadDir, not user input
 		if err != nil {
 			continue
 		}
@@ -199,21 +199,22 @@ func (c *DiskCache) removeExpired() {
 		var item diskItem
 		if err := json.Unmarshal(data, &item); err != nil {
 			// Remove corrupted files
-			os.Remove(path)
+			os.Remove(path) // #nosec G104 -- best-effort removal of corrupted cache file
 			continue
 		}
 
 		// Delete if expired
 		if now.After(item.Expiration) {
-			os.Remove(path)
+			os.Remove(path) // #nosec G104 -- best-effort cleanup of expired cache file
 		}
 	}
 }
 
 // keyPath converts a cache key to a file path
 func (c *DiskCache) keyPath(key string) string {
-	// Hash the key to create a valid filename
-	hash := md5.Sum([]byte(key))
+	// Hash the key to create a valid filename — MD5 is used here as a fast
+	// filename-safe hash, not for any cryptographic purpose.
+	hash := md5.Sum([]byte(key)) // #nosec G401 -- non-cryptographic use: converts arbitrary cache key to a valid filename
 	filename := hex.EncodeToString(hash[:])
 	return filepath.Join(c.dir, filename+".cache")
 }
@@ -236,7 +237,7 @@ func (c *DiskCache) Stats() (Stats, error) {
 		total++
 
 		path := filepath.Join(c.dir, entry.Name())
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path is the cache dir joined with a directory entry name, not user input
 		if err != nil {
 			continue
 		}

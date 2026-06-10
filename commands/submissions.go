@@ -74,8 +74,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.WorkflowState, "workflow-state", "", "Filter by workflow state (submitted, unsubmitted, graded, pending_review)")
 	cmd.Flags().StringVar(&opts.GradedSince, "graded-since", "", "Filter by graded since date (ISO8601 format)")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (comma-separated)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id")
 
 	return cmd
 }
@@ -107,9 +106,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (required)")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (comma-separated)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "user-id")
 
 	return cmd
 }
@@ -147,9 +144,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.Comment, "comment", "", "Comment to add")
 	cmd.Flags().BoolVar(&opts.Excuse, "excuse", false, "Excuse the submission")
 	cmd.Flags().StringVar(&opts.PostedGrade, "posted-grade", "", "Posted grade (e.g., 'A', 'B+', 'Pass')")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "user-id")
 
 	return cmd
 }
@@ -192,7 +187,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.CSV, "csv", "", "CSV file with grades (deprecated: use --csv-file)")
 	_ = cmd.Flags().MarkDeprecated("csv", "use --csv-file instead")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview changes without applying them")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -222,9 +217,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "user-id")
 
 	return cmd
 }
@@ -257,10 +250,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (required)")
 	cmd.Flags().StringVar(&opts.Text, "text", "", "Comment text (required)")
 	cmd.Flags().BoolVar(&opts.GroupShare, "group", false, "Share comment with group members")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("user-id")
-	cmd.MarkFlagRequired("text")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "user-id", "text")
 
 	return cmd
 }
@@ -292,10 +282,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (required)")
 	cmd.Flags().Int64Var(&opts.CommentID, "comment-id", 0, "Comment ID to delete (required)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("user-id")
-	cmd.MarkFlagRequired("comment-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "user-id", "comment-id")
 
 	return cmd
 }

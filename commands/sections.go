@@ -65,7 +65,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data (students, total_students, passback_status, permissions)")
 
 	return cmd
@@ -135,9 +135,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Section name (required)")
-	cmd.MarkFlagRequired("name")
+	mustMarkRequired(cmd, "name")
 	cmd.Flags().StringVar(&opts.SISSectionID, "sis-section-id", "", "SIS section ID")
 	cmd.Flags().StringVar(&opts.IntegrationID, "integration-id", "", "Integration ID")
 	cmd.Flags().StringVar(&opts.StartAt, "start-at", "", "Section start date (ISO 8601)")
@@ -275,7 +275,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.NewCourseID, "new-course-id", 0, "Target course ID (required)")
-	cmd.MarkFlagRequired("new-course-id")
+	mustMarkRequired(cmd, "new-course-id")
 	cmd.Flags().BoolVar(&opts.OverrideSISStickiness, "override-sis-stickiness", false, "Override SIS stickiness")
 
 	return cmd

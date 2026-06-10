@@ -37,21 +37,9 @@ have been removed.
      `commands/shell.go`, `commands/completion.go`
    - **Priority:** Important
 
-3. **Gosec Findings Backlog (CI is report-only)**
-   - **Problem:** gosec reports ~300 findings (mostly G104 unchecked errors,
-     e.g. `cmd.MarkFlagRequired(...)` return values). The CI gosec step runs
-     with `-no-fail` so it cannot gate merges.
-   - **Impact:** New security findings land unnoticed; the scanner provides no
-     enforcement.
-   - **Status:** Identified
-   - **Files/Areas:** `.github/workflows/ci.yml` (security job), `commands/`
-   - **Next Steps:** Burn down findings (handle or `#nosec`-annotate with
-     justification), then remove `-no-fail`.
-   - **Priority:** Important
-
 ### Nice to Have
 
-4. **Services Accept `*Client` Instead of `HTTPClient` Interface**
+3. **Services Accept `*Client` Instead of `HTTPClient` Interface**
    - **Problem:** Every service in `internal/api` takes the concrete `*Client`
      (`func NewXxxService(client *Client)`) rather than the `HTTPClient`
      interface.
@@ -63,7 +51,7 @@ have been removed.
    - **Files/Areas:** `internal/api/*.go`
    - **Priority:** Low
 
-5. **Duplicated Test Client Construction**
+4. **Duplicated Test Client Construction**
    - **Problem:** ~476 duplicated `NewClient(ClientConfig{...})` blocks across
      `internal/api` tests.
    - **Impact:** Boilerplate; config changes require mass edits.
@@ -73,7 +61,7 @@ have been removed.
    - **Files/Areas:** `internal/api/*_test.go`
    - **Priority:** Low
 
-6. **No Binary-Level Integration Tests**
+5. **No Binary-Level Integration Tests**
    - **Problem:** There are no end-to-end tests that exercise the compiled
      `canvas` binary (no `test/integration` suite exists).
    - **Impact:** Flag parsing, alias expansion, exit codes, and output routing
@@ -83,7 +71,7 @@ have been removed.
      against a mock Canvas server.
    - **Priority:** Low
 
-7. **No Golden-File Formatter Tests**
+6. **No Golden-File Formatter Tests**
    - **Problem:** `internal/output` formatters (table/JSON/YAML/CSV) are tested
      with inline assertions, not golden files.
    - **Impact:** Output regressions (column order, truncation, spacing) are
@@ -92,7 +80,7 @@ have been removed.
    - **Files/Areas:** `internal/output/`
    - **Priority:** Low
 
-8. **Two Command Test Frameworks Coexist**
+7. **Two Command Test Frameworks Coexist**
    - **Problem:** The older `commands/testing` framework coexists with the
      newer `commands/internal/testing` package.
    - **Impact:** Confusing for contributors; duplicate maintenance.
@@ -101,7 +89,7 @@ have been removed.
      `commands/internal/testing` once no tests depend on it.
    - **Priority:** Low
 
-9. **Benchmark Test Suite**
+8. **Benchmark Test Suite**
    - **Problem:** No automated performance regression detection.
    - **Impact:** Performance changes not caught until production.
    - **Status:** Planned
@@ -109,7 +97,7 @@ have been removed.
      limiter, cache).
    - **Priority:** Low
 
-10. **Additional Platform Coverage in Auth Tests**
+9. **Additional Platform Coverage in Auth Tests**
     - **Problem:** Platform-specific auth code (macOS ioreg, Windows
       PowerShell) has limited coverage on Linux CI.
     - **Impact:** Some platform-specific code paths only exercised by the
@@ -133,6 +121,11 @@ have been removed.
   ERROR_HANDLING_AUDIT.md was removed in June 2026 as stale.
 - **Overall coverage** raised to ~82% with a CI coverage gate (June 2026,
   #31).
+- **Gosec findings backlog resolved** (June 2026) — all 283 findings burned
+  down: 205 G104s eliminated via `mustMarkRequired` helper in
+  `commands/helpers.go`; G112 fixed by adding `ReadHeaderTimeout` to HTTP
+  servers; remaining findings annotated with `#nosec GXXX -- justification`
+  comments. The CI gosec step now enforces a zero-finding gate.
 
 ---
 

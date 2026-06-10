@@ -292,13 +292,13 @@ func runAuthLogin(ctx context.Context, opts *options.AuthLoginOptions) error {
 	// Get or prompt for client ID
 	if opts.ClientID == "" {
 		fmt.Print("Enter OAuth Client ID: ")
-		fmt.Scanln(&opts.ClientID)
+		fmt.Scanln(&opts.ClientID) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
 	}
 
 	// If client ID is provided, also require client secret for OAuth
 	if opts.ClientID != "" && opts.ClientSecret == "" {
 		fmt.Print("Enter OAuth Client Secret: ")
-		fmt.Scanln(&opts.ClientSecret)
+		fmt.Scanln(&opts.ClientSecret) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
 		if opts.ClientSecret == "" {
 			return fmt.Errorf("client secret is required when using OAuth with a client ID")
 		}
@@ -381,7 +381,7 @@ func runAuthLogout(ctx context.Context, opts *options.AuthLogoutOptions) error {
 	// Confirm logout
 	fmt.Printf("Are you sure you want to logout from %s? (y/N): ", instanceName)
 	var confirm string
-	fmt.Scanln(&confirm)
+	fmt.Scanln(&confirm) // #nosec G104 -- Scanln EOF on Enter defaults to empty string, treated as "no" by the check below
 
 	if confirm != "y" && confirm != "Y" {
 		fmt.Println("Logout cancelled")
@@ -570,7 +570,7 @@ func runAuthTokenSet(ctx context.Context, opts *options.AuthTokenSetOptions) err
 	apiToken := opts.Token
 	if apiToken == "" {
 		fmt.Print("Enter API Access Token: ")
-		fmt.Scanln(&apiToken)
+		fmt.Scanln(&apiToken) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
 		if apiToken == "" {
 			return fmt.Errorf("API token is required")
 		}
@@ -654,7 +654,7 @@ func runAuthTokenRemove(ctx context.Context, opts *options.AuthTokenRemoveOption
 	// Confirm removal
 	fmt.Printf("Are you sure you want to remove the API token from %s? (y/N): ", opts.InstanceName)
 	var confirm string
-	fmt.Scanln(&confirm)
+	fmt.Scanln(&confirm) // #nosec G104 -- Scanln EOF on Enter defaults to empty string, treated as "no" by the check below
 
 	if confirm != "y" && confirm != "Y" {
 		printInfoln("Token removal cancelled")

@@ -20,7 +20,7 @@ type GradeRecord struct {
 // ReadGradesCSV reads grades from a CSV file
 // Expected format: user_id,assignment_id,grade,comment
 func ReadGradesCSV(filename string) ([]GradeRecord, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304 -- filename comes from the --file flag, user-controlled by design
 	if err != nil {
 		return nil, fmt.Errorf("failed to open CSV file: %w", err)
 	}
@@ -95,7 +95,7 @@ func ReadGradesCSV(filename string) ([]GradeRecord, error) {
 // WriteGradesCSV writes grades to a CSV file with secure permissions (0600)
 func WriteGradesCSV(filename string, records []GradeRecord) error {
 	// Create file with secure permissions (owner read/write only)
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 -- filename comes from the --output flag, user-controlled by design
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}
@@ -131,7 +131,7 @@ type ExportRecord map[string]string
 
 // ReadCSV reads generic CSV data
 func ReadCSV(filename string) ([]ExportRecord, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304 -- filename comes from the --file flag, user-controlled by design
 	if err != nil {
 		return nil, fmt.Errorf("failed to open CSV file: %w", err)
 	}
@@ -179,7 +179,7 @@ func ReadCSV(filename string) ([]ExportRecord, error) {
 // WriteCSV writes generic CSV data with secure permissions (0600)
 func WriteCSV(filename string, headers []string, records []ExportRecord) error {
 	// Create file with secure permissions (owner read/write only)
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600) // #nosec G304 -- filename comes from the --output flag, user-controlled by design
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}

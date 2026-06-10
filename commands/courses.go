@@ -266,8 +266,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.DefaultView, "default-view", "", "Default view (feed, wiki, modules, syllabus, assignments)")
 	cmd.Flags().BoolVar(&opts.Offer, "offer", false, "Publish course immediately")
 
-	cmd.MarkFlagRequired("account-id")
-	cmd.MarkFlagRequired("name")
+	mustMarkRequired(cmd, "account-id", "name")
 
 	return cmd
 }

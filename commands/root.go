@@ -137,12 +137,13 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceVar(&filterColumns, "columns", nil, "Select specific columns to display (comma-separated)")
 	rootCmd.PersistentFlags().StringVar(&sortField, "sort", "", "Sort results by field (prefix with - for descending, e.g., -name)")
 
-	// Bind flags to viper
-	viper.BindPFlag("instance", rootCmd.PersistentFlags().Lookup("instance"))
-	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("as-user", rootCmd.PersistentFlags().Lookup("as-user"))
-	viper.BindPFlag("no-cache", rootCmd.PersistentFlags().Lookup("no-cache"))
+	// Bind flags to viper — BindPFlag only errors if the flag does not exist,
+	// which cannot happen here since all flags are registered just above.
+	viper.BindPFlag("instance", rootCmd.PersistentFlags().Lookup("instance")) // #nosec G104 -- flag registered above, cannot fail
+	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))     // #nosec G104 -- flag registered above, cannot fail
+	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))   // #nosec G104 -- flag registered above, cannot fail
+	viper.BindPFlag("as-user", rootCmd.PersistentFlags().Lookup("as-user"))   // #nosec G104 -- flag registered above, cannot fail
+	viper.BindPFlag("no-cache", rootCmd.PersistentFlags().Lookup("no-cache")) // #nosec G104 -- flag registered above, cannot fail
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -134,8 +134,7 @@ Examples:
 	cmd.Flags().Float64Var(&opts.MasteryPoints, "mastery-points", 0, "Points for mastery")
 	cmd.Flags().StringVar(&opts.CalculationMethod, "calculation-method", "", "Calculation method (decaying_average, n_mastery, latest, highest)")
 	cmd.Flags().IntVar(&opts.CalculationInt, "calculation-int", 0, "Calculation parameter")
-	cmd.MarkFlagRequired("group-id")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "group-id", "title")
 
 	return cmd
 }
@@ -219,7 +218,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
-	cmd.MarkFlagRequired("group-id")
+	mustMarkRequired(cmd, "group-id")
 
 	return cmd
 }
@@ -259,7 +258,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
-	cmd.MarkFlagRequired("group-id")
+	mustMarkRequired(cmd, "group-id")
 
 	return cmd
 }
@@ -300,7 +299,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("group-id")
+	mustMarkRequired(cmd, "group-id")
 
 	return cmd
 }
@@ -409,7 +408,7 @@ Examples:
 	cmd.Flags().Int64SliceVar(&opts.OutcomeIDs, "outcome-ids", []int64{}, "Filter by outcome IDs")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data (alignments, outcomes, outcomes.alignments, outcome_groups)")
 	cmd.Flags().BoolVar(&opts.IncludeHidden, "include-hidden", false, "Include hidden outcomes")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -441,7 +440,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
