@@ -181,13 +181,10 @@ func (l *Listener) handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 	// Parse raw JSON event if not already parsed from JWT
 	if event.EventType == "" {
-		// Log raw body for debugging
+		// Note: the raw body is intentionally NOT logged here to avoid capturing
+		// PII that may appear in event payloads. Log metadata (event type, ID,
+		// body key count) after parsing instead.
 		bodyStr := string(body)
-		if len(bodyStr) > 200 {
-			l.logger.Printf("Raw body (truncated): %s...\n", bodyStr[:200])
-		} else {
-			l.logger.Printf("Raw body: %s\n", bodyStr)
-		}
 
 		// Canvas Data Services sends JWT wrapped in quotes (e.g., "eyJhbGci...")
 		// Strip the quotes to get the raw JWT
@@ -214,8 +211,8 @@ func (l *Listener) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	l.logger.Printf("Received event: %s (ID: %s)\n", event.EventType, event.ID)
-	l.logger.Printf("Event body: %v\n", event.Body)
+	l.logger.Printf("Received event: %s (ID: %s, time: %s, body keys: %d)\n",
+		event.EventType, event.ID, event.EventTime.Format(time.RFC3339), len(event.Body))
 
 	// Process event
 	l.mu.RLock()
