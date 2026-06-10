@@ -327,7 +327,7 @@ func parseVersion(v string) [3]int {
 	for i := 0; i < 3 && i < len(parts); i++ {
 		// Strip any pre-release suffix
 		numStr := strings.Split(parts[i], "-")[0]
-		fmt.Sscanf(numStr, "%d", &result[i])
+		fmt.Sscanf(numStr, "%d", &result[i]) // #nosec G104 -- parse failure leaves the element zero, which is correct for a missing/malformed version component
 	}
 
 	return result

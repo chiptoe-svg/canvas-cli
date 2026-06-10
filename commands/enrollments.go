@@ -113,7 +113,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -162,8 +162,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.SectionID, "section-id", 0, "Section ID")
 	cmd.Flags().BoolVar(&opts.Notify, "notify", false, "Send enrollment notification email")
 	cmd.Flags().StringVar(&opts.Role, "role", "", "Custom role name")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "course-id", "user-id")
 
 	return cmd
 }
@@ -206,7 +205,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.Task, "task", "conclude", "Task: conclude, deactivate, delete")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation for delete")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -240,7 +239,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -274,7 +273,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -308,7 +307,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }

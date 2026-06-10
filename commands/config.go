@@ -85,7 +85,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.URL, "url", "", "Canvas instance URL (required)")
 	cmd.Flags().StringVar(&opts.Description, "description", "", "Instance description")
 	cmd.Flags().StringVar(&opts.ClientID, "client-id", "", "OAuth client ID")
-	cmd.MarkFlagRequired("url")
+	mustMarkRequired(cmd, "url")
 
 	return cmd
 }

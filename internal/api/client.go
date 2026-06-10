@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 -- MD5 is used only for cache key hashing, not for any cryptographic purpose
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -363,7 +363,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		// Check for API errors
 		if resp.StatusCode >= 400 {
 			err := ParseAPIError(resp)
-			resp.Body.Close()
+			resp.Body.Close() // #nosec G104 -- closing body on error path; close error is irrelevant when returning an API error
 			return resp, err
 		}
 
@@ -450,8 +450,9 @@ func (c *Client) cacheKey(path string) string {
 		key += fmt.Sprintf(":as_user:%d", c.asUserID)
 	}
 
-	// Hash the key to avoid issues with special characters
-	hash := md5.Sum([]byte(key))
+	// Hash the key to avoid issues with special characters — MD5 is used as a
+	// fast hash to create a cache key, not for any cryptographic purpose.
+	hash := md5.Sum([]byte(key)) // #nosec G401 -- non-cryptographic use: converts URL path to a cache key
 	return hex.EncodeToString(hash[:])
 }
 
@@ -509,8 +510,8 @@ func (c *Client) Delete(ctx context.Context, path string) (*http.Response, error
 		return resp, err
 	}
 	// Drain and close so the connection can be reused.
-	io.Copy(io.Discard, resp.Body) //nolint:errcheck
-	resp.Body.Close()
+	io.Copy(io.Discard, resp.Body) // #nosec G104 -- drain errors irrelevant for connection reuse  //nolint:errcheck
+	resp.Body.Close()              // #nosec G104 -- close error irrelevant for connection reuse   //nolint:errcheck
 	return resp, nil
 }
 
@@ -670,7 +671,7 @@ func GetAllPagesGeneric[T any](c *Client, ctx context.Context, path string) ([]T
 		}
 
 		bodyBytes, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		resp.Body.Close() // #nosec G104 -- body already fully read; close error is irrelevant
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
@@ -760,7 +761,7 @@ func (c *Client) GetAllPages(ctx context.Context, path string, result interface{
 		}
 
 		bodyBytes, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		resp.Body.Close() // #nosec G104 -- body already fully read; close error is irrelevant
 		if err != nil {
 			return fmt.Errorf("failed to read response body: %w", err)
 		}

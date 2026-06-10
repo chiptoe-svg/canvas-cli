@@ -16,8 +16,8 @@ import (
 func main() {
 	outputDir := "./docs/commands"
 
-	// Create output directory
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	// Create output directory — 0755 so a web server can serve the generated docs.
+	if err := os.MkdirAll(outputDir, 0755); err != nil { // #nosec G301 -- docs directory must be world-readable for MkDocs to serve it
 		log.Fatalf("Failed to create output directory: %v", err)
 	}
 
@@ -128,7 +128,7 @@ canvas submissions grade 789 --score 95       # Grade a submission
 `
 
 	indexPath := filepath.Join(outputDir, "index.md")
-	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil { // #nosec G306 -- generated documentation must be world-readable for MkDocs
 		log.Fatalf("Failed to write index.md: %v", err)
 	}
 
@@ -143,6 +143,7 @@ canvas submissions grade 789 --score 95       # Grade a submission
 // postProcessMarkdownFiles walks through all generated markdown files and fixes
 // the Examples: sections by wrapping them in code blocks
 func postProcessMarkdownFiles(dir string) error {
+	// #nosec G122 -- developer tool: dir is the just-generated docs/commands output directory, not user input; symlink TOCTOU is not a concern here
 	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -152,14 +153,14 @@ func postProcessMarkdownFiles(dir string) error {
 			return nil
 		}
 
-		content, err := os.ReadFile(path)
+		content, err := os.ReadFile(path) // #nosec G304,G122 -- path comes from Walk over the just-generated docs/commands directory; TOCTOU symlink risk is negligible for this developer tool
 		if err != nil {
 			return err
 		}
 
 		fixed := fixExamplesInMarkdown(string(content))
 
-		return os.WriteFile(path, []byte(fixed), 0644)
+		return os.WriteFile(path, []byte(fixed), 0644) // #nosec G306,G122 -- generated documentation files are intentionally world-readable; TOCTOU risk is negligible for this developer tool
 	})
 }
 

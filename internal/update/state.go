@@ -58,7 +58,7 @@ func (m *StateManager) Load() (*State, error) {
 func (m *StateManager) Save(state *State) error {
 	// Ensure directory exists
 	dir := filepath.Dir(m.statePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return err
 	}
 

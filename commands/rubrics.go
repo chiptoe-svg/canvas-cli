@@ -138,9 +138,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Rubric title (required)")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "title")
 	cmd.Flags().Float64Var(&opts.PointsPossible, "points", 0, "Total points possible")
 	cmd.Flags().BoolVar(&opts.FreeFormCriterionComments, "free-form", false, "Allow free-form criterion comments")
 	cmd.Flags().BoolVar(&opts.HideScoreTotal, "hide-score-total", false, "Hide score total")
@@ -187,7 +187,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Rubric title")
 	cmd.Flags().Float64Var(&opts.PointsPossible, "points", 0, "Total points possible")
 	cmd.Flags().BoolVar(&opts.FreeFormCriterionComments, "free-form", false, "Allow free-form criterion comments")
@@ -229,7 +229,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
 
 	return cmd
@@ -268,9 +268,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "assignment-id")
 	cmd.Flags().BoolVar(&opts.UseForGrading, "use-for-grading", false, "Use rubric for grading")
 	cmd.Flags().BoolVar(&opts.HideScoreTotal, "hide-score-total", false, "Hide score total")
 	cmd.Flags().BoolVar(&opts.HidePoints, "hide-points", false, "Hide points")

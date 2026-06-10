@@ -74,7 +74,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.FilterBy, "filter", "", "Filter by: all, unread")
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search term")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include: all_dates, sections, sections_user_count, overrides")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -109,7 +109,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -148,8 +148,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.LockAt, "lock-at", "", "Lock at date (ISO 8601)")
 	cmd.Flags().BoolVar(&opts.RequireInitialPost, "require-initial-post", false, "Require initial post before viewing")
 	cmd.Flags().BoolVar(&opts.Pinned, "pinned", false, "Pin the discussion")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "course-id", "title")
 
 	return cmd
 }
@@ -206,7 +205,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.RequireInitialPost, "require-initial-post", false, "Require initial post")
 	cmd.Flags().BoolVar(&opts.Pinned, "pinned", false, "Pin the discussion")
 	cmd.Flags().BoolVar(&opts.Locked, "locked", false, "Lock the discussion")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -241,7 +240,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -275,7 +274,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -317,7 +316,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVarP(&opts.Message, "message", "m", "", "Message content (alternative to positional argument)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -364,7 +363,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVarP(&opts.Message, "message", "m", "", "Message content (alternative to positional argument)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -398,7 +397,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -432,7 +431,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }

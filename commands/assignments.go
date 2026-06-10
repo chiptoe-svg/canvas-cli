@@ -185,7 +185,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with assignment data (deprecated: use --json-file)")
 	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 	cmd.Flags().BoolVar(&opts.Stdin, "stdin", false, "Read JSON from stdin")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -248,7 +248,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with assignment data (deprecated: use --json-file)")
 	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 	cmd.Flags().BoolVar(&opts.Stdin, "stdin", false, "Read JSON from stdin")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -288,7 +288,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -692,7 +692,7 @@ func runAssignmentsDelete(ctx context.Context, client *api.Client, opts *options
 
 func readAssignmentJSON(filePath string, useStdin bool) ([]byte, error) {
 	if filePath != "" {
-		return os.ReadFile(filePath)
+		return os.ReadFile(filePath) // #nosec G304 -- filePath comes from the --file flag, user-controlled by design
 	}
 	if useStdin {
 		return io.ReadAll(os.Stdin)

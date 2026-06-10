@@ -93,7 +93,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.StartDate, "start-date", "", "Start date (YYYY-MM-DD)")
 	cmd.Flags().StringVar(&opts.EndDate, "end-date", "", "End date (YYYY-MM-DD)")
 
@@ -127,7 +127,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "Filter by user ID")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Filter by assignment ID")
 	cmd.Flags().StringVar(&opts.StartDate, "start-date", "", "Start date (YYYY-MM-DD)")
@@ -162,7 +162,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().BoolVar(&opts.IncludeHidden, "include-hidden", false, "Include hidden columns")
 
 	return cmd
@@ -200,7 +200,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -231,9 +231,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Column title (required)")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "title")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Column position")
 	cmd.Flags().BoolVar(&opts.Hidden, "hidden", false, "Hide column")
 	cmd.Flags().BoolVar(&opts.TeacherNotes, "teacher-notes", false, "Teacher notes column")
@@ -282,7 +282,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Column title")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Column position")
 	cmd.Flags().BoolVar(&opts.Hidden, "hidden", false, "Hide column")
@@ -325,7 +325,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
 
 	return cmd
@@ -363,7 +363,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -400,11 +400,11 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (required)")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "user-id")
 	cmd.Flags().StringVar(&opts.Content, "content", "", "Column content (required)")
-	cmd.MarkFlagRequired("content")
+	mustMarkRequired(cmd, "content")
 
 	return cmd
 }

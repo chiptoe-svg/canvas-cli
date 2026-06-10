@@ -183,7 +183,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.Details, "details", "", "Note details")
 	cmd.Flags().StringVar(&opts.TodoDate, "todo-date", "", "Todo date (ISO 8601)")
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Associate with course")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "title")
 
 	return cmd
 }

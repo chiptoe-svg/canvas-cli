@@ -113,8 +113,8 @@ func New(cfg *Config) (*Client, error) {
 func getUserID(dataDir string) (string, error) {
 	userIDPath := filepath.Join(dataDir, "user_id")
 
-	// Try to read existing user ID
-	data, err := os.ReadFile(userIDPath)
+	// Try to read existing user ID — userIDPath is constructed from the app data directory, not user input.
+	data, err := os.ReadFile(userIDPath) // #nosec G304 -- userIDPath is constructed from the application data directory
 	if err == nil {
 		return string(data), nil
 	}
@@ -272,9 +272,9 @@ func (c *Client) flushWorker() {
 	for {
 		select {
 		case <-ticker.C:
-			c.Flush()
+			c.Flush() // #nosec G104 -- periodic flush errors are intentionally discarded; only the final flush error is surfaced
 		case <-c.flushChan:
-			c.Flush()
+			c.Flush() // #nosec G104 -- on-demand flush errors are intentionally discarded; only the final flush error is surfaced
 		case <-c.stopChan:
 			c.flushErr = c.Flush() // final flush; surfaced by Close() after <-done
 			return
