@@ -105,7 +105,7 @@ deps:
 release:
 	@which goreleaser > /dev/null || (echo "goreleaser not installed. Install: https://goreleaser.com/install/" && exit 1)
 	@echo "Building snapshot release with GoReleaser..."
-	@goreleaser release --snapshot --clean
+	@goreleaser release --snapshot --clean --skip=sign,sbom,docker
 	@echo "✓ Snapshot release built in dist/"
 
 # Development build with verbose output

@@ -137,13 +137,15 @@ jobs:
           go-version-file: go.mod
 
       # Snapshot build through GoReleaser so CI artifacts are produced by the
-      # same pipeline (ldflags, archives, checksums) as tagged releases.
+      # same pipeline (ldflags, archives, checksums, docker image) as tagged
+      # releases. Signing and SBOMs are skipped: cosign and syft are only
+      # installed in the release workflow, which runs the full pipeline.
       - name: Build snapshot for all platforms
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --snapshot --clean
+          args: release --snapshot --clean --skip=sign,sbom
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
