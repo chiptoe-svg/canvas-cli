@@ -57,7 +57,7 @@ Examples:
 				return err
 			}
 
-			if _, err := validateCourseID(client, opts.CourseID); err != nil {
+			if _, err := validateCourseID(cmd.Context(), client, opts.CourseID); err != nil {
 				return err
 			}
 
@@ -91,7 +91,7 @@ Examples:
 				return err
 			}
 
-			if _, err := validateCourseID(client, opts.CourseID); err != nil {
+			if _, err := validateCourseID(cmd.Context(), client, opts.CourseID); err != nil {
 				return err
 			}
 
@@ -130,7 +130,7 @@ Examples:
 				return err
 			}
 
-			if _, err := validateCourseID(client, opts.CourseID); err != nil {
+			if _, err := validateCourseID(cmd.Context(), client, opts.CourseID); err != nil {
 				return err
 			}
 
@@ -178,7 +178,7 @@ Examples:
 				return err
 			}
 
-			if _, err := validateCourseID(client, opts.CourseID); err != nil {
+			if _, err := validateCourseID(cmd.Context(), client, opts.CourseID); err != nil {
 				return err
 			}
 
