@@ -19,35 +19,46 @@ have been removed.
      `filterText`, etc.) read roughly 380 times across the `commands/` package.
    - **Impact:** Commands share mutable global state; hard to test in
      isolation, unsafe for concurrent execution.
-   - **Status:** In Progress — a concurrent work stream is migrating these to
-     the options-struct pattern.
+   - **Status:** Planned — needs a design decision first (see Next Steps);
+     the per-command options migration (former item 2) is complete, this is
+     the remaining root-level layer.
    - **Files/Areas:** `commands/root.go`, all command files reading the globals
-   - **Next Steps:** Finish migration to `commands/internal/options`.
-   - **Priority:** Important
+   - **Next Steps:** (1) Decide the carrier: a `GlobalOptions` struct resolved
+     once in `PersistentPreRun` and passed via `cmd.Context()`, vs. reading
+     cobra flag values per call. (2) Migrate incrementally, one command file
+     per PR, starting with files that have the fewest reads. Do not attempt a
+     big-bang migration.
+   - **Priority:** Important — **Target: incremental, start v1.11**
 
-2. **Package-Level Flag Variables in Remaining Commands**
-   - **Problem:** `api`, `cache`, `sync`, `telemetry`, `repl`, `shell`, and
-     `completion` commands still use package-level command/flag variables
-     instead of the options-struct pattern documented in AGENTS.md.
-   - **Impact:** Same testability/state issues as item 1; the documented
-     pattern is not consistently applied.
-   - **Status:** In Progress (same migration work stream)
-   - **Files/Areas:** `commands/api.go`, `commands/cache.go`,
-     `commands/sync.go`, `commands/telemetry.go`, `commands/repl.go`,
-     `commands/shell.go`, `commands/completion.go`
-   - **Priority:** Important
-
-3. **Gosec Findings Backlog (CI is report-only)**
+2. **Gosec Findings Backlog (CI is report-only)**
    - **Problem:** gosec reports ~300 findings (mostly G104 unchecked errors,
      e.g. `cmd.MarkFlagRequired(...)` return values). The CI gosec step runs
      with `-no-fail` so it cannot gate merges.
    - **Impact:** New security findings land unnoticed; the scanner provides no
      enforcement.
-   - **Status:** Identified
+   - **Status:** Planned
    - **Files/Areas:** `.github/workflows/ci.yml` (security job), `commands/`
-   - **Next Steps:** Burn down findings (handle or `#nosec`-annotate with
-     justification), then remove `-no-fail`.
-   - **Priority:** Important
+   - **Next Steps:** (1) Fix the G104 bulk with a small `mustMarkRequired`
+     helper (panic on programmer error) — that alone removes most findings.
+     (2) Triage the remainder: fix or `#nosec` with justification. (3) Flip
+     CI to enforcing by removing `-no-fail`, optionally excluding rules that
+     are consciously accepted.
+   - **Priority:** Important — **Target: v1.10**
+
+3. **Cosign Pinned to v2 Line**
+   - **Problem:** `release.yml` pins `cosign-release: v2.6.3` because cosign
+     v3 changed the sign-blob/verify-blob bundle format, and both
+     `.goreleaser.yaml` (`signs:`) and the documented verification
+     instructions use the v2 `.sig`/`.pem` flags.
+   - **Impact:** Signing tooling ages; v2 will eventually stop receiving
+     fixes.
+   - **Status:** Identified (introduced deliberately, June 2026)
+   - **Files/Areas:** `.github/workflows/release.yml`, `.goreleaser.yaml`,
+     `docs/getting-started/installation.md`, `docs/security.md`
+   - **Next Steps:** Migrate signs config and docs to the v3 bundle format
+     together, then unpin. Verify with a snapshot release first.
+   - **Priority:** Low — **Target: when cosign v3 bundles are the ecosystem
+     default**
 
 ### Nice to Have
 
@@ -67,47 +78,56 @@ have been removed.
    - **Problem:** ~476 duplicated `NewClient(ClientConfig{...})` blocks across
      `internal/api` tests.
    - **Impact:** Boilerplate; config changes require mass edits.
-   - **Status:** Identified
-   - **Next Steps:** Add a shared `newTestClient(t, server)` helper and migrate
-     call sites incrementally.
+   - **Status:** Planned
+   - **Next Steps:** Add a shared `newTestClient(t, server)` helper; the
+     call-site migration is regex-scriptable in one pass (verify with the full
+     suite + `-race`).
    - **Files/Areas:** `internal/api/*_test.go`
-   - **Priority:** Low
+   - **Priority:** Low — **Target: v1.10 test-debt batch**
 
 6. **No Binary-Level Integration Tests**
    - **Problem:** There are no end-to-end tests that exercise the compiled
      `canvas` binary (no `test/integration` suite exists).
    - **Impact:** Flag parsing, alias expansion, exit codes, and output routing
      are only covered indirectly through package tests.
-   - **Status:** Identified
-   - **Next Steps:** Add a small suite that builds the binary and runs it
-     against a mock Canvas server.
-   - **Priority:** Low
+   - **Status:** Planned
+   - **Next Steps:** Small `test/integration` suite (build tag `integration`):
+     compile the binary once per run, exercise it with `os/exec` against an
+     `httptest` mock Canvas — cover env-var auth, `-o json|csv`, exit codes
+     0/1, alias expansion, `context set`, and `--dry-run` redaction. Wire into
+     CI as a separate job.
+   - **Priority:** Low — **Target: v1.10**
 
 7. **No Golden-File Formatter Tests**
    - **Problem:** `internal/output` formatters (table/JSON/YAML/CSV) are tested
      with inline assertions, not golden files.
    - **Impact:** Output regressions (column order, truncation, spacing) are
      easy to miss and tedious to assert.
-   - **Status:** Identified
+   - **Status:** Planned
+   - **Next Steps:** `testdata/` golden files with an `-update` flag; cover one
+     representative struct across all four formats plus nil/empty edge cases.
    - **Files/Areas:** `internal/output/`
-   - **Priority:** Low
+   - **Priority:** Low — **Target: v1.10 test-debt batch**
 
 8. **Two Command Test Frameworks Coexist**
    - **Problem:** The older `commands/testing` framework coexists with the
      newer `commands/internal/testing` package.
-   - **Impact:** Confusing for contributors; duplicate maintenance.
+   - **Impact:** Confusing for contributors; duplicate maintenance. The old
+     framework also doesn't route `getAPIClient()` to its mock server, so its
+     tests don't exercise real HTTP dispatch.
    - **Status:** Planned
-   - **Next Steps:** Remove `commands/testing` in favor of
-     `commands/internal/testing` once no tests depend on it.
-   - **Priority:** Low
+   - **Next Steps:** Migrate its few remaining usages to
+     `commands/internal/testing`, then delete `commands/testing`.
+   - **Priority:** Low — **Target: v1.10 test-debt batch**
 
 9. **Benchmark Test Suite**
    - **Problem:** No automated performance regression detection.
    - **Impact:** Performance changes not caught until production.
-   - **Status:** Planned
-   - **Next Steps:** Add benchmark tests for critical paths (GetAllPages, rate
-     limiter, cache).
-   - **Priority:** Low
+   - **Status:** Identified
+   - **Next Steps:** Add benchmarks for `GetAllPagesGeneric`, the adaptive
+     rate limiter, and cache read/write. Run in CI as informational only
+     (benchmarks on shared runners are too noisy to gate on).
+   - **Priority:** Low — **Target: opportunistic**
 
 10. **Additional Platform Coverage in Auth Tests**
     - **Problem:** Platform-specific auth code (macOS ioreg, Windows
@@ -119,8 +139,27 @@ have been removed.
 
 ---
 
+## Plan Summary
+
+| When | What | Items |
+|------|------|-------|
+| v1.10 — security gate | G104 helper + triage, flip gosec to enforcing | 2 |
+| v1.10 — test-debt batch (one PR, test-only, zero user risk) | shared test client helper, golden files, delete old framework | 5, 7, 8 |
+| v1.10 | binary-level integration suite | 6 |
+| v1.11+ — incremental | root-global flag migration (design first, file-by-file) | 1 |
+| Opportunistic | benchmarks | 9 |
+| When ecosystem ready | cosign v3 bundle migration | 3 |
+| Accepted, no action | services take `*Client` (4), platform auth coverage (10) | 4, 10 |
+
 ## Resolved Debt
 
+- **Package-level flag variables in remaining commands** (June 2026, #37) —
+  `api`, `cache`, `sync`, `telemetry`, `repl`, `completion` migrated to the
+  options-struct pattern; `shell` became an alias of `repl`.
+- **Dependabot configured** (June 2026) — `github-actions` + `gomod` weekly;
+  SECURITY.md had advertised this before any config existed.
+- **GitHub Actions on Node 24** (June 2026) — all node-based actions bumped
+  ahead of the June 16 forced migration.
 - **Structured logging and options pattern introduced** (January 2026) —
   `commands/internal/options` and `commands/internal/logging` packages exist
   and most resource commands use them. Note: the original claim that the
