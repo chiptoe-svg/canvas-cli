@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 )
 
 // AssignmentsService handles assignment-related API calls
@@ -550,11 +549,9 @@ func (s *AssignmentsService) BulkUpdate(ctx context.Context, courseID int64, par
 	body := make(map[string]interface{})
 
 	if len(params.AssignmentIDs) > 0 {
-		ids := make([]string, len(params.AssignmentIDs))
-		for i, id := range params.AssignmentIDs {
-			ids[i] = strconv.FormatInt(id, 10)
-		}
-		body["assignment_ids[]"] = strings.Join(ids, ",")
+		// Canvas bulk_update expects a JSON array under "assignment_ids", not
+		// the form-encoded "assignment_ids[]" key which is silently ignored.
+		body["assignment_ids"] = params.AssignmentIDs
 	}
 
 	if params.DueAt != "" {
@@ -567,21 +564,19 @@ func (s *AssignmentsService) BulkUpdate(ctx context.Context, courseID int64, par
 		body["lock_at"] = params.LockAt
 	}
 
-	var result struct {
-		Progress struct {
-			ID int64 `json:"id"`
-		} `json:"progress"`
-	}
-	if err := s.client.PutJSON(ctx, path, body, &result); err != nil {
+	// Canvas returns the Progress object directly at the top level of the
+	// response. Discard the body since BulkUpdate only signals errors.
+	if err := s.client.PutJSON(ctx, path, body, nil); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// ListUserAssignments retrieves assignments for a specific user across all courses
-func (s *AssignmentsService) ListUserAssignments(ctx context.Context, userID int64, opts *ListAssignmentsOptions) ([]Assignment, error) {
-	path := fmt.Sprintf("/api/v1/users/%d/courses/%d/assignments", userID, userID)
+// ListUserAssignments retrieves assignments for a specific user in a specific course.
+// Canvas endpoint: /users/:user_id/courses/:course_id/assignments
+func (s *AssignmentsService) ListUserAssignments(ctx context.Context, userID, courseID int64, opts *ListAssignmentsOptions) ([]Assignment, error) {
+	path := fmt.Sprintf("/api/v1/users/%d/courses/%d/assignments", userID, courseID)
 
 	if opts != nil {
 		query := url.Values{}

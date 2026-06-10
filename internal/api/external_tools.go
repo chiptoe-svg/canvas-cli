@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -261,15 +260,9 @@ func (s *ExternalToolsService) DeleteFromAccount(ctx context.Context, accountID,
 }
 
 func (s *ExternalToolsService) delete(ctx context.Context, path string) (*ExternalTool, error) {
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var tool ExternalTool
-	if err := json.NewDecoder(resp.Body).Decode(&tool); err != nil {
-		return nil, nil
+	if err := s.client.DeleteJSON(ctx, path, &tool); err != nil {
+		return nil, err
 	}
 
 	return &tool, nil

@@ -367,7 +367,9 @@ func TestAssignmentsService_ListUserAssignments(t *testing.T) {
 			return
 		}
 
-		if r.URL.Path == "/api/v1/users/456/courses/456/assignments" {
+		// userID=456, courseID=789 — distinct values verify the bug fix where
+		// both arguments were mistakenly set to userID.
+		if r.URL.Path == "/api/v1/users/456/courses/789/assignments" {
 			if r.Method != http.MethodGet {
 				t.Errorf("Expected GET method, got %s", r.Method)
 			}
@@ -378,12 +380,12 @@ func TestAssignmentsService_ListUserAssignments(t *testing.T) {
 				{
 					"id": 1,
 					"name": "Assignment 1",
-					"course_id": 123
+					"course_id": 789
 				},
 				{
 					"id": 2,
 					"name": "Assignment 2",
-					"course_id": 123
+					"course_id": 789
 				}
 			]`))
 			return
@@ -405,7 +407,7 @@ func TestAssignmentsService_ListUserAssignments(t *testing.T) {
 	service := NewAssignmentsService(client)
 	ctx := context.Background()
 
-	assignments, err := service.ListUserAssignments(ctx, 456, nil)
+	assignments, err := service.ListUserAssignments(ctx, 456, 789, nil)
 	if err != nil {
 		t.Fatalf("ListUserAssignments failed: %v", err)
 	}
@@ -426,7 +428,8 @@ func TestAssignmentsService_ListUserAssignments_WithOptions(t *testing.T) {
 			return
 		}
 
-		if r.URL.Path == "/api/v1/users/456/courses/456/assignments" {
+		// userID=456, courseID=789 — distinct values verify the bug fix.
+		if r.URL.Path == "/api/v1/users/456/courses/789/assignments" {
 			// Verify query parameters
 			query := r.URL.Query()
 			if query.Get("bucket") != "upcoming" {
@@ -465,7 +468,7 @@ func TestAssignmentsService_ListUserAssignments_WithOptions(t *testing.T) {
 		Bucket:  "upcoming",
 	}
 
-	assignments, err := service.ListUserAssignments(ctx, 456, opts)
+	assignments, err := service.ListUserAssignments(ctx, 456, 789, opts)
 	if err != nil {
 		t.Fatalf("ListUserAssignments failed: %v", err)
 	}
@@ -896,8 +899,10 @@ func TestAssignmentsService_BulkUpdate_WithAllOptions(t *testing.T) {
 		if _, ok := body["lock_at"]; !ok {
 			t.Error("Expected lock_at in body")
 		}
-		if _, ok := body["assignment_ids[]"]; !ok {
-			t.Error("Expected assignment_ids[] in body")
+		// Canvas bulk_update expects a JSON array under "assignment_ids", not
+		// the form-encoded "assignment_ids[]" key which Canvas silently ignores.
+		if _, ok := body["assignment_ids"]; !ok {
+			t.Error("Expected assignment_ids array in body")
 		}
 
 		w.Header().Set("Content-Type", "application/json")

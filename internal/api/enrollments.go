@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -314,14 +313,8 @@ func (s *EnrollmentsService) Conclude(ctx context.Context, courseID, enrollmentI
 	query.Add("task", task)
 	path += "?" + query.Encode()
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result Enrollment
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &result); err != nil {
 		return nil, err
 	}
 

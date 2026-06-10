@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -428,14 +427,8 @@ func (s *QuizzesService) Update(ctx context.Context, courseID, quizID int64, par
 func (s *QuizzesService) Delete(ctx context.Context, courseID, quizID int64) (*Quiz, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d", courseID, quizID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var quiz Quiz
-	if err := json.NewDecoder(resp.Body).Decode(&quiz); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &quiz); err != nil {
 		return nil, err
 	}
 
