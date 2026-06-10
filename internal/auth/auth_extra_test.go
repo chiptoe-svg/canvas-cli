@@ -39,23 +39,11 @@ func TestGetMachineID_LinuxMachineIDFile(t *testing.T) {
 func TestGetUsername_Fallback_Unknown(t *testing.T) {
 	// Clear all username-providing env vars so getUsername falls through to
 	// `whoami`, or returns "unknown" if whoami isn't available.
-	oldUser := os.Getenv("USER")
-	oldUsername := os.Getenv("USERNAME")
-	oldLogname := os.Getenv("LOGNAME")
 	// Also override PATH so whoami cannot be found.
-	oldPath := os.Getenv("PATH")
-
-	os.Setenv("USER", "")
-	os.Setenv("USERNAME", "")
-	os.Setenv("LOGNAME", "")
-	os.Setenv("PATH", "") // no executables reachable → whoami fails
-
-	defer func() {
-		os.Setenv("USER", oldUser)
-		os.Setenv("USERNAME", oldUsername)
-		os.Setenv("LOGNAME", oldLogname)
-		os.Setenv("PATH", oldPath)
-	}()
+	t.Setenv("USER", "")
+	t.Setenv("USERNAME", "")
+	t.Setenv("LOGNAME", "")
+	t.Setenv("PATH", "") // no executables reachable → whoami fails
 
 	result := getUsername()
 	// Should be either "unknown" (whoami unavailable) or a real username

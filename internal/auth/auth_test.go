@@ -622,9 +622,7 @@ func TestFallbackTokenStore_ErrorHandling(t *testing.T) {
 func TestGetMachineID_WithEnvOverride(t *testing.T) {
 	// Set environment variable override
 	testID := "test-machine-id-12345"
-	oldEnv := os.Getenv("CANVAS_CLI_MACHINE_ID")
-	os.Setenv("CANVAS_CLI_MACHINE_ID", testID)
-	defer os.Setenv("CANVAS_CLI_MACHINE_ID", oldEnv)
+	t.Setenv("CANVAS_CLI_MACHINE_ID", testID)
 
 	id, err := getMachineID()
 	if err != nil {
@@ -637,18 +635,10 @@ func TestGetMachineID_WithEnvOverride(t *testing.T) {
 }
 
 func TestGetUsername_USER_Env(t *testing.T) {
-	// Save original env
-	oldUser := os.Getenv("USER")
-	oldUsername := os.Getenv("USERNAME")
-
 	// Set USER env variable
 	testUser := "testuser123"
-	os.Setenv("USER", testUser)
-	os.Setenv("USERNAME", "") // Clear USERNAME to test USER priority
-	defer func() {
-		os.Setenv("USER", oldUser)
-		os.Setenv("USERNAME", oldUsername)
-	}()
+	t.Setenv("USER", testUser)
+	t.Setenv("USERNAME", "") // Clear USERNAME to test USER priority
 
 	username := getUsername()
 	if username != testUser {
@@ -657,18 +647,10 @@ func TestGetUsername_USER_Env(t *testing.T) {
 }
 
 func TestGetUsername_USERNAME_Env(t *testing.T) {
-	// Save original env
-	oldUser := os.Getenv("USER")
-	oldUsername := os.Getenv("USERNAME")
-
 	// Set USERNAME env variable (Windows)
 	testUser := "windowsuser456"
-	os.Setenv("USER", "") // Clear USER to test USERNAME fallback
-	os.Setenv("USERNAME", testUser)
-	defer func() {
-		os.Setenv("USER", oldUser)
-		os.Setenv("USERNAME", oldUsername)
-	}()
+	t.Setenv("USER", "") // Clear USER to test USERNAME fallback
+	t.Setenv("USERNAME", testUser)
 
 	username := getUsername()
 	if username != testUser {
@@ -678,15 +660,8 @@ func TestGetUsername_USERNAME_Env(t *testing.T) {
 
 func TestDeriveEncryptionKey_Consistency(t *testing.T) {
 	// Set consistent environment for testing
-	oldMachineID := os.Getenv("CANVAS_CLI_MACHINE_ID")
-	oldUser := os.Getenv("USER")
-
-	os.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-123")
-	os.Setenv("USER", "testuser")
-	defer func() {
-		os.Setenv("CANVAS_CLI_MACHINE_ID", oldMachineID)
-		os.Setenv("USER", oldUser)
-	}()
+	t.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-123")
+	t.Setenv("USER", "testuser")
 
 	salt := []byte("test-salt-123456")
 
@@ -810,21 +785,11 @@ func TestFileTokenStore_Delete_NotExists(t *testing.T) {
 }
 
 func TestGetUsername_LOGNAME_Env(t *testing.T) {
-	// Save original env
-	oldUser := os.Getenv("USER")
-	oldUsername := os.Getenv("USERNAME")
-	oldLogname := os.Getenv("LOGNAME")
-
 	// Set LOGNAME env variable
 	testUser := "lognameuser789"
-	os.Setenv("USER", "")     // Clear USER
-	os.Setenv("USERNAME", "") // Clear USERNAME
-	os.Setenv("LOGNAME", testUser)
-	defer func() {
-		os.Setenv("USER", oldUser)
-		os.Setenv("USERNAME", oldUsername)
-		os.Setenv("LOGNAME", oldLogname)
-	}()
+	t.Setenv("USER", "")     // Clear USER
+	t.Setenv("USERNAME", "") // Clear USERNAME
+	t.Setenv("LOGNAME", testUser)
 
 	username := getUsername()
 	if username != testUser {
@@ -834,15 +799,8 @@ func TestGetUsername_LOGNAME_Env(t *testing.T) {
 
 func TestEncryptDecrypt_EdgeCases(t *testing.T) {
 	// Set consistent environment for testing
-	oldMachineID := os.Getenv("CANVAS_CLI_MACHINE_ID")
-	oldUser := os.Getenv("USER")
-
-	os.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-encrypt")
-	os.Setenv("USER", "testuser")
-	defer func() {
-		os.Setenv("CANVAS_CLI_MACHINE_ID", oldMachineID)
-		os.Setenv("USER", oldUser)
-	}()
+	t.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-encrypt")
+	t.Setenv("USER", "testuser")
 
 	tests := []struct {
 		name      string
@@ -893,15 +851,8 @@ func TestEncryptDecrypt_EdgeCases(t *testing.T) {
 
 func TestDecrypt_InvalidData(t *testing.T) {
 	// Set consistent environment for testing
-	oldMachineID := os.Getenv("CANVAS_CLI_MACHINE_ID")
-	oldUser := os.Getenv("USER")
-
-	os.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-invalid")
-	os.Setenv("USER", "testuser")
-	defer func() {
-		os.Setenv("CANVAS_CLI_MACHINE_ID", oldMachineID)
-		os.Setenv("USER", oldUser)
-	}()
+	t.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-invalid")
+	t.Setenv("USER", "testuser")
 
 	// Create data with correct length but invalid content
 	invalidData := make([]byte, 60)
@@ -948,24 +899,11 @@ func TestFallbackTokenStore_FallbackToFile(t *testing.T) {
 }
 
 func TestDeriveEncryptionKey_EmptyUsername(t *testing.T) {
-	// Save original env
-	oldMachineID := os.Getenv("CANVAS_CLI_MACHINE_ID")
-	oldUser := os.Getenv("USER")
-	oldUsername := os.Getenv("USERNAME")
-	oldLogname := os.Getenv("LOGNAME")
-
 	// Set machine ID but clear all username env vars
-	os.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-no-user")
-	os.Setenv("USER", "")
-	os.Setenv("USERNAME", "")
-	os.Setenv("LOGNAME", "")
-
-	defer func() {
-		os.Setenv("CANVAS_CLI_MACHINE_ID", oldMachineID)
-		os.Setenv("USER", oldUser)
-		os.Setenv("USERNAME", oldUsername)
-		os.Setenv("LOGNAME", oldLogname)
-	}()
+	t.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-no-user")
+	t.Setenv("USER", "")
+	t.Setenv("USERNAME", "")
+	t.Setenv("LOGNAME", "")
 
 	salt := []byte("test-salt-empty-user")
 
@@ -995,24 +933,11 @@ func TestKeyringTokenStore_Delete(t *testing.T) {
 }
 
 func TestEncrypt_EmptyUsername(t *testing.T) {
-	// Save original env
-	oldMachineID := os.Getenv("CANVAS_CLI_MACHINE_ID")
-	oldUser := os.Getenv("USER")
-	oldUsername := os.Getenv("USERNAME")
-	oldLogname := os.Getenv("LOGNAME")
-
 	// Set machine ID but clear all username env vars
-	os.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-encrypt-no-user")
-	os.Setenv("USER", "")
-	os.Setenv("USERNAME", "")
-	os.Setenv("LOGNAME", "")
-
-	defer func() {
-		os.Setenv("CANVAS_CLI_MACHINE_ID", oldMachineID)
-		os.Setenv("USER", oldUser)
-		os.Setenv("USERNAME", oldUsername)
-		os.Setenv("LOGNAME", oldLogname)
-	}()
+	t.Setenv("CANVAS_CLI_MACHINE_ID", "test-machine-encrypt-no-user")
+	t.Setenv("USER", "")
+	t.Setenv("USERNAME", "")
+	t.Setenv("LOGNAME", "")
 
 	plaintext := []byte("test data")
 

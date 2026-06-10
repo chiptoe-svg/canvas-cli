@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
@@ -13,10 +12,8 @@ import (
 
 func TestGetAPIClient_EnvironmentVariables(t *testing.T) {
 	// Set environment variables
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Create API client
 	client, err := getAPIClient()
@@ -33,12 +30,9 @@ func TestGetAPIClient_EnvironmentVariables(t *testing.T) {
 
 func TestGetAPIClient_EnvironmentVariables_WithRPS(t *testing.T) {
 	// Set environment variables including requests per second
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	os.Setenv("CANVAS_REQUESTS_PER_SEC", "10.5")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
-	defer os.Unsetenv("CANVAS_REQUESTS_PER_SEC")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
+	t.Setenv("CANVAS_REQUESTS_PER_SEC", "10.5")
 
 	// Create API client
 	client, err := getAPIClient()
@@ -55,8 +49,7 @@ func TestGetAPIClient_EnvironmentVariables_WithRPS(t *testing.T) {
 
 func TestGetAPIClient_EnvironmentVariables_Partial(t *testing.T) {
 	// Set only URL, not token - should fall through to config-based auth
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	defer os.Unsetenv("CANVAS_URL")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
 
 	// Create API client - will either work (if config exists) or fail (if no config)
 	// This test just verifies partial env vars don't cause panic
@@ -270,10 +263,8 @@ func TestCreateCache(t *testing.T) {
 
 func TestGetAPIClient_WithCache(t *testing.T) {
 	// Set environment variables for testing
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Reset noCache flag
 	originalNoCache := noCache
@@ -298,10 +289,8 @@ func TestGetAPIClient_WithCache(t *testing.T) {
 
 func TestGetAPIClient_NoCache(t *testing.T) {
 	// Set environment variables for testing
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Set noCache flag
 	originalNoCache := noCache
@@ -384,10 +373,8 @@ func TestGetAPIClient_UserAgentSet(t *testing.T) {
 	defer server.Close()
 
 	// Set environment variables
-	os.Setenv("CANVAS_URL", server.URL)
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", server.URL)
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Save and set version for test
 	originalVersion := version

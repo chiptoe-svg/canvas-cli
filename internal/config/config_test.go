@@ -270,9 +270,7 @@ func TestLoad_NewConfig(t *testing.T) {
 	defer os.RemoveAll(tempHome)
 
 	// Set temporary HOME
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempHome)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempHome)
 
 	cfg, err := Load()
 	if err != nil {
@@ -423,9 +421,7 @@ func TestLoad_ExistingConfig(t *testing.T) {
 	}
 
 	// Change HOME to temp dir so Load finds our config
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempDir)
 
 	// Create .canvas-cli directory structure
 	canvasDir := filepath.Join(tempDir, ".canvas-cli")
