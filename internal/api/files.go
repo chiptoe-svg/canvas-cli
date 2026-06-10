@@ -329,10 +329,16 @@ func (s *FilesService) upload(ctx context.Context, uploadPath, filePath string, 
 			return nil, fmt.Errorf("failed to create confirmation request: %w", err)
 		}
 
-		// Add authorization header only if the redirect is to Canvas domain
-		// This prevents leaking the bearer token to third-party storage providers
+		// Add authorization header only if the redirect is to Canvas domain.
+		// This prevents leaking the bearer token to third-party storage providers.
+		// Use getToken() so OAuth token-source users (who may have an empty
+		// s.client.token field) send a valid, possibly auto-refreshed token.
 		if isCanvasDomain(location, s.client.baseURL) {
-			confirmReq.Header.Set("Authorization", "Bearer "+s.client.token)
+			tok, err := s.client.getToken()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get token for upload confirmation: %w", err)
+			}
+			confirmReq.Header.Set("Authorization", "Bearer "+tok)
 		}
 
 		confirmResp, err := s.client.httpClient.Do(confirmReq)
@@ -358,8 +364,28 @@ func (s *FilesService) upload(ctx context.Context, uploadPath, filePath string, 
 	}
 }
 
+// sanitizeDestPath validates a destination path to prevent path traversal.
+// It accepts any caller-supplied path as-is (the caller controls it), but
+// rejects the empty string so os.Create does not create an unnamed file.
+// The primary path-traversal defence lives in the command layer which
+// sanitizes server-controlled filenames before they reach here.
+func sanitizeDestPath(destPath string) error {
+	if destPath == "" {
+		return fmt.Errorf("destination path must not be empty")
+	}
+	// Reject a bare "." which would create or truncate the current directory entry.
+	if filepath.Clean(destPath) == "." {
+		return fmt.Errorf("unsafe destination path: %q", destPath)
+	}
+	return nil
+}
+
 // Download downloads a file to the specified destination
 func (s *FilesService) Download(ctx context.Context, fileID int64, destPath string) error {
+	if err := sanitizeDestPath(destPath); err != nil {
+		return err
+	}
+
 	// Get file info first to get the download URL
 	file, err := s.Get(ctx, fileID, nil)
 	if err != nil {

@@ -109,8 +109,44 @@ func getAPIClient() (*api.Client, error) {
 
 	var clientConfig api.ClientConfig
 
-	// Check if instance has an API token configured (token auth - no OAuth required)
-	if instance.HasToken() {
+	// Resolve the token to use for this instance.
+	// Resolution order (first match wins):
+	//   1. Static token in secure storage (keyring / AES-GCM encrypted file) —
+	//      written by "canvas auth token set" since the secure-storage migration.
+	//   2. Legacy plaintext token in config.yaml — backward compat for users who
+	//      set up instances before the migration. We honour it but do not migrate
+	//      it silently (the user should re-run "canvas auth token set").
+	//   3. OAuth token from secure storage.
+
+	// Load the token store once; it is needed for all three paths.
+	configDirForTokens, err := config.GetConfigDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config directory: %w", err)
+	}
+	tokenStore := auth.NewFallbackTokenStore(configDirForTokens)
+
+	secureAPIToken, _ := auth.LoadStaticToken(tokenStore, instance.Name)
+
+	if secureAPIToken != "" {
+		// Path 1: static token from secure storage.
+		clientConfig = api.ClientConfig{
+			BaseURL:        instance.URL,
+			Token:          secureAPIToken,
+			RequestsPerSec: cfg.Settings.RequestsPerSecond,
+			AsUserID:       asUserID,
+			Cache:          apiCache,
+			CacheEnabled:   cacheEnabled,
+			UserAgent:      getUserAgent(),
+			MaxResults:     globalLimit,
+			DryRun:         dryRun,
+			ShowToken:      showToken,
+		}
+
+		if verbose {
+			fmt.Fprintf(os.Stderr, "Using API token authentication (secure storage) for %s\n", instance.Name)
+		}
+	} else if instance.HasToken() {
+		// Path 2: legacy plaintext token in config.yaml (backward compat).
 		clientConfig = api.ClientConfig{
 			BaseURL:        instance.URL,
 			Token:          instance.Token,
@@ -125,16 +161,10 @@ func getAPIClient() (*api.Client, error) {
 		}
 
 		if verbose {
-			fmt.Fprintf(os.Stderr, "Using API token authentication for %s\n", instance.Name)
+			fmt.Fprintf(os.Stderr, "Using API token authentication (config.yaml) for %s\n", instance.Name)
 		}
 	} else {
-		// OAuth flow - load token from store
-		configDir, err := config.GetConfigDir()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get config directory: %w", err)
-		}
-
-		tokenStore := auth.NewFallbackTokenStore(configDir)
+		// Path 3: OAuth token from secure storage.
 		token, err := tokenStore.Load(instance.Name)
 		if err != nil {
 			return nil, fmt.Errorf("not authenticated with %s. Run 'canvas auth login' or 'canvas auth token set' first", instance.Name)

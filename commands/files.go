@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -409,7 +410,14 @@ func runFilesDownload(ctx context.Context, client *api.Client, opts *options.Fil
 	// Determine destination path
 	destPath := opts.Destination
 	if destPath == "" {
-		destPath = file.Filename
+		// Sanitize the server-controlled filename to prevent path traversal.
+		// filepath.Base strips any directory components; the additional checks
+		// below reject names that would still be unsafe after cleaning.
+		clean := filepath.Base(file.Filename)
+		if clean == "" || clean == "." || clean == "/" || strings.ContainsAny(clean, "/\\") {
+			return fmt.Errorf("server returned an unsafe filename: %q", file.Filename)
+		}
+		destPath = clean
 	}
 
 	fmt.Printf("Downloading %s...\n", file.DisplayName)

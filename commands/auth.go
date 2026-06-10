@@ -457,10 +457,15 @@ func printInstanceStatus(instance *config.Instance, isDefault bool, tokenStore a
 	fmt.Printf("📌 %s%s\n", instance.Name, defaultMarker)
 	fmt.Printf("   URL: %s\n", instance.URL)
 
-	// Check authentication type and status
-	if instance.HasToken() {
-		// Token-based authentication
-		fmt.Printf("   Auth: API Token\n")
+	// Check authentication type and status.
+	// Priority: secure-storage static token > legacy config.yaml token > OAuth token.
+	if auth.StaticTokenExists(tokenStore, instance.Name) {
+		// Static API token stored in keyring / encrypted file (new behaviour).
+		fmt.Printf("   Auth: API Token (secure storage)\n")
+		fmt.Printf("   Status: ✓ Configured (token does not expire)\n")
+	} else if instance.HasToken() {
+		// Legacy: plaintext token in config.yaml (backward-compat read path).
+		fmt.Printf("   Auth: API Token (config.yaml — consider re-running 'canvas auth token set' to migrate to secure storage)\n")
 		fmt.Printf("   Status: ✓ Configured (token does not expire)\n")
 	} else if tokenStore.Exists(instance.Name) {
 		// OAuth-based authentication
@@ -562,41 +567,58 @@ func runAuthTokenSet(ctx context.Context, opts *options.AuthTokenSetOptions) err
 	}
 
 	// Get token (from flag or prompt)
-	token := opts.Token
-	if token == "" {
+	apiToken := opts.Token
+	if apiToken == "" {
 		fmt.Print("Enter API Access Token: ")
-		fmt.Scanln(&token)
-		if token == "" {
+		fmt.Scanln(&apiToken)
+		if apiToken == "" {
 			return fmt.Errorf("API token is required")
 		}
 	}
 
-	// Create or update instance
-	instance := &config.Instance{
-		Name:  opts.InstanceName,
-		URL:   normalizedURL,
-		Token: token,
+	// Persist the token in secure storage (keyring → encrypted file fallback)
+	// rather than writing it to the plaintext config.yaml.
+	configDir, err := config.GetConfigDir()
+	if err != nil {
+		return fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	// Preserve OAuth credentials if updating existing instance
+	tokenStore := auth.NewFallbackTokenStore(configDir)
+	if err := auth.SaveStaticToken(tokenStore, opts.InstanceName, apiToken); err != nil {
+		return fmt.Errorf("failed to save token to secure storage: %w", err)
+	}
+
+	// Create or update the instance record in config.yaml.
+	// The Token field is intentionally left empty so the secret is not stored
+	// in plaintext. The instance record only holds connection metadata.
+	instance := &config.Instance{
+		Name: opts.InstanceName,
+		URL:  normalizedURL,
+	}
+
+	// Preserve OAuth credentials and description if updating an existing instance.
 	if existingInstance != nil {
 		instance.ClientID = existingInstance.ClientID
 		instance.ClientSecret = existingInstance.ClientSecret
 		instance.Description = existingInstance.Description
+		// If the existing record has a legacy plaintext token, clear it now that
+		// we have stored the (new) token securely. We do not silently migrate the
+		// old value to avoid re-encrypting credentials the user may have rotated.
+		instance.Token = ""
 
 		if err := cfg.UpdateInstance(opts.InstanceName, instance); err != nil {
 			return fmt.Errorf("failed to update instance: %w", err)
 		}
-		printInfo("✓ Updated API token for %s\n", opts.InstanceName)
+		printInfo("✓ Updated API token for %s (stored in secure storage)\n", opts.InstanceName)
 	} else {
 		if err := cfg.AddInstance(instance); err != nil {
 			return fmt.Errorf("failed to add instance: %w", err)
 		}
-		printInfo("✓ Created instance %s with API token authentication\n", opts.InstanceName)
+		printInfo("✓ Created instance %s with API token authentication (stored in secure storage)\n", opts.InstanceName)
 	}
 
 	printInfo("URL: %s\n", normalizedURL)
-	printInfo("Auth type: token\n")
+	printInfo("Auth type: token (secure storage)\n")
 
 	return nil
 }
@@ -614,7 +636,18 @@ func runAuthTokenRemove(ctx context.Context, opts *options.AuthTokenRemoveOption
 		return err
 	}
 
-	if instance.Token == "" {
+	// Determine whether there is actually a token to remove (either in secure
+	// storage or as a legacy plaintext entry in config.yaml).
+	configDir, err := config.GetConfigDir()
+	if err != nil {
+		return fmt.Errorf("failed to get config directory: %w", err)
+	}
+
+	tokenStore := auth.NewFallbackTokenStore(configDir)
+	hasSecureToken := auth.StaticTokenExists(tokenStore, opts.InstanceName)
+	hasLegacyToken := instance.Token != ""
+
+	if !hasSecureToken && !hasLegacyToken {
 		return fmt.Errorf("instance %q does not have an API token configured", opts.InstanceName)
 	}
 
@@ -628,11 +661,17 @@ func runAuthTokenRemove(ctx context.Context, opts *options.AuthTokenRemoveOption
 		return nil
 	}
 
-	// Clear token
-	instance.Token = ""
+	// Remove from secure storage (no-op if not present).
+	if err := auth.DeleteStaticToken(tokenStore, opts.InstanceName); err != nil {
+		return fmt.Errorf("failed to remove token from secure storage: %w", err)
+	}
 
-	if err := cfg.UpdateInstance(opts.InstanceName, instance); err != nil {
-		return fmt.Errorf("failed to update instance: %w", err)
+	// Clear any legacy plaintext token from config.yaml.
+	if hasLegacyToken {
+		instance.Token = ""
+		if err := cfg.UpdateInstance(opts.InstanceName, instance); err != nil {
+			return fmt.Errorf("failed to update instance: %w", err)
+		}
 	}
 
 	printInfo("✓ Removed API token from %s\n", opts.InstanceName)
