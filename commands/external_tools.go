@@ -163,7 +163,10 @@ Examples:
 	cmd.Flags().StringVar(&opts.ConfigType, "config-type", "", "Config type: url, xml")
 	cmd.Flags().StringVar(&opts.ConfigURL, "config-url", "", "Configuration URL")
 	cmd.Flags().StringVar(&opts.ConfigXML, "config-xml", "", "Configuration XML")
-	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with full tool configuration")
+	// --json-file is the preferred flag name; --json is kept for backward compatibility
+	cmd.Flags().StringVar(&opts.JSONFile, "json-file", "", "JSON file with full tool configuration")
+	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with full tool configuration (deprecated: use --json-file)")
+	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 
 	return cmd
 }
