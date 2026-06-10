@@ -10,6 +10,47 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Added
+
+- **Docker image**: releases now publish `ghcr.io/jjuanrivvera/canvas-cli` (distroless, multi-tag)
+- **Signed releases**: checksums are signed keylessly with cosign (Sigstore) and archives ship SBOMs
+- **AI agent skill**: bundled skill for Claude Code, Cursor, and other agents — install via `canvas skills install`, `npx skills add jjuanrivvera/canvas-cli`, or the Claude Code plugin marketplace
+- Confirmation prompt and `--force` flag for `submissions delete-comment`
+- `--json-file`/`--csv-file` input flags (the ambiguous `--json`/`--csv` input flags are deprecated but still work)
+- `doctor` now honors the global `-o json` output flag
+
+### Fixed
+
+- **Batch assignment sync no longer panics** on courses with assignments
+- Retried POST/PUT requests resend the full body instead of an empty one
+- `assignments bulk-update` sends `assignment_ids` in a format Canvas accepts
+- User assignments endpoint requested the wrong path (user ID was used as course ID)
+- `bulk-grade` progress ID is now parsed from the Canvas response
+- Ctrl+C now cancels in-flight course validation and sync operations
+- Rate-limit bookkeeping no longer races when quota is updated concurrently
+- DELETE responses are drained and closed, restoring HTTP connection reuse
+- Pagination is guarded against servers that repeat the same `next` link
+- 429 responses now honor the `Retry-After` header
+- File upload confirmation works for OAuth (auto-refreshed) sessions
+
+### Security
+
+- Static API tokens from `auth token set` are stored in the OS keyring/encrypted store instead of plaintext `config.yaml` (existing configs keep working)
+- File downloads sanitize server-supplied filenames (path-traversal protection)
+- Self-update aborts when a release is missing `checksums.txt` (fail closed)
+- `http://` instance URLs are rejected for non-loopback hosts
+- Webhook listener defaults to `127.0.0.1` and warns when signature verification is not configured
+- OAuth callback server binds to loopback only
+- Config and REPL history directories are created with `0700` permissions
+
+### Changed
+
+- Delete confirmations are unified: all destructive commands accept `y`/`yes` and honor `--dry-run`
+- `shell` is now an alias of `repl` (single REPL command)
+- Remaining commands migrated to the options-struct pattern (`api`, `cache`, `sync`, `telemetry`, `repl`, `completion`)
+- CI pins Go via `go.mod`, blocks on `govulncheck`, and pins security scanners
+- A warning is printed when `CANVAS_URL`/`CANVAS_TOKEN` env vars override an explicit `--instance` flag
+
 ### Planned
 - Canvas Studio integration
 - GraphQL API support
