@@ -123,6 +123,21 @@ jobs:
         shell: bash
         run: go build -v ./cmd/canvas
 
+  # Binary-level integration tests (compiled binary + mock Canvas server)
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run integration tests
+        env:
+          CANVAS_CLI_MACHINE_ID: test-machine-id-ci
+        run: go test -tags integration -v -timeout 5m ./test/integration/
+
   # Build artifacts
   build:
     name: Build Release
