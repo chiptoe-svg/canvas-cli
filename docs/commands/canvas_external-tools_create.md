@@ -34,7 +34,7 @@ canvas external-tools create [flags]
       --description string     Tool description
       --domain string          Tool domain
   -h, --help                   help for create
-      --json string            JSON file with full tool configuration
+      --json-file string       JSON file with full tool configuration
       --name string            Tool name (required)
       --privacy-level string   Privacy level: anonymous, name_only, email_only, public
       --shared-secret string   OAuth shared secret

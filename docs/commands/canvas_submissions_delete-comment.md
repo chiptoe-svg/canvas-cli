@@ -26,6 +26,7 @@ canvas submissions delete-comment [flags]
       --assignment-id int   Assignment ID (required)
       --comment-id int      Comment ID to delete (required)
       --course-id int       Course ID (required)
+      --force               Skip confirmation prompt
   -h, --help                help for delete-comment
       --user-id int         User ID (required)
 ```

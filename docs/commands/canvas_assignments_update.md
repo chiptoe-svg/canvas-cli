@@ -41,7 +41,7 @@ canvas assignments update <assignment-id> [flags]
       --grading-type string        Grading type (points, pass_fail, percent, letter_grade, gpa_scale, not_graded)
       --group-id int               Assignment group ID
   -h, --help                       help for update
-      --json string                JSON file with assignment data
+      --json-file string           JSON file with assignment data
       --lock-at string             Lock date (ISO8601 format)
       --name string                Assignment name
       --points float               Points possible

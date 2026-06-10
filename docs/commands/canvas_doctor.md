@@ -40,7 +40,6 @@ canvas doctor [flags]
 
 ```
   -h, --help      help for doctor
-      --json      Output results as JSON
   -v, --verbose   Show detailed output
 ```
 

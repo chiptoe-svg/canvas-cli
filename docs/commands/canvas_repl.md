@@ -29,6 +29,9 @@ Examples:
 # Start the REPL
 canvas repl
 
+# Start using the shell alias
+canvas shell
+
 # In the REPL:
 ```
 

@@ -79,7 +79,6 @@ canvas submissions bulk-grade --course-id 123 --csv grades.csv # Bulk grade from
 * [canvas roles](canvas_roles.md)	 - Manage account roles
 * [canvas rubrics](canvas_rubrics.md)	 - Manage Canvas rubrics
 * [canvas sections](canvas_sections.md)	 - Manage Canvas course sections
-* [canvas shell](canvas_shell.md)	 - Start interactive shell (REPL mode)
 * [canvas sis-imports](canvas_sis-imports.md)	 - Manage SIS imports
 * [canvas skills](canvas_skills.md)	 - Install this CLI's AI-agent skill into Claude, Cursor, and other agents
 * [canvas submissions](canvas_submissions.md)	 - Manage Canvas submissions

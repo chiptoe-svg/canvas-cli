@@ -29,7 +29,8 @@ canvas sync assignments <source-instance> <source-course-id> <target-instance> <
 ### Options
 
 ```
-  -h, --help   help for assignments
+  -h, --help          help for assignments
+  -i, --interactive   Enable interactive conflict resolution
 ```
 
 ### Options inherited from parent commands
@@ -41,7 +42,6 @@ canvas sync assignments <source-instance> <source-course-id> <target-instance> <
       --dry-run           Print curl commands instead of executing requests
       --filter string     Filter results by text (case-insensitive substring match)
       --instance string   Canvas instance URL (overrides config)
-  -i, --interactive       Enable interactive conflict resolution
       --limit int         Limit number of results for list operations (0 = unlimited)
       --no-cache          Disable caching of API responses
   -o, --output string     Output format: table, json, yaml, csv (default "table")

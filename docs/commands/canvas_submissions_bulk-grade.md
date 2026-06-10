@@ -32,10 +32,10 @@ canvas submissions bulk-grade [flags]
 ### Options
 
 ```
-      --course-id int   Course ID (required)
-      --csv string      CSV file with grades (required)
-      --dry-run         Preview changes without applying them
-  -h, --help            help for bulk-grade
+      --course-id int     Course ID (required)
+      --csv-file string   CSV file with grades (required)
+      --dry-run           Preview changes without applying them
+  -h, --help              help for bulk-grade
 ```
 
 ### Options inherited from parent commands

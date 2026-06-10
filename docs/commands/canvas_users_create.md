@@ -37,7 +37,7 @@ canvas users create [flags]
       --account-id int         Account ID (required)
       --email string           User's email address
   -h, --help                   help for create
-      --json string            JSON file with user data
+      --json-file string       JSON file with user data
       --locale string          User's locale (e.g., 'en')
       --login-id string        Login ID (unique identifier)
       --name string            User's full name

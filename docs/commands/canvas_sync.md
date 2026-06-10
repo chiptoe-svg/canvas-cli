@@ -19,8 +19,7 @@ This is useful for:
 ### Options
 
 ```
-  -h, --help          help for sync
-  -i, --interactive   Enable interactive conflict resolution
+  -h, --help   help for sync
 ```
 
 ### Options inherited from parent commands
