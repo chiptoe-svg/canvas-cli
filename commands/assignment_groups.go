@@ -388,22 +388,21 @@ func runAssignmentGroupsDelete(ctx context.Context, client *api.Client, opts *op
 	})
 
 	// Confirmation
-	if !opts.Force {
-		msg := fmt.Sprintf("WARNING: This will delete assignment group %d", opts.GroupID)
-		if opts.MoveTo > 0 {
-			msg += fmt.Sprintf(". Assignments will be moved to group %d", opts.MoveTo)
-		} else {
-			msg += ". Any assignments in this group will also be deleted"
-		}
-		fmt.Println(msg)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			logger.LogCommandComplete(ctx, "assignment_groups.delete", 0)
-			return nil
-		}
+	details := map[string]interface{}{
+		"group_id": opts.GroupID,
+	}
+	if opts.MoveTo > 0 {
+		details["assignments_moved_to"] = opts.MoveTo
+	} else {
+		details["warning"] = "Any assignments in this group will also be deleted"
+	}
+	ok, confirmErr := confirmDeleteWithDetails("assignment group", opts.GroupID, details, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		logger.LogCommandComplete(ctx, "assignment_groups.delete", 0)
+		return nil
 	}
 
 	service := api.NewAssignmentGroupsService(client)

@@ -468,14 +468,15 @@ func runCoursesDelete(ctx context.Context, client *api.Client, opts *options.Cou
 		"event":     opts.Event,
 	})
 
-	// Confirmation for delete
-	if opts.Event == "delete" && !opts.Force {
-		fmt.Printf("WARNING: This will permanently delete course %d and all its data.\n", opts.CourseID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
+	// Confirmation for permanent deletion
+	if opts.Event == "delete" {
+		ok, err := confirmDeleteWithDetails("course", opts.CourseID, map[string]interface{}{
+			"warning": "This will permanently delete the course and all its data",
+		}, opts.Force)
+		if err != nil {
+			return err
+		}
+		if !ok {
 			return nil
 		}
 	}

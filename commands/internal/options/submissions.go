@@ -144,6 +144,7 @@ type SubmissionsDeleteCommentOptions struct {
 	AssignmentID int64
 	UserID       int64
 	CommentID    int64
+	Force        bool
 }
 
 // Validate validates the options
