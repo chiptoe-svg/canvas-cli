@@ -10,6 +10,12 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Planned
+- Canvas Studio integration
+- GraphQL API support
+
+## [1.9.0] - 2026-06-10
+
 ### Added
 
 - **Docker image**: releases now publish `ghcr.io/jjuanrivvera/canvas-cli` (distroless, multi-tag)
@@ -50,10 +56,6 @@ sync by `make docs-gen` and the documentation workflow.
 - Remaining commands migrated to the options-struct pattern (`api`, `cache`, `sync`, `telemetry`, `repl`, `completion`)
 - CI pins Go via `go.mod`, blocks on `govulncheck`, and pins security scanners
 - A warning is printed when `CANVAS_URL`/`CANVAS_TOKEN` env vars override an explicit `--instance` flag
-
-### Planned
-- Canvas Studio integration
-- GraphQL API support
 
 ## [1.8.1] - 2026-06-09
 
@@ -662,7 +664,8 @@ This release adds comprehensive write command support across all Canvas API reso
 
 ---
 
-[Unreleased]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.6.1...v1.7.0
