@@ -2,6 +2,7 @@ package commands
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -452,4 +453,269 @@ func TestHasFilteringOptions(t *testing.T) {
 			t.Error("hasFilteringOptions() = false, want true")
 		}
 	})
+}
+
+// setFilterGlobals sets the three filtering globals and returns a cleanup func
+// that restores their original values.
+func setFilterGlobals(t *testing.T, text string, columns []string, sort string) {
+	t.Helper()
+	origText := filterText
+	origCols := filterColumns
+	origSort := sortField
+
+	filterText = text
+	filterColumns = columns
+	sortField = sort
+
+	t.Cleanup(func() {
+		filterText = origText
+		filterColumns = origCols
+		sortField = origSort
+	})
+}
+
+// setOutputFormat sets the outputFormat global and restores it via t.Cleanup.
+func setOutputFormat(t *testing.T, format string) {
+	t.Helper()
+	orig := outputFormat
+	outputFormat = format
+	t.Cleanup(func() { outputFormat = orig })
+}
+
+// sampleItems is a simple slice used across all pipeline tests.
+type sampleItem struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Tag  string `json:"tag"`
+}
+
+func sampleItems() []sampleItem {
+	return []sampleItem{
+		{ID: 3, Name: "Charlie", Tag: "beta"},
+		{ID: 1, Name: "Alice", Tag: "alpha"},
+		{ID: 2, Name: "Bob", Tag: "alpha"},
+	}
+}
+
+// TestApplyFiltering_TextFilter exercises the text-filter branch of applyFiltering.
+func TestApplyFiltering_TextFilter(t *testing.T) {
+	setFilterGlobals(t, "alice", nil, "")
+
+	result := applyFiltering(sampleItems())
+	items, ok := result.([]map[string]interface{})
+	if !ok {
+		t.Fatalf("expected []map[string]interface{}, got %T", result)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(items))
+	}
+	if items[0]["name"] != "Alice" {
+		t.Errorf("expected Alice, got %v", items[0]["name"])
+	}
+}
+
+// TestApplyFiltering_ColumnSelection exercises the column-selection branch.
+func TestApplyFiltering_ColumnSelection(t *testing.T) {
+	setFilterGlobals(t, "", []string{"id", "name"}, "")
+
+	result := applyFiltering(sampleItems())
+	items, ok := result.([]map[string]interface{})
+	if !ok {
+		t.Fatalf("expected []map[string]interface{}, got %T", result)
+	}
+	if len(items) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(items))
+	}
+	// tag must not appear
+	if _, exists := items[0]["tag"]; exists {
+		t.Error("column 'tag' should have been removed by column selection")
+	}
+	if _, exists := items[0]["name"]; !exists {
+		t.Error("column 'name' should be present after column selection")
+	}
+}
+
+// TestApplyFiltering_SortAscending exercises ascending sort.
+func TestApplyFiltering_SortAscending(t *testing.T) {
+	setFilterGlobals(t, "", nil, "name")
+
+	result := applyFiltering(sampleItems())
+	items, ok := result.([]map[string]interface{})
+	if !ok {
+		t.Fatalf("expected []map[string]interface{}, got %T", result)
+	}
+	if len(items) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(items))
+	}
+	if items[0]["name"] != "Alice" {
+		t.Errorf("first item should be Alice (ascending), got %v", items[0]["name"])
+	}
+	if items[2]["name"] != "Charlie" {
+		t.Errorf("last item should be Charlie (ascending), got %v", items[2]["name"])
+	}
+}
+
+// TestApplyFiltering_SortDescending exercises the descending-sort branch.
+func TestApplyFiltering_SortDescending(t *testing.T) {
+	setFilterGlobals(t, "", nil, "-name")
+
+	result := applyFiltering(sampleItems())
+	items, ok := result.([]map[string]interface{})
+	if !ok {
+		t.Fatalf("expected []map[string]interface{}, got %T", result)
+	}
+	if items[0]["name"] != "Charlie" {
+		t.Errorf("first item should be Charlie (descending), got %v", items[0]["name"])
+	}
+}
+
+// TestApplyFiltering_Combination exercises all three flags together.
+func TestApplyFiltering_Combination(t *testing.T) {
+	// Keep only alpha-tagged items, sort by id, show only id column.
+	setFilterGlobals(t, "alpha", []string{"id"}, "id")
+
+	result := applyFiltering(sampleItems())
+	items, ok := result.([]map[string]interface{})
+	if !ok {
+		t.Fatalf("expected []map[string]interface{}, got %T", result)
+	}
+	// Alice (id=1, alpha) and Bob (id=2, alpha) remain after filter.
+	if len(items) != 2 {
+		t.Fatalf("expected 2 results after combined filter, got %d", len(items))
+	}
+	// Sorted ascending by id: Alice first (id=1).
+	if items[0]["id"] != float64(1) {
+		t.Errorf("first item id should be 1, got %v", items[0]["id"])
+	}
+	// Only the id column should remain.
+	if _, exists := items[0]["name"]; exists {
+		t.Error("column 'name' should have been removed by column selection")
+	}
+}
+
+// TestApplyFiltering_NoFlags confirms applyFiltering returns input unchanged when
+// no flags are set (hasFilteringOptions is false so applyFiltering is not called
+// at all from formatOutput; but calling it directly should be a no-op on non-slices).
+func TestApplyFiltering_NonSlicePassthrough(t *testing.T) {
+	setFilterGlobals(t, "x", nil, "")
+
+	scalar := "not a slice"
+	result := applyFiltering(scalar)
+	if result != scalar {
+		t.Errorf("non-slice should pass through unchanged, got %v", result)
+	}
+}
+
+// TestApplyFiltering_EmptySlice verifies an empty slice passes through.
+func TestApplyFiltering_EmptySlice(t *testing.T) {
+	setFilterGlobals(t, "x", nil, "")
+
+	result := applyFiltering([]sampleItem{})
+	items, ok := result.([]sampleItem)
+	if !ok {
+		t.Fatalf("expected []sampleItem, got %T", result)
+	}
+	if len(items) != 0 {
+		t.Errorf("expected empty slice, got len %d", len(items))
+	}
+}
+
+// TestFormatOutput_WithTextFilter exercises the full pipeline through formatOutput.
+func TestFormatOutput_WithTextFilter(t *testing.T) {
+	setFilterGlobals(t, "alice", nil, "")
+	setOutputFormat(t, "json")
+
+	out := captureStdout(func() {
+		if err := formatOutput(sampleItems(), nil); err != nil {
+			t.Errorf("formatOutput returned error: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, "Alice") {
+		t.Errorf("output should contain Alice, got: %s", out)
+	}
+	if strings.Contains(out, "Bob") {
+		t.Errorf("output should not contain Bob after text filter, got: %s", out)
+	}
+}
+
+// TestFormatOutput_WithColumnSelection exercises column selection via formatOutput.
+func TestFormatOutput_WithColumnSelection(t *testing.T) {
+	setFilterGlobals(t, "", []string{"id"}, "")
+	setOutputFormat(t, "json")
+
+	out := captureStdout(func() {
+		if err := formatOutput(sampleItems(), nil); err != nil {
+			t.Errorf("formatOutput returned error: %v", err)
+		}
+	})
+
+	// name should not appear; id should
+	if strings.Contains(out, `"name"`) {
+		t.Errorf("output should not contain 'name' after column selection, got: %s", out)
+	}
+	if !strings.Contains(out, `"id"`) {
+		t.Errorf("output should contain 'id' after column selection, got: %s", out)
+	}
+}
+
+// TestFormatOutput_NoFlags confirms formatOutput works without filtering flags.
+func TestFormatOutput_NoFlags(t *testing.T) {
+	setFilterGlobals(t, "", nil, "")
+	setOutputFormat(t, "json")
+
+	out := captureStdout(func() {
+		if err := formatOutput(sampleItems(), nil); err != nil {
+			t.Errorf("formatOutput returned error: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, "Alice") || !strings.Contains(out, "Bob") || !strings.Contains(out, "Charlie") {
+		t.Errorf("all items should appear with no flags, got: %s", out)
+	}
+}
+
+// TestFormatSuccessOutput_WithSort exercises the sort branch via formatSuccessOutput.
+func TestFormatSuccessOutput_WithSort(t *testing.T) {
+	setFilterGlobals(t, "", nil, "name")
+	setOutputFormat(t, "json")
+
+	origQuiet := quiet
+	quiet = true
+	defer func() { quiet = origQuiet }()
+
+	out := captureStdout(func() {
+		if err := formatSuccessOutput(sampleItems(), "done"); err != nil {
+			t.Errorf("formatSuccessOutput returned error: %v", err)
+		}
+	})
+
+	// Items should appear; order in JSON output reflects sorted order.
+	aliceIdx := strings.Index(out, "Alice")
+	charlieIdx := strings.Index(out, "Charlie")
+	if aliceIdx == -1 || charlieIdx == -1 {
+		t.Fatalf("expected Alice and Charlie in output, got: %s", out)
+	}
+	if aliceIdx > charlieIdx {
+		t.Errorf("Alice should appear before Charlie in ascending sort")
+	}
+}
+
+// TestFormatEmptyOrOutput_WithFilter exercises the filter branch via formatEmptyOrOutput.
+func TestFormatEmptyOrOutput_WithFilter(t *testing.T) {
+	setFilterGlobals(t, "charlie", nil, "")
+	setOutputFormat(t, "json")
+
+	out := captureStdout(func() {
+		if err := formatEmptyOrOutput(sampleItems(), "no items"); err != nil {
+			t.Errorf("formatEmptyOrOutput returned error: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, "Charlie") {
+		t.Errorf("output should contain Charlie, got: %s", out)
+	}
+	if strings.Contains(out, "Alice") {
+		t.Errorf("output should not contain Alice after filter, got: %s", out)
+	}
 }

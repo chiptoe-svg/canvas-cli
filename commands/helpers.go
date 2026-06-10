@@ -382,21 +382,6 @@ func ExactArgsWithUsage(n int, argNames ...string) cobra.PositionalArgs {
 	}
 }
 
-// MinArgsWithUsage returns a cobra.PositionalArgs that validates minimum arg count
-// with a descriptive error message
-func MinArgsWithUsage(n int, argNames ...string) cobra.PositionalArgs {
-	return func(cmd *cobra.Command, args []string) error {
-		if len(args) < n {
-			if len(argNames) > 0 {
-				expected := strings.Join(argNames, "> <")
-				return fmt.Errorf("missing required argument(s)\n\nUsage:\n  %s <%s>\n\nRun '%s --help' for more information", cmd.CommandPath(), expected, cmd.CommandPath())
-			}
-			return fmt.Errorf("requires at least %d arg(s), received %d", n, len(args))
-		}
-		return nil
-	}
-}
-
 // getDefaultAccountID returns the default account ID for the current instance.
 // Returns 0 if no default account ID is configured.
 func getDefaultAccountID() (int64, error) {
