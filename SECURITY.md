@@ -2,11 +2,12 @@
 
 ## Supported Versions
 
+Only the latest minor release line receives security fixes.
+
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.1.x   | :white_check_mark: |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 1.8.x   | :white_check_mark: |
+| < 1.8   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -48,7 +49,7 @@ Canvas CLI stores authentication tokens securely:
 ### API Security
 
 - All API communication uses HTTPS
-- Tokens are never logged or displayed
+- Tokens are never logged. They are redacted in `--dry-run` output unless you explicitly opt in with the `--show-token` flag
 - Rate limiting prevents accidental API abuse
 
 ## Security Scanning

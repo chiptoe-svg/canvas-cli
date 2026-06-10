@@ -32,7 +32,7 @@
 - **Smart Rate Limiting** - Adaptive throttling based on API quotas
 - **Multiple Outputs** - Table, JSON, YAML, and CSV formats
 - **Interactive Mode** - REPL shell with command history and completion
-- **280+ Commands** - Full coverage of Canvas LMS resources
+- **265 Commands** - Full coverage of Canvas LMS resources
 - **MCP Server** - Use as an AI agent tool via Model Context Protocol
 
 ## Installation
@@ -66,7 +66,7 @@ canvas auth login https://your-school.instructure.com
 canvas courses list
 
 # Get assignments for a course
-canvas assignments list <course-id>
+canvas assignments list --course-id <course-id>
 
 # Start interactive mode
 canvas shell
@@ -118,7 +118,7 @@ See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-sta
 
 ## MCP Server Mode
 
-Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing all 253 commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot).
+Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing 253 of its 265 commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot). Only the `canvas mcp` management commands themselves are excluded.
 
 ```bash
 # Start as STDIO MCP server
