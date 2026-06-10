@@ -102,7 +102,7 @@ Examples:
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.Addr, "addr", ":8080", "Server address to listen on")
+	cmd.Flags().StringVar(&opts.Addr, "addr", "127.0.0.1:8080", "Server address to listen on (default binds only loopback; use 0.0.0.0:8080 to bind all interfaces)")
 	cmd.Flags().StringVar(&opts.Secret, "secret", "", "Webhook secret for HMAC verification")
 	cmd.Flags().StringVar(&opts.JWKsURL, "jwks-url", "", "JWK Set URL for JWT verification")
 	cmd.Flags().BoolVar(&opts.CanvasDataSvc, "canvas-data-services", false, "Use Canvas Data Services JWK URL for JWT verification")
@@ -155,6 +155,15 @@ func runWebhookListen(ctx context.Context, opts *options.WebhookListenOptions) e
 	}
 	if opts.Log {
 		middleware = append(middleware, webhook.EventLogger(webhookLogger))
+	}
+
+	// Warn when no verification is configured: every inbound request will be
+	// accepted as authenticated, which means any caller can inject arbitrary
+	// events. This is intentionally loud (stderr) so the operator notices.
+	if opts.Secret == "" && jwksURL == "" {
+		fmt.Fprintln(os.Stderr, "WARNING: webhook listener is running without signature or JWT verification.")
+		fmt.Fprintln(os.Stderr, "WARNING: All incoming requests will be treated as authenticated.")
+		fmt.Fprintln(os.Stderr, "WARNING: Use --secret or --canvas-data-services / --jwks-url to enable verification.")
 	}
 
 	// Create listener

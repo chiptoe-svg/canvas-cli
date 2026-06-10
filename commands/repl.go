@@ -5,12 +5,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
 	"github.com/jjuanrivvera/canvas-cli/internal/repl"
 )
 
 var replCmd = &cobra.Command{
-	Use:   "repl",
-	Short: "Start interactive REPL mode",
+	Use:     "repl",
+	Aliases: []string{"shell"},
+	Short:   "Start interactive REPL mode",
 	Long: `Start an interactive Read-Eval-Print Loop (REPL) for Canvas CLI.
 
 The REPL provides an interactive shell where you can execute Canvas commands
@@ -30,6 +32,9 @@ Examples:
   # Start the REPL
   canvas repl
 
+  # Start using the shell alias
+  canvas shell
+
   # In the REPL:
   canvas> courses list
   canvas> session set course_id 12345
@@ -45,6 +50,8 @@ func init() {
 
 func runRepl(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
+	logger := logging.NewCommandLogger(verbose)
+	logger.LogCommandStart(ctx, "repl", nil)
 
 	// Create REPL instance
 	r := repl.New(rootCmd)
@@ -54,5 +61,6 @@ func runRepl(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("REPL error: %w", err)
 	}
 
+	logger.LogCommandComplete(ctx, "repl", 0)
 	return nil
 }

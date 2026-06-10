@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
 )
 
 var completionCmd = &cobra.Command{
@@ -49,18 +51,32 @@ func init() {
 }
 
 func runCompletion(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+	logger := logging.NewCommandLogger(verbose)
 	shell := args[0]
 
+	logger.LogCommandStart(ctx, "completion", map[string]interface{}{
+		"shell": shell,
+	})
+
+	var err error
 	switch shell {
 	case "bash":
-		return rootCmd.GenBashCompletionV2(os.Stdout, true)
+		err = rootCmd.GenBashCompletionV2(os.Stdout, true)
 	case "zsh":
-		return rootCmd.GenZshCompletion(os.Stdout)
+		err = rootCmd.GenZshCompletion(os.Stdout)
 	case "fish":
-		return rootCmd.GenFishCompletion(os.Stdout, true)
+		err = rootCmd.GenFishCompletion(os.Stdout, true)
 	case "powershell":
-		return rootCmd.GenPowerShellCompletionWithDesc(os.Stdout)
+		err = rootCmd.GenPowerShellCompletionWithDesc(os.Stdout)
 	default:
 		return fmt.Errorf("invalid shell: %s. Valid shells are: bash, zsh, fish, powershell", shell)
 	}
+
+	if err != nil {
+		return fmt.Errorf("failed to generate %s completion: %w", shell, err)
+	}
+
+	logger.LogCommandComplete(ctx, "completion", 1)
+	return nil
 }

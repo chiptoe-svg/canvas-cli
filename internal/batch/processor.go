@@ -30,11 +30,94 @@ func New(workers int, stopOnError bool, progress ProgressReporter) *Processor {
 // ProcessFunc is a function that processes a single item
 type ProcessFunc func(ctx context.Context, item interface{}) error
 
+// TypedProcessFunc is a type-safe function that processes a single typed item.
+type TypedProcessFunc[T any] func(ctx context.Context, item T) error
+
 // Result represents the result of processing a single item
 type Result struct {
 	Item  interface{}
 	Error error
 	Index int
+}
+
+// ProcessGeneric processes a batch of typed items concurrently without unsafe type
+// assertions. It is the preferred alternative to Processor.Process when the item
+// type is known at the call site.
+func ProcessGeneric[T any](ctx context.Context, workers int, stopOnError bool, progress ProgressReporter, items []T, fn TypedProcessFunc[T]) (*Summary, error) {
+	if workers <= 0 {
+		workers = 1
+	}
+	if len(items) == 0 {
+		return &Summary{Total: 0}, nil
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	type typedJob struct {
+		item  T
+		index int
+	}
+
+	jobs := make(chan typedJob, len(items))
+	results := make(chan Result, len(items))
+
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				select {
+				case <-ctx.Done():
+					results <- Result{Item: j.item, Error: ctx.Err(), Index: j.index}
+					continue
+				default:
+				}
+				err := fn(ctx, j.item)
+				results <- Result{Item: j.item, Error: err, Index: j.index}
+			}
+		}()
+	}
+
+	for i, item := range items {
+		jobs <- typedJob{item: item, index: i}
+	}
+	close(jobs)
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	summary := &Summary{
+		Total:   len(items),
+		Results: make([]Result, 0, len(items)),
+	}
+	start := time.Now()
+
+	for result := range results {
+		summary.Results = append(summary.Results, result)
+		if result.Error != nil {
+			summary.Failed++
+			if stopOnError {
+				cancel()
+				break
+			}
+		} else {
+			summary.Succeeded++
+		}
+		if progress != nil {
+			progress.Report(summary.Succeeded+summary.Failed, summary.Total)
+		}
+	}
+
+	summary.Duration = time.Since(start)
+
+	if stopOnError && summary.Failed > 0 {
+		return summary, fmt.Errorf("batch processing stopped due to error")
+	}
+	return summary, nil
 }
 
 // Process processes a batch of items concurrently

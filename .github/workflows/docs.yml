@@ -8,6 +8,7 @@ on:
       - 'mkdocs.yml'
       - 'commands/**'
       - 'tools/gendocs/**'
+      - 'CHANGELOG.md'
   workflow_dispatch:
 
 permissions:
@@ -25,10 +26,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
 
       - name: Generate CLI Reference
         run: go run ./tools/gendocs/main.go
+
+      # docs/changelog.md is a copy of the root CHANGELOG.md (source of truth)
+      - name: Sync changelog
+        run: cp CHANGELOG.md docs/changelog.md
 
       - name: Set up Python
         uses: actions/setup-python@v5

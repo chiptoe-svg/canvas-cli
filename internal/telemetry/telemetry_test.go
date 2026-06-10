@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -413,14 +414,20 @@ func TestClient_TrackError(t *testing.T) {
 		"status_code": 500,
 	})
 
-	client.mu.Lock()
-	defer client.mu.Unlock()
-
-	if len(client.events) != 1 {
-		t.Errorf("expected 1 event, got %d", len(client.events))
+	// TrackError signals the flush worker, which may drain client.events to
+	// disk at any moment — asserting on the in-memory slice is racy. Close()
+	// performs the final flush, so the event is guaranteed to be on disk after
+	// it returns; assert on the flushed files instead.
+	if err := client.Close(); err != nil {
+		t.Fatalf("Close failed: %v", err)
 	}
 
-	event := client.events[0]
+	events := readFlushedEvents(t, tempDir)
+	if len(events) != 1 {
+		t.Fatalf("expected 1 flushed event, got %d", len(events))
+	}
+
+	event := events[0]
 	if event.Type != "error" {
 		t.Errorf("expected type 'error', got '%s'", event.Type)
 	}
@@ -428,6 +435,30 @@ func TestClient_TrackError(t *testing.T) {
 	if event.Error == "" {
 		t.Error("expected error message to be set")
 	}
+}
+
+// readFlushedEvents collects all events written to events_*.json files in dir.
+func readFlushedEvents(t *testing.T, dir string) []Event {
+	t.Helper()
+
+	matches, err := filepath.Glob(filepath.Join(dir, "events_*.json"))
+	if err != nil {
+		t.Fatalf("glob failed: %v", err)
+	}
+
+	var all []Event
+	for _, name := range matches {
+		data, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatalf("reading %s failed: %v", name, err)
+		}
+		var events []Event
+		if err := json.Unmarshal(data, &events); err != nil {
+			t.Fatalf("unmarshaling %s failed: %v", name, err)
+		}
+		all = append(all, events...)
+	}
+	return all
 }
 
 func TestNew_NilConfig(t *testing.T) {

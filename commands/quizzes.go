@@ -536,7 +536,7 @@ func runQuizzesList(ctx context.Context, client *api.Client, opts *options.Quizz
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "quizzes.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -740,15 +740,12 @@ func runQuizzesDelete(ctx context.Context, client *api.Client, opts *options.Qui
 		"quiz_id":   opts.QuizID,
 	})
 
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete quiz %d.\n", opts.QuizID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			return nil
-		}
+	ok, confirmErr := confirmDelete("quiz", opts.QuizID, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
 	}
 
 	service := api.NewQuizzesService(client)
@@ -871,15 +868,14 @@ func runQuizzesQuestionsDelete(ctx context.Context, client *api.Client, opts *op
 		"question_id": opts.QuestionID,
 	})
 
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete question %d from quiz %d.\n", opts.QuestionID, opts.QuizID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			return nil
-		}
+	ok, confirmErr := confirmDeleteWithDetails("quiz question", opts.QuestionID, map[string]interface{}{
+		"quiz_id": opts.QuizID,
+	}, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
 	}
 
 	service := api.NewQuizQuestionsService(client)

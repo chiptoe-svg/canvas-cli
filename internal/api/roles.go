@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -200,14 +199,8 @@ func (s *RolesService) Update(ctx context.Context, accountID, roleID int64, para
 func (s *RolesService) Deactivate(ctx context.Context, accountID, roleID int64) (*Role, error) {
 	path := fmt.Sprintf("/api/v1/accounts/%d/roles/%d", accountID, roleID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var role Role
-	if err := json.NewDecoder(resp.Body).Decode(&role); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &role); err != nil {
 		return nil, err
 	}
 

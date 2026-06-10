@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/zalando/go-keyring"
 )
 
 // TestMain disables the background auto-updater for the whole test binary.
@@ -24,5 +26,10 @@ func TestMain(m *testing.M) {
 	// Use a near-zero retry backoff so retryable-error tests don't each sleep
 	// through the default 1s/2s/4s exponential backoff (~7s/test).
 	testRetryBackoff = time.Millisecond
+	// In-memory keyring for the whole test binary: getAPIClient consults the
+	// secure token store on every invocation, and the real macOS keychain both
+	// collects test entries and hangs headless CI runners on ACL prompts when
+	// one test binary reads items another binary wrote.
+	keyring.MockInit()
 	os.Exit(m.Run())
 }

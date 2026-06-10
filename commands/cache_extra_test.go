@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 )
 
 // setupCacheTestHome redirects HOME to a temp dir and resets config cache.
@@ -22,15 +24,12 @@ func setupCacheTestHome(t *testing.T) string {
 func TestCacheStatsCmd_NoCacheDir(t *testing.T) {
 	setupCacheTestHome(t)
 
-	var output strings.Builder
-	cmd := cacheStatsCmd
-	cmd.SetOut(&output)
-
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	err := runCacheStats(cmd, []string{})
+	cmd, _, _ := cacheCmd.Find([]string{"stats"})
+	err := runCacheStats(cmd)
 
 	w.Close()
 	os.Stdout = oldStdout
@@ -53,15 +52,12 @@ func TestCacheStatsCmd_NoCacheDir(t *testing.T) {
 func TestCacheClearCmd_NoCacheDir(t *testing.T) {
 	setupCacheTestHome(t)
 
-	var buf strings.Builder
-	cmd := cacheClearCmd
-	cmd.SetOut(&buf)
-
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	err := runCacheClear(cmd, []string{})
+	cmd, _, _ := cacheCmd.Find([]string{"clear"})
+	err := runCacheClear(cmd, &options.CacheClearOptions{All: false})
 
 	w.Close()
 	os.Stdout = oldStdout
@@ -184,7 +180,8 @@ func TestCacheStatsCmd_WithEntries(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	err := runCacheStats(cacheStatsCmd, []string{})
+	cmd, _, _ := cacheCmd.Find([]string{"stats"})
+	err := runCacheStats(cmd)
 
 	w.Close()
 	os.Stdout = oldStdout

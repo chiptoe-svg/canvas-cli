@@ -2,7 +2,7 @@
 # Multi-stage build for minimal final image
 
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git make
@@ -17,9 +17,13 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary
+# Build the binary. Version metadata matches the ldflags vars in
+# cmd/canvas/main.go (main.Version / main.Commit / main.BuildDate).
+ARG VERSION=docker
+ARG COMMIT=none
+ARG BUILD_DATE=unknown
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
-    -ldflags="-s -w -X main.version=docker" \
+    -ldflags="-s -w -X main.Version=${VERSION} -X main.Commit=${COMMIT} -X main.BuildDate=${BUILD_DATE}" \
     -o canvas ./cmd/canvas
 
 # Final stage

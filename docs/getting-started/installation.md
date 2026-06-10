@@ -80,16 +80,28 @@ canvas version
 
 ### Method 4: Docker
 
+Images are published to GHCR for every release: `:latest`, `:v1` (major), and
+exact versions like `:1.9.0`.
+
 ```bash
 # Run Canvas CLI in Docker
-docker run ghcr.io/jjuanrivvera/canvas-cli:latest version
+docker run --rm ghcr.io/jjuanrivvera/canvas-cli:latest version
+
+# Authenticate via environment variables (recommended for containers)
+docker run --rm -e CANVAS_URL -e CANVAS_TOKEN \
+  ghcr.io/jjuanrivvera/canvas-cli:latest courses list
 
 # Create an alias for easier use
-alias canvas='docker run -it --rm -v ~/.canvas-cli:/root/.canvas-cli ghcr.io/jjuanrivvera/canvas-cli:latest'
+alias canvas='docker run -i --rm -e CANVAS_URL -e CANVAS_TOKEN ghcr.io/jjuanrivvera/canvas-cli:latest'
 
 # Now use as normal
 canvas courses list
 ```
+
+!!! note "Minimal image"
+    The image is distroless and runs as a non-root user — there is no shell
+    inside. Pass credentials with `CANVAS_URL`/`CANVAS_TOKEN` environment
+    variables instead of mounting a config directory.
 
 ### Method 5: Build from Source
 

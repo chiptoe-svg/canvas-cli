@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -451,15 +450,9 @@ func (s *OutcomesService) LinkOutcomeCourse(ctx context.Context, courseID, group
 func (s *OutcomesService) UnlinkOutcomeAccount(ctx context.Context, accountID, groupID, outcomeID int64) (*OutcomeLink, error) {
 	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/outcomes/%d", accountID, groupID, outcomeID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	// The unlink endpoint returns the deleted link
 	var link OutcomeLink
-	if err := json.NewDecoder(resp.Body).Decode(&link); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &link); err != nil {
 		return nil, err
 	}
 
@@ -470,14 +463,8 @@ func (s *OutcomesService) UnlinkOutcomeAccount(ctx context.Context, accountID, g
 func (s *OutcomesService) UnlinkOutcomeCourse(ctx context.Context, courseID, groupID, outcomeID int64) (*OutcomeLink, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d/outcomes/%d", courseID, groupID, outcomeID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var link OutcomeLink
-	if err := json.NewDecoder(resp.Body).Decode(&link); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &link); err != nil {
 		return nil, err
 	}
 

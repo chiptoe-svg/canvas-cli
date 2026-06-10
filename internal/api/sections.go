@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -219,14 +218,8 @@ func (s *SectionsService) Update(ctx context.Context, sectionID int64, params *U
 func (s *SectionsService) Delete(ctx context.Context, sectionID int64) (*Section, error) {
 	path := fmt.Sprintf("/api/v1/sections/%d", sectionID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var section Section
-	if err := json.NewDecoder(resp.Body).Decode(&section); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &section); err != nil {
 		return nil, err
 	}
 
@@ -257,14 +250,8 @@ func (s *SectionsService) Uncrosslist(ctx context.Context, sectionID int64, over
 		path += "?override_sis_stickiness=true"
 	}
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var section Section
-	if err := json.NewDecoder(resp.Body).Decode(&section); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &section); err != nil {
 		return nil, err
 	}
 

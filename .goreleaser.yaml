@@ -49,9 +49,49 @@ archives:
       - README.md
       - LICENSE
 
+dockers:
+  - id: canvas
+    ids:
+      - canvas
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/jjuanrivvera/canvas-cli:{{ .Version }}"
+      - "ghcr.io/jjuanrivvera/canvas-cli:v{{ .Major }}"
+      - "ghcr.io/jjuanrivvera/canvas-cli:latest"
+    build_flag_templates:
+      - "--label=org.opencontainers.image.title=canvas-cli"
+      - "--label=org.opencontainers.image.description=A powerful command-line interface for Canvas LMS"
+      - "--label=org.opencontainers.image.source=https://github.com/jjuanrivvera/canvas-cli"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.licenses=MIT"
+
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
+
+sboms:
+  - id: archive
+    artifacts: archive
+
+# Keyless signing of the checksums file (Sigstore/Fulcio/Rekor). Verify with:
+#   cosign verify-blob --certificate checksums.txt.pem \
+#     --signature checksums.txt.sig \
+#     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+#     --certificate-identity-regexp 'https://github.com/jjuanrivvera/canvas-cli.*' \
+#     checksums.txt
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

@@ -409,50 +409,68 @@ func TestSyncOperation_SyncAssignments_FetchError(t *testing.T) {
 	}
 }
 
-// TestSyncOperation_SyncAssignments_NonEmptyList verifies the batch processor path
-// is invoked when assignments are present. There is a known bug in SyncAssignments
-// (sync.go:294-303) where assignments are stored as value types but type-asserted
-// as pointers, which would panic at runtime. This test verifies only that the
-// function proceeds past the empty-list early return and enters the batch path;
-// the test uses a cancelled context so the processor exits quickly before the
-// type assertion is reached in the worker goroutine.
-func TestSyncOperation_SyncAssignments_NonEmptyList_ContextCancelled(t *testing.T) {
-	assignments := []map[string]interface{}{
-		{"id": float64(1), "name": "A1", "grading_type": "points", "submission_types": []string{"online_text_entry"}, "published": true},
+// TestSyncOperation_SyncAssignments_NonEmptyList verifies that SyncAssignments
+// correctly processes a non-empty assignment list without panicking.
+// The previous implementation stored assignments as value types but
+// type-asserted them as pointers, causing a guaranteed runtime panic on any
+// non-empty course. The fix uses ProcessGeneric with *api.Assignment pointers.
+func TestSyncOperation_SyncAssignments_NonEmptyList(t *testing.T) {
+	singleAssignment := map[string]interface{}{
+		"id":               float64(1),
+		"name":             "A1",
+		"grading_type":     "points",
+		"submission_types": []string{"online_text_entry"},
+		"published":        true,
 	}
+	assignmentList := []map[string]interface{}{singleAssignment}
 
+	// Source: list returns array, individual GET returns single object.
 	srcHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(assignments)
+		// List endpoint: /api/v1/courses/1/assignments
+		if r.URL.Path == "/api/v1/courses/1/assignments" {
+			json.NewEncoder(w).Encode(assignmentList)
+			return
+		}
+		// Individual assignment GET: /api/v1/courses/1/assignments/1
+		json.NewEncoder(w).Encode(singleAssignment)
 	}
+
+	// Destination: no assignments exist yet (404), CREATE succeeds.
 	dstHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"message":"not found"}`))
+		if r.Method == http.MethodGet {
+			// No conflict — assignment does not exist in target
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"errors":[{"type":"not_found"}]}`))
+			return
+		}
+		// POST (create) succeeds
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(singleAssignment)
 	}
 
 	src := newTestClient(t, srcHandler)
 	dst := newTestClient(t, dstHandler)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancel before calling — workers will see ctx.Done()
-
 	op := NewSyncOperation(src, dst, false)
-	// The call should not panic; it may return an error due to cancellation.
-	// We use recover to protect against the known production bug.
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Known production bug: value/pointer type assertion mismatch.
-				// Record but do not fail the test.
-				t.Logf("recovered from known SyncAssignments bug: %v", r)
-			}
-		}()
-		result, _ := op.SyncAssignments(ctx, 1, 2)
-		if result != nil && result.TotalItems != 1 {
-			t.Errorf("expected TotalItems=1, got %d", result.TotalItems)
-		}
-	}()
+	result, err := op.SyncAssignments(context.Background(), 1, 2)
+	// A 404 on the target GET is treated as "no conflict" and we proceed
+	// to create. If the non-interactive mode returns an error for a different
+	// reason, we still verify that at minimum we got a non-nil result and the
+	// function didn't panic (which was the original bug).
+	if result == nil {
+		t.Fatal("SyncAssignments returned nil result — expected non-nil")
+	}
+	if result.TotalItems != 1 {
+		t.Errorf("expected TotalItems=1, got %d", result.TotalItems)
+	}
+	// A successful copy means SyncedItems == 1 and no error.
+	// If there was an error, surface it but don't fail the primary assertion
+	// (no panic).
+	if err != nil {
+		t.Logf("SyncAssignments error (non-critical for panic test): %v", err)
+	}
 }
 
 // --- promptConflict / promptCourseConflict indirect ---

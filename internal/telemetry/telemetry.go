@@ -22,6 +22,7 @@ type Client struct {
 	mu        sync.Mutex
 	flushChan chan struct{}
 	stopChan  chan struct{}
+	closeOnce sync.Once     // makes Close idempotent (stopChan must only close once)
 	done      chan struct{} // closed by flushWorker when it has exited
 	flushErr  error         // result of the final flush; read by Close() after <-done
 	dataDir   string
@@ -150,10 +151,11 @@ func (c *Client) Track(eventType, action string, properties map[string]interface
 
 	c.mu.Lock()
 	c.events = append(c.events, event)
+	pending := len(c.events)
 	c.mu.Unlock()
 
 	// Trigger flush if we have enough events
-	if len(c.events) >= 10 {
+	if pending >= 10 {
 		select {
 		case c.flushChan <- struct{}{}:
 		default:
@@ -280,13 +282,15 @@ func (c *Client) flushWorker() {
 	}
 }
 
-// Close stops the telemetry client
+// Close stops the telemetry client. It is safe to call multiple times.
 func (c *Client) Close() error {
 	if !c.enabled {
 		return nil
 	}
 
-	close(c.stopChan)
+	c.closeOnce.Do(func() {
+		close(c.stopChan)
+	})
 	// Wait for flushWorker to perform its final flush and release the data file.
 	// On Windows an open handle would block the caller's temp-dir cleanup. The
 	// <-c.done receive synchronizes with the worker's flushErr write.

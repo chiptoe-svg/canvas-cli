@@ -116,18 +116,23 @@ func (u *Updater) CheckAndUpdate(ctx context.Context) *UpdateResult {
 		return result
 	}
 
-	// Verify checksum if available
-	if checksumAsset != nil {
-		checksums, err := u.downloadChecksums(ctx, checksumAsset)
-		if err != nil {
-			result.Error = fmt.Errorf("failed to download checksums: %w", err)
-			return result
-		}
+	// Checksum verification is mandatory; abort if checksums.txt is absent from
+	// the release. A release without a checksum file could indicate tampering or
+	// an incomplete publish, and installing unverified binaries is unsafe.
+	if checksumAsset == nil {
+		result.Error = fmt.Errorf("update aborted: release %q is missing checksums.txt — cannot verify binary integrity", release.TagName)
+		return result
+	}
 
-		if !u.verifyChecksum(binary, asset.Name, checksums) {
-			result.Error = fmt.Errorf("checksum verification failed")
-			return result
-		}
+	checksums, err := u.downloadChecksums(ctx, checksumAsset)
+	if err != nil {
+		result.Error = fmt.Errorf("failed to download checksums: %w", err)
+		return result
+	}
+
+	if !u.verifyChecksum(binary, asset.Name, checksums) {
+		result.Error = fmt.Errorf("checksum verification failed")
+		return result
 	}
 
 	// Extract binary from archive

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 )
@@ -68,6 +69,18 @@ func ValidateInstance(instance *Instance) error {
 
 	if parsedURL.Host == "" {
 		return fmt.Errorf("URL must have a host")
+	}
+
+	// Reject plain http:// for non-loopback hosts: Bearer tokens would be sent
+	// over the network in cleartext, which is a serious credential exposure risk.
+	// localhost / 127.0.0.1 / ::1 are allowed for local development and testing.
+	if parsedURL.Scheme == "http" {
+		host := parsedURL.Hostname() // strips port if present
+		if !isLoopbackHost(host) {
+			return fmt.Errorf("URL scheme http:// is not allowed for non-loopback hosts (got %q): "+
+				"use https:// to protect credentials in transit. "+
+				"http:// is only permitted for localhost/127.0.0.1/::1", host)
+		}
 	}
 
 	// Validate authentication if configured
@@ -202,6 +215,16 @@ func SanitizeInstanceName(name string) string {
 	}
 
 	return name
+}
+
+// isLoopbackHost reports whether host is a loopback address (localhost,
+// 127.x.x.x, ::1). It is used to permit http:// only for local dev/test.
+func isLoopbackHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // NormalizeURL normalizes a Canvas instance URL

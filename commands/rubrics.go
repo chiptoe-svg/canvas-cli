@@ -435,16 +435,13 @@ func runRubricsDelete(ctx context.Context, client *api.Client, opts *options.Rub
 		"force":     opts.Force,
 	})
 
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete rubric %d.\n", opts.RubricID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			logger.LogCommandComplete(ctx, "rubrics.delete", 0)
-			return nil
-		}
+	ok, confirmErr := confirmDelete("rubric", opts.RubricID, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		logger.LogCommandComplete(ctx, "rubrics.delete", 0)
+		return nil
 	}
 
 	service := api.NewRubricsService(client)

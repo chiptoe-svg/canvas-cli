@@ -132,10 +132,13 @@ func (f *OAuthFlow) startLocalServer(ctx context.Context) (*oauth2.Token, error)
 	resultChan := make(chan *oauth2.Token, 1)
 	errChan := make(chan error, 1)
 
-	// Create HTTP server
+	// Create HTTP server bound to loopback only.
+	// The redirect URL already points to localhost, so binding all interfaces
+	// (":port") would needlessly expose the OAuth callback on every network
+	// interface, leaking the authorization code to any host on the same network.
 	mux := http.NewServeMux()
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", f.config.CallbackPort),
+		Addr:    fmt.Sprintf("127.0.0.1:%d", f.config.CallbackPort),
 		Handler: mux,
 	}
 

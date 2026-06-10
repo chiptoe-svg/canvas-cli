@@ -186,10 +186,13 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.Flags().StringVar(&opts.CSV, "csv", "", "CSV file with grades (required)")
+	// --csv-file is the preferred flag name; --csv is kept for backward compatibility.
+	// Both point to the same variable; validation in opts.Validate() ensures one is provided.
+	cmd.Flags().StringVar(&opts.CSV, "csv-file", "", "CSV file with grades (required)")
+	cmd.Flags().StringVar(&opts.CSV, "csv", "", "CSV file with grades (deprecated: use --csv-file)")
+	_ = cmd.Flags().MarkDeprecated("csv", "use --csv-file instead")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Preview changes without applying them")
 	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("csv")
 
 	return cmd
 }
@@ -288,6 +291,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (required)")
 	cmd.Flags().Int64Var(&opts.CommentID, "comment-id", 0, "Comment ID to delete (required)")
+	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
 	cmd.MarkFlagRequired("course-id")
 	cmd.MarkFlagRequired("assignment-id")
 	cmd.MarkFlagRequired("user-id")
@@ -305,7 +309,7 @@ func runSubmissionsList(ctx context.Context, client *api.Client, opts *options.S
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -351,7 +355,7 @@ func runSubmissionsGet(ctx context.Context, client *api.Client, opts *options.Su
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.get", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -389,7 +393,7 @@ func runSubmissionsGrade(ctx context.Context, client *api.Client, opts *options.
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.grade", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -475,7 +479,7 @@ func runSubmissionsBulkGrade(ctx context.Context, client *api.Client, opts *opti
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.bulk-grade", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -609,7 +613,7 @@ func runSubmissionsComments(ctx context.Context, client *api.Client, opts *optio
 		"user_id":       opts.UserID,
 	})
 
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.comments", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -641,7 +645,7 @@ func runSubmissionsAddComment(ctx context.Context, client *api.Client, opts *opt
 		"user_id":       opts.UserID,
 	})
 
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.add-comment", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -680,11 +684,19 @@ func runSubmissionsDeleteComment(ctx context.Context, client *api.Client, opts *
 		"comment_id":    opts.CommentID,
 	})
 
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "submissions.delete-comment", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
 		return err
+	}
+
+	ok, confirmErr := confirmDelete("submission comment", opts.CommentID, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
 	}
 
 	submissionsService := api.NewSubmissionsService(client)

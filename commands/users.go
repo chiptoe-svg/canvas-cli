@@ -219,7 +219,10 @@ Examples:
 	cmd.Flags().StringVar(&opts.Locale, "locale", "", "User's locale (e.g., 'en')")
 	cmd.Flags().BoolVar(&opts.SkipRegistration, "skip-registration", false, "Skip registration email")
 	cmd.Flags().BoolVar(&opts.SkipConfirmation, "skip-confirmation", false, "Skip email confirmation")
-	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with user data")
+	// --json-file is the preferred flag name; --json is kept for backward compatibility
+	cmd.Flags().StringVar(&opts.JSONFile, "json-file", "", "JSON file with user data")
+	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with user data (deprecated: use --json-file)")
+	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 	cmd.Flags().BoolVar(&opts.Stdin, "stdin", false, "Read JSON from stdin")
 	cmd.MarkFlagRequired("account-id")
 

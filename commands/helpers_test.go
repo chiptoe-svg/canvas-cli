@@ -13,10 +13,8 @@ import (
 
 func TestGetAPIClient_EnvironmentVariables(t *testing.T) {
 	// Set environment variables
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Create API client
 	client, err := getAPIClient()
@@ -33,12 +31,9 @@ func TestGetAPIClient_EnvironmentVariables(t *testing.T) {
 
 func TestGetAPIClient_EnvironmentVariables_WithRPS(t *testing.T) {
 	// Set environment variables including requests per second
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	os.Setenv("CANVAS_REQUESTS_PER_SEC", "10.5")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
-	defer os.Unsetenv("CANVAS_REQUESTS_PER_SEC")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
+	t.Setenv("CANVAS_REQUESTS_PER_SEC", "10.5")
 
 	// Create API client
 	client, err := getAPIClient()
@@ -55,8 +50,7 @@ func TestGetAPIClient_EnvironmentVariables_WithRPS(t *testing.T) {
 
 func TestGetAPIClient_EnvironmentVariables_Partial(t *testing.T) {
 	// Set only URL, not token - should fall through to config-based auth
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	defer os.Unsetenv("CANVAS_URL")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
 
 	// Create API client - will either work (if config exists) or fail (if no config)
 	// This test just verifies partial env vars don't cause panic
@@ -96,13 +90,13 @@ func TestValidateCourseID_InvalidID(t *testing.T) {
 	}
 
 	// Test with 0
-	_, err = validateCourseID(client, 0)
+	_, err = validateCourseID(context.Background(), client, 0)
 	if err == nil {
 		t.Error("Expected error for course ID 0")
 	}
 
 	// Test with negative
-	_, err = validateCourseID(client, -1)
+	_, err = validateCourseID(context.Background(), client, -1)
 	if err == nil {
 		t.Error("Expected error for negative course ID")
 	}
@@ -142,7 +136,7 @@ func TestValidateCourseID_ValidCourse(t *testing.T) {
 	}
 
 	// Test with valid course ID
-	course, err := validateCourseID(client, 123)
+	course, err := validateCourseID(context.Background(), client, 123)
 	if err != nil {
 		t.Errorf("Expected no error for valid course, got: %v", err)
 	}
@@ -181,7 +175,7 @@ func TestValidateCourseID_NotFound(t *testing.T) {
 	}
 
 	// Test with non-existent course ID
-	_, err = validateCourseID(client, 999)
+	_, err = validateCourseID(context.Background(), client, 999)
 	if err == nil {
 		t.Error("Expected error for non-existent course")
 	}
@@ -221,7 +215,7 @@ func TestValidateCourseID_Unauthorized(t *testing.T) {
 	}
 
 	// Test with unauthorized access
-	_, err = validateCourseID(client, 456)
+	_, err = validateCourseID(context.Background(), client, 456)
 	if err == nil {
 		t.Error("Expected error for unauthorized access")
 	}
@@ -270,10 +264,8 @@ func TestCreateCache(t *testing.T) {
 
 func TestGetAPIClient_WithCache(t *testing.T) {
 	// Set environment variables for testing
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Reset noCache flag
 	originalNoCache := noCache
@@ -298,10 +290,8 @@ func TestGetAPIClient_WithCache(t *testing.T) {
 
 func TestGetAPIClient_NoCache(t *testing.T) {
 	// Set environment variables for testing
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Set noCache flag
 	originalNoCache := noCache
@@ -384,10 +374,8 @@ func TestGetAPIClient_UserAgentSet(t *testing.T) {
 	defer server.Close()
 
 	// Set environment variables
-	os.Setenv("CANVAS_URL", server.URL)
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", server.URL)
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Save and set version for test
 	originalVersion := version
@@ -408,5 +396,109 @@ func TestGetAPIClient_UserAgentSet(t *testing.T) {
 	expectedUA := "canvas-cli/v1.5.0"
 	if receivedUserAgent != expectedUA {
 		t.Errorf("Expected User-Agent '%s', got '%s'", expectedUA, receivedUserAgent)
+	}
+}
+
+// TestGetAPIClient_InstanceFlagWarning verifies that a warning is printed to stderr
+// when both --instance and CANVAS_URL/CANVAS_TOKEN env vars are set.
+func TestGetAPIClient_InstanceFlagWarning(t *testing.T) {
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
+
+	// Simulate --instance being set
+	origInstanceURL := instanceURL
+	instanceURL = "some-instance"
+	defer func() { instanceURL = origInstanceURL }()
+
+	// Capture stderr to verify warning
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	client, err := getAPIClient()
+	w.Close()
+	os.Stderr = oldStderr
+
+	buf := make([]byte, 4096)
+	n, _ := r.Read(buf)
+	stderrOutput := string(buf[:n])
+
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+	if client == nil {
+		t.Fatal("Expected client to be created")
+	}
+	if !containsAny(stderrOutput, "WARNING", "--instance", "ignored") {
+		t.Errorf("Expected warning about --instance being ignored, got: %q", stderrOutput)
+	}
+}
+
+// TestGetAPIClient_ErrorMessageUsesConfigList verifies that the error for unknown
+// instance names references 'canvas config list' (not 'canvas auth list').
+func TestGetAPIClient_ErrorMessageUsesConfigList(t *testing.T) {
+	// Ensure no env vars are set (t.Setenv to "" restores originals on cleanup)
+	t.Setenv("CANVAS_URL", "")
+	t.Setenv("CANVAS_TOKEN", "")
+
+	// Set a non-existent instance
+	origInstanceURL := instanceURL
+	instanceURL = "nonexistent-instance-xyz"
+	defer func() { instanceURL = origInstanceURL }()
+
+	// Point config to a temp dir so we don't load real config
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("USERPROFILE", tmpDir)
+
+	_, err := getAPIClient()
+	if err == nil {
+		t.Fatal("Expected error for unknown instance")
+	}
+	if !containsAny(err.Error(), "canvas config list") {
+		t.Errorf("Expected error to reference 'canvas config list', got: %q", err.Error())
+	}
+}
+
+// TestValidateCourseID_ContextCancellation verifies that a cancelled context
+// propagates through validateCourseID (no hang or panic).
+func TestValidateCourseID_ContextCancellation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return 404 so the request completes quickly
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"errors":[{"message":"Not found"}]}`))
+	}))
+	defer server.Close()
+
+	client, err := api.NewClient(api.ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	// Should return an error (either ctx cancelled or 404) without hanging
+	_, err = validateCourseID(ctx, client, 123)
+	if err == nil {
+		t.Error("Expected error for cancelled context or 404")
+	}
+}
+
+// TestReplCmdHasShellAlias verifies that the repl command exposes 'shell' as an alias.
+func TestReplCmdHasShellAlias(t *testing.T) {
+	found := false
+	for _, alias := range replCmd.Aliases {
+		if alias == "shell" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("Expected 'shell' to be an alias of the repl command")
 	}
 }

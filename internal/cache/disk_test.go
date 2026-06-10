@@ -507,3 +507,23 @@ func TestDiskCache_Stats_WithSubdirectories(t *testing.T) {
 		t.Errorf("expected at least 2 active, got %d", stats.Active)
 	}
 }
+
+// TestDiskCache_Close verifies that Close() stops the background cleanup
+// goroutine and is safe to call multiple times.
+func TestDiskCache_Close(t *testing.T) {
+	tempDir := t.TempDir()
+	c, err := NewDiskCache(tempDir, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("NewDiskCache: %v", err)
+	}
+
+	// First close should succeed
+	if err := c.Close(); err != nil {
+		t.Errorf("first Close() returned error: %v", err)
+	}
+
+	// Second close must be idempotent (no panic, no error)
+	if err := c.Close(); err != nil {
+		t.Errorf("second Close() returned error: %v", err)
+	}
+}

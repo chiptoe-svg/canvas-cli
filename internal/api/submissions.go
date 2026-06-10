@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -363,12 +362,13 @@ func (s *SubmissionsService) BulkGrade(ctx context.Context, courseID, assignment
 		gradeData[userKey] = userData
 	}
 
-	var result struct {
-		Progress struct {
-			ID int64 `json:"id"`
-		} `json:"progress"`
+	// Canvas returns the Progress object at the top level of the response, not
+	// nested under a "progress" key. Parsing as a nested struct would always
+	// yield Progress.ID == 0.
+	var progress struct {
+		ID int64 `json:"id"`
 	}
-	if err := s.client.PostJSON(ctx, path, body, &result); err != nil {
+	if err := s.client.PostJSON(ctx, path, body, &progress); err != nil {
 		return nil, err
 	}
 
@@ -508,17 +508,10 @@ func (s *SubmissionsService) InitiateFileUpload(ctx context.Context, courseID, a
 func (s *SubmissionsService) DeleteComment(ctx context.Context, courseID, assignmentID, userID, commentID int64) (*SubmissionComment, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/submissions/%d/comments/%d", courseID, assignmentID, userID, commentID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	// Canvas returns the deleted comment
 	var comment SubmissionComment
-	if err := json.NewDecoder(resp.Body).Decode(&comment); err != nil {
-		// If decode fails, it may return empty response for deletion
-		return nil, nil
+	if err := s.client.DeleteJSON(ctx, path, &comment); err != nil {
+		return nil, err
 	}
 
 	return &comment, nil

@@ -103,13 +103,8 @@ func (s *PeerReviewsService) Delete(ctx context.Context, courseID, assignmentID,
 	query.Add("user_id", fmt.Sprintf("%d", reviewerID))
 	path += "?" + query.Encode()
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
-
-	return nil
+	_, err := s.client.Delete(ctx, path)
+	return err
 }
 
 // ListSections retrieves peer review sections for an assignment

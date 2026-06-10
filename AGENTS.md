@@ -34,7 +34,7 @@ Run `make setup-hooks` to enable. Runs automatically on each commit:
 - `gofmt` - formatting check
 - `golangci-lint` - comprehensive linting (if installed)
 - `go vet` - static analysis
-- `go test -short` - quick test pass
+- `go test -short -race` - quick test pass with race detector
 
 ## Architecture
 
@@ -162,6 +162,14 @@ fix/*  ────────────────┘
 
 ### Release Process
 
+Before tagging, on `develop`:
+
+1. **Update CHANGELOG.md** with the new version section (and copy to
+   `docs/changelog.md` — `make docs-gen` does this automatically)
+2. **Update SECURITY.md** supported-versions table if the minor version changes
+
+Then:
+
 ```bash
 # 1. Merge develop to main
 git checkout main && git merge develop
@@ -180,10 +188,10 @@ GitHub Actions automatically builds binaries and creates the release on tag push
 ## CI
 
 Single workflow `.github/workflows/ci.yml` runs:
-- Lint (gofmt, go vet, golangci-lint, staticcheck)
-- Security (govulncheck, gosec)
-- Test matrix (ubuntu/macos/windows × Go 1.21/1.22)
-- Build artifacts
+- Lint (gofmt, go vet, golangci-lint)
+- Security (govulncheck — blocking; gosec — report-only, see TECHNICAL_DEBT.md)
+- Test matrix (ubuntu/macos/windows, Go version from go.mod)
+- Build artifacts (GoReleaser snapshot)
 
 ## Documentation
 
@@ -230,6 +238,13 @@ Releases use GoReleaser and auto-publish to GitHub Releases + Homebrew tap.
 
 ### Creating a Release
 
+Pre-tag checklist (on `develop`):
+
+1. Update `CHANGELOG.md` with the new version section, then run `make docs-gen`
+   to sync `docs/changelog.md`
+2. Update the supported-versions table in `SECURITY.md` if the minor version
+   changes
+
 ```bash
 # 1. Ensure main is up to date
 git checkout main && git merge develop
@@ -256,9 +271,7 @@ The formula is at: https://github.com/jjuanrivvera/homebrew-canvas-cli
 
 ## Technical Debt & Remediation
 
-See [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) for tracked technical debt items.
-
-All critical and important technical debt has been resolved. Remaining items are nice-to-have improvements tracked in TECHNICAL_DEBT.md.
+See [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) for tracked technical debt items, including the in-progress migration away from package-level flag variables.
 
 ### Adding New Commands
 

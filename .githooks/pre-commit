@@ -37,11 +37,11 @@ if ! go vet ./... 2>&1; then
 fi
 echo "✓ Vet OK"
 
-# Run tests (short mode for speed)
-echo "→ Running tests (short)..."
-if ! go test -short ./... > /dev/null 2>&1; then
+# Run tests (short mode for speed; -race to match CI)
+echo "→ Running tests (short, race)..."
+if ! go test -short -race ./... > /dev/null 2>&1; then
     echo "✗ Tests failed"
-    echo "Run 'go test -v ./...' to see details"
+    echo "Run 'go test -race -v ./...' to see details"
     exit 1
 fi
 echo "✓ Tests OK"

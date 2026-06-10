@@ -49,12 +49,20 @@ Examples:
 				return err
 			}
 
+			// Honor the global -o/--output flag for JSON output.
+			// The local --json flag is kept as a deprecated alias for backward compat.
+			if outputFormat == "json" {
+				opts.JSON = true
+			}
+
 			return runDoctor(cmd.Context(), opts)
 		},
 	}
 
 	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Show detailed output")
-	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output results as JSON")
+	// --json kept for backward compatibility; prefer -o json / --output json
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Output results as JSON (deprecated: use -o json)")
+	_ = cmd.Flags().MarkDeprecated("json", "use -o json / --output json instead")
 
 	return cmd
 }

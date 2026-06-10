@@ -111,11 +111,9 @@ func (s *AdminsService) Delete(ctx context.Context, accountID, userID int64, rol
 		path += "?" + query.Encode()
 	}
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
+	if _, err := s.client.Delete(ctx, path); err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	return &Admin{UserID: userID, Status: "removed"}, nil
 }

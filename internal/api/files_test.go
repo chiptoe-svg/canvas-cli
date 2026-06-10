@@ -725,3 +725,438 @@ func TestFilesService_UploadToUser(t *testing.T) {
 		t.Errorf("Expected file ID 888, got %d", file.ID)
 	}
 }
+
+// TestFilesService_Upload_WithRedirect exercises the three-step upload flow where
+// the storage server returns a redirect that must be confirmed via a Canvas GET.
+func TestFilesService_Upload_WithRedirect(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "redirect_test.txt")
+	if err := os.WriteFile(testFile, []byte("redirect content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	var uploadURL, confirmURL string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+
+		// Step 1: pre-flight
+		if r.URL.Path == "/api/v1/courses/200/files" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"upload_url":"` + uploadURL + `","upload_params":{"key":"value"}}`))
+			return
+		}
+
+		// Step 2: multipart upload — return 302 redirect pointing to Canvas confirm URL
+		if r.URL.Path == "/upload_storage" {
+			w.Header().Set("Location", confirmURL)
+			w.WriteHeader(http.StatusFound)
+			return
+		}
+
+		// Step 3: Canvas confirmation
+		if r.URL.Path == "/confirm" {
+			// Verify the Authorization header was forwarded (same Canvas domain).
+			if r.Header.Get("Authorization") == "" {
+				t.Error("expected Authorization header on confirmation request to Canvas domain")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"id": 777, "display_name": "redirect_test.txt", "size": 16}`))
+			return
+		}
+
+		t.Errorf("Unexpected path: %s", r.URL.Path)
+	}))
+	defer server.Close()
+
+	uploadURL = server.URL + "/upload_storage"
+	confirmURL = server.URL + "/confirm"
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	ctx := context.Background()
+
+	file, err := service.UploadToCourse(ctx, 200, testFile, &UploadParams{})
+	if err != nil {
+		t.Fatalf("UploadToCourse with redirect failed: %v", err)
+	}
+	if file.ID != 777 {
+		t.Errorf("Expected file ID 777, got %d", file.ID)
+	}
+}
+
+// TestFilesService_Upload_RedirectMissingLocation verifies the error returned when
+// a redirect response has no Location header.
+func TestFilesService_Upload_RedirectMissingLocation(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "no_location.txt")
+	if err := os.WriteFile(testFile, []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	var uploadURL string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path == "/api/v1/courses/300/files" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"upload_url":"` + uploadURL + `","upload_params":{}}`))
+			return
+		}
+		if r.URL.Path == "/upload_no_loc" {
+			// 302 without Location header
+			w.WriteHeader(http.StatusFound)
+			return
+		}
+	}))
+	defer server.Close()
+	uploadURL = server.URL + "/upload_no_loc"
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	_, err = service.UploadToCourse(context.Background(), 300, testFile, &UploadParams{})
+	if err == nil {
+		t.Fatal("expected error for redirect with no Location header")
+	}
+	if !strings.Contains(err.Error(), "Location") {
+		t.Errorf("expected error to mention Location, got: %v", err)
+	}
+}
+
+// TestFilesService_Upload_ConfirmationFailure verifies the error returned when
+// the Canvas confirmation step responds with a non-2xx status.
+func TestFilesService_Upload_ConfirmationFailure(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "confirm_fail.txt")
+	if err := os.WriteFile(testFile, []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	var uploadURL, confirmURL string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path == "/api/v1/courses/400/files" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"upload_url":"` + uploadURL + `","upload_params":{}}`))
+			return
+		}
+		if r.URL.Path == "/upload_cf" {
+			w.Header().Set("Location", confirmURL)
+			w.WriteHeader(http.StatusFound)
+			return
+		}
+		if r.URL.Path == "/confirm_fail" {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("internal error"))
+			return
+		}
+	}))
+	defer server.Close()
+	uploadURL = server.URL + "/upload_cf"
+	confirmURL = server.URL + "/confirm_fail"
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	_, err = service.UploadToCourse(context.Background(), 400, testFile, &UploadParams{})
+	if err == nil {
+		t.Fatal("expected error when confirmation fails with 500")
+	}
+	if !strings.Contains(err.Error(), "confirmation failed") {
+		t.Errorf("expected 'confirmation failed' in error, got: %v", err)
+	}
+}
+
+// TestFilesService_Upload_Step1Failure verifies the error returned when the
+// pre-flight Canvas request (step 1) fails.
+func TestFilesService_Upload_Step1Failure(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "step1_fail.txt")
+	if err := os.WriteFile(testFile, []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		// Pre-flight returns 403.
+		if r.URL.Path == "/api/v1/courses/500/files" {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"errors":[{"message":"Unauthorized"}]}`))
+			return
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:             server.URL,
+		Token:               "test-token",
+		RequestsPerSec:      10,
+		RetryInitialBackoff: 1, // avoid exponential backoff in test
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	_, err = service.UploadToCourse(context.Background(), 500, testFile, &UploadParams{})
+	if err == nil {
+		t.Fatal("expected error when step 1 pre-flight fails")
+	}
+}
+
+// TestFilesService_Upload_Step2Failure verifies the error returned when the
+// storage upload (step 2) returns an unexpected non-redirect, non-success status.
+func TestFilesService_Upload_Step2Failure(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "step2_fail.txt")
+	if err := os.WriteFile(testFile, []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	var uploadURL string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path == "/api/v1/courses/600/files" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"upload_url":"` + uploadURL + `","upload_params":{}}`))
+			return
+		}
+		if r.URL.Path == "/upload_fail" {
+			// Storage server returns 500.
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("storage error"))
+			return
+		}
+	}))
+	defer server.Close()
+	uploadURL = server.URL + "/upload_fail"
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	_, err = service.UploadToCourse(context.Background(), 600, testFile, &UploadParams{})
+	if err == nil {
+		t.Fatal("expected error when step 2 storage upload fails")
+	}
+	if !strings.Contains(err.Error(), "upload failed") {
+		t.Errorf("expected 'upload failed' in error, got: %v", err)
+	}
+}
+
+// TestFilesService_Upload_WithUploadParams verifies that upload_params fields
+// from the Canvas pre-flight response are forwarded in the multipart body.
+func TestFilesService_Upload_WithUploadParams(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "params_test.txt")
+	if err := os.WriteFile(testFile, []byte("params content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	var uploadURL string
+	var receivedKey string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path == "/api/v1/courses/700/files" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{
+				"upload_url":"` + uploadURL + `",
+				"upload_params":{"key":"uploads/file-key","x-amz-acl":"private"},
+				"file_param":"file"
+			}`))
+			return
+		}
+		if r.URL.Path == "/upload_params" {
+			if err := r.ParseMultipartForm(10 << 20); err == nil {
+				receivedKey = r.FormValue("key")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"id": 555, "display_name": "params_test.txt", "size": 14}`))
+			return
+		}
+	}))
+	defer server.Close()
+	uploadURL = server.URL + "/upload_params"
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	file, err := service.UploadToCourse(context.Background(), 700, testFile, &UploadParams{
+		OnDuplicate: "rename",
+	})
+	if err != nil {
+		t.Fatalf("UploadToCourse with params failed: %v", err)
+	}
+	if file.ID != 555 {
+		t.Errorf("Expected file ID 555, got %d", file.ID)
+	}
+	if receivedKey != "uploads/file-key" {
+		t.Errorf("Expected upload_params.key to be forwarded, got %q", receivedKey)
+	}
+}
+
+// TestFilesService_Upload_FileNotFound verifies the error when the source file doesn't exist.
+func TestFilesService_Upload_FileNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	_, err = service.UploadToCourse(context.Background(), 800, "/nonexistent/path/file.txt", &UploadParams{})
+	if err == nil {
+		t.Fatal("expected error when source file doesn't exist")
+	}
+}
+
+// TestFilesService_Download_FileNotFound verifies the error when the download URL is empty.
+func TestFilesService_Download_NoURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path == "/api/v1/files/999" {
+			// File exists but has no download URL.
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"id": 999, "display_name": "no_url.txt", "url": ""}`))
+			return
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	tempDir := t.TempDir()
+	err = service.Download(context.Background(), 999, filepath.Join(tempDir, "out.txt"))
+	if err == nil {
+		t.Fatal("expected error when file has no download URL")
+	}
+	if !strings.Contains(err.Error(), "no download URL") {
+		t.Errorf("expected 'no download URL' in error, got: %v", err)
+	}
+}
+
+// TestFilesService_Download_HTTPError verifies the error when the HTTP download fails.
+func TestFilesService_Download_HTTPError(t *testing.T) {
+	var downloadURL string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path == "/api/v1/files/111" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"id": 111, "display_name": "fail.txt", "url": "` + downloadURL + `"}`))
+			return
+		}
+		if r.URL.Path == "/download_fail" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}))
+	defer server.Close()
+	downloadURL = server.URL + "/download_fail"
+
+	client, err := NewClient(ClientConfig{
+		BaseURL:        server.URL,
+		Token:          "test-token",
+		RequestsPerSec: 10,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	service := NewFilesService(client)
+	tempDir := t.TempDir()
+	err = service.Download(context.Background(), 111, filepath.Join(tempDir, "out.txt"))
+	if err == nil {
+		t.Fatal("expected error when download returns 403")
+	}
+}

@@ -422,16 +422,15 @@ func runOverridesDelete(ctx context.Context, client *api.Client, opts *options.O
 	})
 
 	// Confirmation
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete override %d for assignment %d.\n", opts.OverrideID, opts.AssignmentID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			logger.LogCommandComplete(ctx, "overrides.delete", 0)
-			return nil
-		}
+	ok, confirmErr := confirmDeleteWithDetails("override", opts.OverrideID, map[string]interface{}{
+		"assignment_id": opts.AssignmentID,
+	}, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		logger.LogCommandComplete(ctx, "overrides.delete", 0)
+		return nil
 	}
 
 	service := api.NewOverridesService(client)

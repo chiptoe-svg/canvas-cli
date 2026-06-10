@@ -323,9 +323,7 @@ func TestCheckPermissions_WithConfigDir(t *testing.T) {
 	os.MkdirAll(configDir, 0700)
 
 	// Temporarily change HOME
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempDir)
 
 	doctor := New(nil, nil)
 	ctx := context.Background()
@@ -344,9 +342,7 @@ func TestCheckPermissions_InsecurePerms(t *testing.T) {
 	os.MkdirAll(configDir, 0755) // Insecure: world-readable
 
 	// Temporarily change HOME
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempDir)
 
 	doctor := New(nil, nil)
 	ctx := context.Background()
@@ -372,9 +368,7 @@ func TestCheckPermissions_NoConfigDir(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Temporarily change HOME
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempDir)
 
 	doctor := New(nil, nil)
 	ctx := context.Background()
@@ -658,9 +652,7 @@ func TestCheckDiskSpace_MkdirError(t *testing.T) {
 	os.WriteFile(cacheFile, []byte("blocking file"), 0600)
 
 	// Temporarily change HOME
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempDir)
 
 	doctor := New(nil, nil)
 	ctx := context.Background()
@@ -688,9 +680,7 @@ func TestCheckPermissions_SecurePerms(t *testing.T) {
 	os.MkdirAll(configDir, 0700)
 
 	// Temporarily change HOME
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir)
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", tempDir)
 
 	doctor := New(nil, nil)
 	ctx := context.Background()
@@ -739,9 +729,7 @@ func TestCheckDiskSpace_HomeDirError(t *testing.T) {
 	}
 
 	// Temporarily set HOME to empty to trigger UserHomeDir error
-	oldHome := os.Getenv("HOME")
-	os.Unsetenv("HOME")
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", "")
 
 	doctor := New(nil, nil)
 	ctx := context.Background()
@@ -764,9 +752,7 @@ func TestCheckPermissions_HomeDirError(t *testing.T) {
 	}
 
 	// Temporarily set HOME to empty to trigger UserHomeDir error
-	oldHome := os.Getenv("HOME")
-	os.Unsetenv("HOME")
-	defer os.Setenv("HOME", oldHome)
+	t.Setenv("HOME", "")
 
 	doctor := New(nil, nil)
 	ctx := context.Background()

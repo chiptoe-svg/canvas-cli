@@ -748,15 +748,12 @@ func runConversationsDelete(ctx context.Context, client *api.Client, opts *optio
 		"force":           opts.Force,
 	})
 
-	if !opts.Force {
-		fmt.Printf("WARNING: This will permanently delete conversation %d.\n", opts.ConversationID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			return nil
-		}
+	ok, confirmErr := confirmDelete("conversation", opts.ConversationID, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
 	}
 
 	service := api.NewConversationsService(client)

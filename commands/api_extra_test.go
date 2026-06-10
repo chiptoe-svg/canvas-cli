@@ -15,30 +15,22 @@ func prependAPI(args []string) []string {
 	return append([]string{"api"}, args...)
 }
 
-// runAPICmdTest zeroes the global api flag vars, then runs the case through the
-// shared rootCmd. The api command reads package-global flags, and reusing rootCmd
-// across executions leaves them dirty (bool flags stay set when not re-passed,
-// StringArray flags append). Zeroing per subtest guarantees each test sees only
-// its own flags, which is what makes these tests deterministic in CI.
+// runAPICmdTest replaces the api subcommand with a fresh instance before each
+// test case, then runs the case through the shared rootCmd.
+//
+// Cobra does not reset flag values (string/StringArray) between Execute() calls
+// when the same *cobra.Command is reused.  Replacing the registered api command
+// with a freshly-constructed one guarantees each test sees only its own flags,
+// which is what makes these tests deterministic in CI.
 func runAPICmdTest(t *testing.T, tc cmdtest.CommandTestCase) {
 	t.Helper()
 
-	// Snapshot originals and restore them after the test (hygiene for any
-	// non-api test that might inspect these globals later).
-	origData, origDataFile := apiData, apiDataFile
-	origQuery, origHeaders := apiQuery, apiHeaders
-	origPaginate, origRaw, origShow := apiPaginate, apiRawOutput, apiShowHeaders
-	t.Cleanup(func() {
-		apiData, apiDataFile = origData, origDataFile
-		apiQuery, apiHeaders = origQuery, origHeaders
-		apiPaginate, apiRawOutput, apiShowHeaders = origPaginate, origRaw, origShow
-	})
-
-	// Zero everything so this test is unaffected by state left on rootCmd by a
-	// previous Execute().
-	apiData, apiDataFile = "", ""
-	apiQuery, apiHeaders = nil, nil
-	apiPaginate, apiRawOutput, apiShowHeaders = false, false, false
+	// Remove the stale api subcommand (if any) and register a fresh one.
+	apiSub, _, _ := rootCmd.Find([]string{"api"})
+	if apiSub != nil && apiSub != rootCmd {
+		rootCmd.RemoveCommand(apiSub)
+	}
+	rootCmd.AddCommand(newAPICmd())
 
 	cmdtest.RunCommandTest(t, rootCmd, tc)
 }

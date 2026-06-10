@@ -33,8 +33,9 @@ func New(rootCmd *cobra.Command) *REPL {
 	configDir, _ := config.GetConfigDir()
 	historyFile := filepath.Join(configDir, "history")
 
-	// Ensure directory exists (best-effort, ignore errors)
-	_ = os.MkdirAll(filepath.Dir(historyFile), 0755)
+	// Ensure directory exists with owner-only permissions (best-effort, ignore errors).
+	// History files may contain sensitive command arguments; restrict to owner only.
+	_ = os.MkdirAll(filepath.Dir(historyFile), 0700)
 
 	return &REPL{
 		rootCmd:     rootCmd,

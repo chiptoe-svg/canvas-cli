@@ -1,157 +1,138 @@
 # Technical Debt Tracking
 
-This document tracks known technical debt in the Canvas CLI project. All items should have corresponding GitHub issues.
+This document tracks known technical debt in the Canvas CLI project.
 
-**Last Updated:** 2026-01-18
-**Status:** Remediation Phase Complete - All CRITICAL and IMPORTANT items resolved
+**Last Updated:** 2026-06-10
+**Status:** Updated after the June 2026 deep review. Earlier claims in this file
+("0 global flag variables", "all 34 commands migrated") were inaccurate and
+have been removed.
 
 ---
 
 ## Active Technical Debt
 
+### Important
+
+1. **Root-Level Global Flag Variables**
+   - **Problem:** `commands/root.go` declares 13 package-level persistent-flag
+     globals (`verbose`, `quiet`, `dryRun`, `noCache`, `outputFormat`,
+     `filterText`, etc.) read roughly 380 times across the `commands/` package.
+   - **Impact:** Commands share mutable global state; hard to test in
+     isolation, unsafe for concurrent execution.
+   - **Status:** In Progress — a concurrent work stream is migrating these to
+     the options-struct pattern.
+   - **Files/Areas:** `commands/root.go`, all command files reading the globals
+   - **Next Steps:** Finish migration to `commands/internal/options`.
+   - **Priority:** Important
+
+2. **Package-Level Flag Variables in Remaining Commands**
+   - **Problem:** `api`, `cache`, `sync`, `telemetry`, `repl`, `shell`, and
+     `completion` commands still use package-level command/flag variables
+     instead of the options-struct pattern documented in AGENTS.md.
+   - **Impact:** Same testability/state issues as item 1; the documented
+     pattern is not consistently applied.
+   - **Status:** In Progress (same migration work stream)
+   - **Files/Areas:** `commands/api.go`, `commands/cache.go`,
+     `commands/sync.go`, `commands/telemetry.go`, `commands/repl.go`,
+     `commands/shell.go`, `commands/completion.go`
+   - **Priority:** Important
+
+3. **Gosec Findings Backlog (CI is report-only)**
+   - **Problem:** gosec reports ~300 findings (mostly G104 unchecked errors,
+     e.g. `cmd.MarkFlagRequired(...)` return values). The CI gosec step runs
+     with `-no-fail` so it cannot gate merges.
+   - **Impact:** New security findings land unnoticed; the scanner provides no
+     enforcement.
+   - **Status:** Identified
+   - **Files/Areas:** `.github/workflows/ci.yml` (security job), `commands/`
+   - **Next Steps:** Burn down findings (handle or `#nosec`-annotate with
+     justification), then remove `-no-fail`.
+   - **Priority:** Important
+
 ### Nice to Have
 
-1. **Command Middleware Pattern**
-   - **Problem:** Some boilerplate still exists in commands (auth check, error formatting)
-   - **Impact:** Minor code duplication, opportunity for further DRY improvements
-   - **Status:** Planned
-   - **Next Steps:** Implement middleware chain pattern for cross-cutting concerns
-   - **Owner:** Unassigned
-   - **Effort:** ~10 hours
-   - **Priority:** Low - system is functional, this is an enhancement
+4. **Services Accept `*Client` Instead of `HTTPClient` Interface**
+   - **Problem:** Every service in `internal/api` takes the concrete `*Client`
+     (`func NewXxxService(client *Client)`) rather than the `HTTPClient`
+     interface.
+   - **Impact:** Services cannot be unit-tested with a lightweight fake; tests
+     spin up `httptest` servers instead.
+   - **Status:** Accepted trade-off — documented here. The `httptest`-based
+     test pattern works and exercises real HTTP behavior; switching to the
+     interface is a large mechanical change with modest payoff.
+   - **Files/Areas:** `internal/api/*.go`
+   - **Priority:** Low
 
-2. **Benchmark Test Suite**
-   - **Problem:** No automated performance regression detection
-   - **Impact:** Performance changes not caught until production
-   - **Status:** Planned
-   - **Next Steps:** Add benchmark tests for critical paths (GetAllPages, rate limiter, cache)
-   - **Owner:** Unassigned
-   - **Effort:** ~12 hours
-   - **Priority:** Low - performance is acceptable, this enables optimization work
-
-3. **Additional Platform Coverage in Auth Tests**
-   - **Problem:** Auth tests at 71.7% due to platform-specific code (macOS ioreg, Windows PowerShell)
-   - **Impact:** Some platform-specific code paths untested on Linux CI
+5. **Duplicated Test Client Construction**
+   - **Problem:** ~476 duplicated `NewClient(ClientConfig{...})` blocks across
+     `internal/api` tests.
+   - **Impact:** Boilerplate; config changes require mass edits.
    - **Status:** Identified
-   - **Next Steps:** Add macOS/Windows CI runners or accept current coverage
-   - **Owner:** Unassigned
-   - **Effort:** ~4 hours (CI setup) or Accept As-Is
-   - **Priority:** Low - core functionality tested, platform-specific code is defensive
+   - **Next Steps:** Add a shared `newTestClient(t, server)` helper and migrate
+     call sites incrementally.
+   - **Files/Areas:** `internal/api/*_test.go`
+   - **Priority:** Low
+
+6. **No Binary-Level Integration Tests**
+   - **Problem:** There are no end-to-end tests that exercise the compiled
+     `canvas` binary (no `test/integration` suite exists).
+   - **Impact:** Flag parsing, alias expansion, exit codes, and output routing
+     are only covered indirectly through package tests.
+   - **Status:** Identified
+   - **Next Steps:** Add a small suite that builds the binary and runs it
+     against a mock Canvas server.
+   - **Priority:** Low
+
+7. **No Golden-File Formatter Tests**
+   - **Problem:** `internal/output` formatters (table/JSON/YAML/CSV) are tested
+     with inline assertions, not golden files.
+   - **Impact:** Output regressions (column order, truncation, spacing) are
+     easy to miss and tedious to assert.
+   - **Status:** Identified
+   - **Files/Areas:** `internal/output/`
+   - **Priority:** Low
+
+8. **Two Command Test Frameworks Coexist**
+   - **Problem:** The older `commands/testing` framework coexists with the
+     newer `commands/internal/testing` package.
+   - **Impact:** Confusing for contributors; duplicate maintenance.
+   - **Status:** Planned
+   - **Next Steps:** Remove `commands/testing` in favor of
+     `commands/internal/testing` once no tests depend on it.
+   - **Priority:** Low
+
+9. **Benchmark Test Suite**
+   - **Problem:** No automated performance regression detection.
+   - **Impact:** Performance changes not caught until production.
+   - **Status:** Planned
+   - **Next Steps:** Add benchmark tests for critical paths (GetAllPages, rate
+     limiter, cache).
+   - **Priority:** Low
+
+10. **Additional Platform Coverage in Auth Tests**
+    - **Problem:** Platform-specific auth code (macOS ioreg, Windows
+      PowerShell) has limited coverage on Linux CI.
+    - **Impact:** Some platform-specific code paths only exercised by the
+      macOS/Windows legs of the CI matrix.
+    - **Status:** Identified
+    - **Priority:** Low
 
 ---
 
 ## Resolved Debt
 
-### Completed: January 2026 Remediation Sprint
-
-#### Critical Items (All Complete ✅)
-
-1. **✅ Command Layer Architecture Refactoring** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Created commands/internal/options/ package with option structs for all 34 commands
-   - **Result:** Eliminated global flag variables, commands now testable in isolation
-   - **Validation:** All 34 command files now import and use commands/internal/options
-   - **Impact:** Commands are now maintainable, testable, and support concurrent execution
-
-2. **✅ Command Integration Tests** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Created 34 integration test files using commands/internal/testing framework
-   - **Result:** Comprehensive test coverage for all major commands
-   - **Validation:** 34 *_test.go files in commands/ directory
-   - **Impact:** Regression protection in place, safe to refactor commands
-
-3. **✅ Structured Logging in Commands** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Created commands/internal/logging package, integrated into 33 commands
-   - **Result:** All commands now use structured logging with command start/complete/error tracking
-   - **Validation:** 33 command files import commands/internal/logging
-   - **Impact:** Full audit trail, easier debugging, production issue diagnosis
-
-#### Important Items (All Complete ✅)
-
-4. **✅ Auth Module Test Coverage** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Added comprehensive OAuth flow and encryption tests
-   - **Result:** Coverage increased from 48.9% → 71.7% (+22.8pp)
-   - **Validation:** ~800 lines of tests in oauth_flow_test.go and enhanced auth_test.go
-   - **Impact:** Security-critical code now well-tested
-   - **Note:** Remaining 8.3% is platform-specific code (macOS/Windows) untestable on Linux CI
-
-5. **✅ Technical Debt Tracking** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Created TECHNICAL_DEBT.md with tracking guidelines
-   - **Result:** All debt items documented and tracked
-   - **Validation:** This file
-   - **Impact:** Visibility into technical debt, informed prioritization
-
-6. **✅ Silent Error Handling Audit** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Audited codebase, upgraded slog.Debug to slog.Warn for user-visible errors
-   - **Result:** All 2 identified instances fixed (version cache operations)
-   - **Validation:** ERROR_HANDLING_AUDIT.md documents findings and fixes
-   - **Impact:** Users now see warnings for cache failures instead of silent failures
-
-7. **✅ Configuration Validation** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Created internal/config/validation.go with comprehensive validation
-   - **Result:** URLs, tokens, OAuth config validated on save
-   - **Validation:** validation.go and validation_test.go with 14,501 lines of tests
-   - **Impact:** Configuration errors caught early with helpful messages
-
-8. **✅ GetAllPages Optimization (Generics)** - RESOLVED
-   - **Completed:** 2026-01-18 (Previous session)
-   - **Solution:** Implemented generics-based GetAllPages to replace reflection
-   - **Result:** Type-safe, faster pagination without reflection
-   - **Impact:** ~50% performance improvement for large datasets
-
-9. **✅ Manual Testing Verification** - RESOLVED
-   - **Completed:** 2026-01-18
-   - **Solution:** Tested all major commands against acue-beta Canvas instance
-   - **Result:** 10 read commands + 2 write commands (with cleanup) verified working
-   - **Validation:** Commands tested: courses, users, modules, assignments, sections, discussions, pages, announcements, grades, rubrics
-   - **Impact:** Production readiness confirmed
-
----
-
-## Metrics Summary
-
-### Before Remediation (December 2025)
-```
-Test Coverage:
-- commands:       21.5%
-- internal/auth:  48.9%
-- internal/api:   63.5%
-
-Code Quality:
-- Largest command file:     915 lines (modules.go)
-- Global flag variables:    26 (modules.go alone!)
-- Command test files:       0
-- Structured logging:       0 commands
-- Silent error handling:    2 instances
-- Configuration validation: None
-```
-
-### After Remediation (January 2026)
-```
-Test Coverage:
-- commands:       75%+ (34 test files)
-- internal/auth:  71.7% (+22.8pp)
-- internal/api:   63.5% (maintained)
-
-Code Quality:
-- Command architecture:     ✅ All 34 commands use options pattern
-- Global flag variables:    ✅ 0 (eliminated)
-- Command test files:       ✅ 34 integration tests
-- Structured logging:       ✅ 33 commands instrumented
-- Silent error handling:    ✅ 0 instances (2/2 fixed)
-- Configuration validation: ✅ Complete with tests
-```
-
-### Improvement Summary
-- **Test Coverage:** +53.5pp for commands, +22.8pp for auth
-- **Code Architecture:** Transformed from monolithic to modular
-- **Logging:** From 0% to 97% of commands with structured logging
-- **Quality Gates:** Validation, error handling, comprehensive testing
+- **Structured logging and options pattern introduced** (January 2026) —
+  `commands/internal/options` and `commands/internal/logging` packages exist
+  and most resource commands use them. Note: the original claim that the
+  migration was *complete* was wrong; see Active items 1-2.
+- **Auth module test coverage** raised from 48.9% to 71.7% (January 2026).
+- **Configuration validation** added in `internal/config/validation.go`
+  (January 2026).
+- **GetAllPages generics optimization** replacing reflection (January 2026).
+- **Silent error handling audit** completed; the standalone
+  ERROR_HANDLING_AUDIT.md was removed in June 2026 as stale.
+- **Overall coverage** raised to ~82% with a CI coverage gate (June 2026,
+  #31).
 
 ---
 
@@ -170,9 +151,7 @@ N. **Short Title**
    - **Status:** Current state (Planned/In Progress/Blocked)
    - **Files/Areas:** Where is this located?
    - **Next Steps:** What needs to happen next?
-   - **Owner:** Who is responsible?
-   - **Effort:** Estimated hours
-   - **Issue:** #XXX (GitHub issue link)
+   - **Priority:** Critical/Important/Low
 ```
 
 ### Priorities
@@ -191,15 +170,5 @@ N. **Short Title**
 
 ---
 
-## Quarterly Review Schedule
-
-- **Q1 2026 (January):** ✅ Major remediation sprint complete
-- **Q2 2026 (April):** Review Nice to Have items, assess new debt
-- **Q3 2026 (July):** Mid-year review
-- **Q4 2026 (October):** Annual planning review
-
----
-
-**Current Status:** 🎉 **All CRITICAL and IMPORTANT debt items RESOLVED**
-**Next Review:** April 2026
+**Next Review:** September 2026
 **Maintained By:** Canvas CLI Development Team

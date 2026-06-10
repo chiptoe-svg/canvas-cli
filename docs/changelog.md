@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+This file is the single source of truth; `docs/changelog.md` is a copy kept in
+sync by `make docs-gen` and the documentation workflow.
+
+## [Unreleased]
+
+### Added
+
+- **Docker image**: releases now publish `ghcr.io/jjuanrivvera/canvas-cli` (distroless, multi-tag)
+- **Signed releases**: checksums are signed keylessly with cosign (Sigstore) and archives ship SBOMs
+- **AI agent skill**: bundled skill for Claude Code, Cursor, and other agents — install via `canvas skills install`, `npx skills add jjuanrivvera/canvas-cli`, or the Claude Code plugin marketplace
+- Confirmation prompt and `--force` flag for `submissions delete-comment`
+- `--json-file`/`--csv-file` input flags (the ambiguous `--json`/`--csv` input flags are deprecated but still work)
+- `doctor` now honors the global `-o json` output flag
+
+### Fixed
+
+- **Batch assignment sync no longer panics** on courses with assignments
+- Retried POST/PUT requests resend the full body instead of an empty one
+- `assignments bulk-update` sends `assignment_ids` in a format Canvas accepts
+- User assignments endpoint requested the wrong path (user ID was used as course ID)
+- `bulk-grade` progress ID is now parsed from the Canvas response
+- Ctrl+C now cancels in-flight course validation and sync operations
+- Rate-limit bookkeeping no longer races when quota is updated concurrently
+- DELETE responses are drained and closed, restoring HTTP connection reuse
+- Pagination is guarded against servers that repeat the same `next` link
+- 429 responses now honor the `Retry-After` header
+- File upload confirmation works for OAuth (auto-refreshed) sessions
+
+### Security
+
+- Static API tokens from `auth token set` are stored in the OS keyring/encrypted store instead of plaintext `config.yaml` (existing configs keep working)
+- File downloads sanitize server-supplied filenames (path-traversal protection)
+- Self-update aborts when a release is missing `checksums.txt` (fail closed)
+- `http://` instance URLs are rejected for non-loopback hosts
+- Webhook listener defaults to `127.0.0.1` and warns when signature verification is not configured
+- OAuth callback server binds to loopback only
+- Config and REPL history directories are created with `0700` permissions
+
+### Changed
+
+- Delete confirmations are unified: all destructive commands accept `y`/`yes` and honor `--dry-run`
+- `shell` is now an alias of `repl` (single REPL command)
+- Remaining commands migrated to the options-struct pattern (`api`, `cache`, `sync`, `telemetry`, `repl`, `completion`)
+- CI pins Go via `go.mod`, blocks on `govulncheck`, and pins security scanners
+- A warning is printed when `CANVAS_URL`/`CANVAS_TOKEN` env vars override an explicit `--instance` flag
+
+### Planned
+- Canvas Studio integration
+- GraphQL API support
+
+## [1.8.1] - 2026-06-09
+
+### Changed
+
+- **Test Quality**: Raised overall test coverage to ~82% and added a CI coverage gate (#31)
+- **CI Stability**: Stabilized cross-platform CI runs (ubuntu/macos/windows) (#31)
+
+### Documentation
+
+- Improved MCP setup and auth/environment documentation (#29)
+- Added CI, pkg.go.dev, codecov, and Ask DeepWiki badges (#30)
+
 ## [1.8.0] - 2026-04-29
 
 ### Added
@@ -68,6 +130,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved CLI UX inspired by modern tools (gh, kubectl, stripe-cli)
 - Documentation updated with new feature guides
 
+## [1.6.1] - 2026-01-19
+
+### Fixed
+
+- Changed command lifecycle logs to DEBUG level to keep normal output clean
+
+## [1.6.0] - 2026-01-19
+
+### Added
+
+- **Command Infrastructure Packages** (#18)
+  - `commands/internal/options` package with an option-struct validation framework
+  - `commands/internal/logging` package with structured command logging
+  - `commands/internal/testing` package for command integration tests
+
+### Changed
+
+- Began migrating commands from package-level flag variables to the options-struct pattern
+
+## [1.5.3] - 2026-01-15
+
+### Added
+
+- **Default Account ID**: Configure a default account so account-scoped commands don't require `--account-id` every time (#17)
+- **Global `--limit` Flag**: Limit the number of results for any list operation (#17)
+
+### Fixed
+
+- Assorted Canvas API request fixes (#17)
+
 ## [1.5.2] - 2026-01-14
 
 ### Added
@@ -87,135 +179,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Token authentication takes precedence over OAuth when both are configured for an instance
 - Improved error messages for authentication failures
 
-## [1.0.0] - 2026-01-09
+## [1.5.1] - 2026-01-14
 
-### Added
+### Fixed
 
-#### Core Functionality
-- OAuth 2.0 authentication with PKCE support
-- Local callback server mode for OAuth flow
-- Out-of-band (OOB) OAuth flow fallback for SSH/remote environments
-- Secure token storage using system keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service)
-- Encrypted file storage fallback with AES-256-GCM encryption
-- User-derived encryption keys from machine ID + username
-- Multi-instance configuration management
-- Canvas version detection and compatibility handling
-
-#### API Client Features
-- Comprehensive Canvas LMS API client
-- Adaptive rate limiting (5 req/sec → 2 req/sec → 1 req/sec based on quota)
-- Automatic pagination handling for large result sets
-- Exponential backoff retry logic with 3 max retries
-- Data normalization for consistent API responses
-- Custom error types with helpful suggestions and documentation links
-- Request/response logging with --debug flag
-
-#### Commands - Authentication
-- `canvas auth login` - OAuth 2.0 authentication flow
-- `canvas auth logout` - Logout and clear credentials
-- `canvas auth status` - Check authentication status
-
-#### Commands - Courses
-- `canvas courses list` - List courses with filtering options
-- `canvas courses get` - Get course details with includes
-- `canvas courses users` - List users in a course
-
-#### Commands - Assignments
-- `canvas assignments list` - List assignments in a course
-- `canvas assignments get` - Get assignment details
-- `canvas assignments create` - Create new assignment with full parameter support
-- `canvas assignments update` - Update assignment with pointer types for optional fields
-- `canvas assignments bulk-update` - Bulk update multiple assignments
-
-#### Commands - Users
-- `canvas users me` - Get current authenticated user
-- `canvas users list` - List users with filtering
-- `canvas users get` - Get user details
-- `canvas users create` - Create new user with pseudonym and communication channel
-- `canvas users update` - Update user with avatar support
-
-#### Commands - Enrollments
-- `canvas enrollments list` - List enrollments in course/section
-- `canvas enrollments create` - Create new enrollment
-
-#### Commands - Submissions
-- `canvas submissions list` - List submissions for assignment
-- `canvas submissions get` - Get submission details
-- `canvas submissions grade` - Grade individual submission
-- `canvas submissions bulk-grade` - Bulk grade from CSV
-
-#### Commands - Files
-- `canvas files upload` - Upload files with progress tracking
-- `canvas files download` - Download files with resumable support
-
-#### Advanced Features
-- **REPL Mode**: Interactive shell with command history, tab completion, and syntax highlighting
-- **Smart Caching**: TTL-based caching (courses: 15min, users: 5min, assignments: 10min)
-- **Batch Operations**: Concurrent processing with progress bars and error collection
-- **Webhook Listener**: Real-time webhook event handling with signature verification
-- **Diagnostics**: `canvas doctor` command for health checks and troubleshooting
-- **Telemetry**: Opt-in anonymous usage tracking for feature prioritization
-
-#### Output Formats
-- Table format (ASCII tables with proper truncation)
-- JSON format (structured output)
-- YAML format (human-readable)
-- CSV format (for data export)
-
-#### Developer Features
-- Comprehensive test suite with 90% coverage
-- HTTP request/response recording for tests
-- Mock Canvas API server for testing
-- Synthetic test data (no PII in test fixtures)
-- Race condition detection in tests
-- CI/CD ready with stable exit codes
-
-### Testing
-- 90% test coverage for core functionality (89.9% weighted average)
-- 8 out of 9 packages at 90%+ coverage
-- All tests passing (100% pass rate)
-- No race conditions detected
-- Comprehensive parameter testing for all API operations
-- Edge case coverage for error scenarios
-- Mock HTTP server testing with httptest
-
-### Security
-- OAuth 2.0 with PKCE (Proof Key for Code Exchange)
-- Secure credential storage with system keyring integration
-- AES-256-GCM encryption for file-based token storage
-- User-derived encryption keys (never stored)
-- Webhook signature verification with HMAC-SHA256
-- No hardcoded credentials
-- No sensitive data in logs or cache
-
-### Performance
-- Adaptive rate limiting respects Canvas API quotas
-- Smart caching reduces redundant API calls
-- Concurrent batch operations (5 concurrent by default)
-- Automatic pagination for large datasets
-- Efficient memory usage (<100MB for 10,000 cached items)
-- Progress indicators for operations >3 seconds
-
-### Documentation
-- Comprehensive README with quick start guide
-- Architecture documentation in docs/development/architecture.md
-- CONTRIBUTING.md with development guidelines
-- PROJECT_STATUS.md tracking implementation progress
-- COVERAGE_REPORT.md with detailed test coverage metrics
-- Inline code documentation with examples
-
-### Infrastructure
-- Go 1.21+ support with modern stdlib features (log/slog)
-- Cross-platform support (macOS, Linux, Windows)
-- Cobra CLI framework for command structure
-- Viper for configuration management
-- Standard Go project layout
-
-## [Unreleased]
-
-### Planned
-- Canvas Studio integration
-- GraphQL API support
+- Wrapped command examples in code blocks in the generated CLI reference documentation
 
 ## [1.5.0] - 2026-01-14
 
@@ -458,6 +426,46 @@ This release adds comprehensive write command support across all Canvas API reso
 - **Pre-commit Linting**: Added golangci-lint to pre-commit hook for early lint error detection
 - **Documentation Accuracy**: Fixed documentation to match actual CLI behavior (sync command syntax, environment variables, flags)
 
+## [1.3.1] - 2026-01-13
+
+### Fixed
+
+- Corrected ldflags variable names so released binaries report the right version (`main.Version`, `main.Commit`, `main.BuildDate`)
+
+## [1.3.0] - 2026-01-13
+
+### Added
+
+- **GoReleaser Configuration**: Automated multi-platform release builds with checksums (#7)
+- **Homebrew Tap**: Install via `brew tap jjuanrivvera/canvas-cli && brew install canvas-cli` (#7)
+
+### Fixed
+
+- Corrected import grouping for the goimports linter
+- Removed broken SPECIFICATION.md link from the changelog
+- Removed conflicting `goreleaser.yml` config file
+
+## [1.2.1] - 2026-01-13
+
+### Fixed
+
+- Addressed lint and security issues from PR review
+- Resolved all testing report findings
+
+## [1.2.0] - 2026-01-11
+
+### Added
+
+- **Input Validation**: Validation for command inputs with helpful error messages
+- **Enhanced Linting**: Added errcheck and unconvert linters with proper exclusions
+- **Pre-commit Hook**: Added `.githooks/pre-commit` running fmt, vet, lint, and short tests (`make setup-hooks`)
+- Implemented missing features and resolved open issues from the initial release
+
+### Documentation
+
+- Clarified branching strategy and release process
+- Updated AGENTS.md and CONTRIBUTING.md with hooks info
+
 ## [1.1.0] - 2026-01-10
 
 ### Added
@@ -531,26 +539,143 @@ This release adds comprehensive write command support across all Canvas API reso
 - Tests for Modules, Pages, Discussions, Announcements, Calendar, and Planner
 - All tests passing with consistent patterns
 
-## Version History
+## [1.0.0] - 2026-01-09
 
-- **1.5.0** (2026-01-14) - Major feature release
-  - 70+ new write commands across all Canvas API resources
-  - JWT verification for Canvas Data Services webhooks
-  - Comprehensive UX improvements and bug fixes
-- **1.4.0** (2026-01-13) - Feature release
-  - Automatic OAuth token refresh
-  - Instance config lookup for auth login
-  - Improved table output with verbose mode
-- **1.1.0** (2026-01-10) - Feature release
-  - Modules, Pages, Discussions, Announcements, Calendar, Planner commands
-  - Comprehensive API coverage for course content management
-- **1.0.0** (2026-01-09) - Initial production release
-  - All v1.0 scope features complete
-  - 90% test coverage achieved
-  - Production-ready and stable
+### Added
+
+#### Core Functionality
+- OAuth 2.0 authentication with PKCE support
+- Local callback server mode for OAuth flow
+- Out-of-band (OOB) OAuth flow fallback for SSH/remote environments
+- Secure token storage using system keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service)
+- Encrypted file storage fallback with AES-256-GCM encryption
+- User-derived encryption keys from machine ID + username
+- Multi-instance configuration management
+- Canvas version detection and compatibility handling
+
+#### API Client Features
+- Comprehensive Canvas LMS API client
+- Adaptive rate limiting (5 req/sec → 2 req/sec → 1 req/sec based on quota)
+- Automatic pagination handling for large result sets
+- Exponential backoff retry logic with 3 max retries
+- Data normalization for consistent API responses
+- Custom error types with helpful suggestions and documentation links
+- Request/response logging with --debug flag
+
+#### Commands - Authentication
+- `canvas auth login` - OAuth 2.0 authentication flow
+- `canvas auth logout` - Logout and clear credentials
+- `canvas auth status` - Check authentication status
+
+#### Commands - Courses
+- `canvas courses list` - List courses with filtering options
+- `canvas courses get` - Get course details with includes
+- `canvas courses users` - List users in a course
+
+#### Commands - Assignments
+- `canvas assignments list` - List assignments in a course
+- `canvas assignments get` - Get assignment details
+- `canvas assignments create` - Create new assignment with full parameter support
+- `canvas assignments update` - Update assignment with pointer types for optional fields
+- `canvas assignments bulk-update` - Bulk update multiple assignments
+
+#### Commands - Users
+- `canvas users me` - Get current authenticated user
+- `canvas users list` - List users with filtering
+- `canvas users get` - Get user details
+- `canvas users create` - Create new user with pseudonym and communication channel
+- `canvas users update` - Update user with avatar support
+
+#### Commands - Enrollments
+- `canvas enrollments list` - List enrollments in course/section
+- `canvas enrollments create` - Create new enrollment
+
+#### Commands - Submissions
+- `canvas submissions list` - List submissions for assignment
+- `canvas submissions get` - Get submission details
+- `canvas submissions grade` - Grade individual submission
+- `canvas submissions bulk-grade` - Bulk grade from CSV
+
+#### Commands - Files
+- `canvas files upload` - Upload files with progress tracking
+- `canvas files download` - Download files with resumable support
+
+#### Advanced Features
+- **REPL Mode**: Interactive shell with command history, tab completion, and syntax highlighting
+- **Smart Caching**: TTL-based caching (courses: 15min, users: 5min, assignments: 10min)
+- **Batch Operations**: Concurrent processing with progress bars and error collection
+- **Webhook Listener**: Real-time webhook event handling with signature verification
+- **Diagnostics**: `canvas doctor` command for health checks and troubleshooting
+- **Telemetry**: Opt-in anonymous usage tracking for feature prioritization
+
+#### Output Formats
+- Table format (ASCII tables with proper truncation)
+- JSON format (structured output)
+- YAML format (human-readable)
+- CSV format (for data export)
+
+#### Developer Features
+- Comprehensive test suite with 90% coverage
+- HTTP request/response recording for tests
+- Mock Canvas API server for testing
+- Synthetic test data (no PII in test fixtures)
+- Race condition detection in tests
+- CI/CD ready with stable exit codes
+
+### Testing
+- 90% test coverage for core functionality (89.9% weighted average)
+- 8 out of 9 packages at 90%+ coverage
+- All tests passing (100% pass rate)
+- No race conditions detected
+- Comprehensive parameter testing for all API operations
+- Edge case coverage for error scenarios
+- Mock HTTP server testing with httptest
+
+### Security
+- OAuth 2.0 with PKCE (Proof Key for Code Exchange)
+- Secure credential storage with system keyring integration
+- AES-256-GCM encryption for file-based token storage
+- User-derived encryption keys (never stored)
+- Webhook signature verification with HMAC-SHA256
+- No hardcoded credentials
+- No sensitive data in logs or cache
+
+### Performance
+- Adaptive rate limiting respects Canvas API quotas
+- Smart caching reduces redundant API calls
+- Concurrent batch operations (5 concurrent by default)
+- Automatic pagination for large datasets
+- Efficient memory usage (<100MB for 10,000 cached items)
+- Progress indicators for operations >3 seconds
+
+### Documentation
+- Comprehensive README with quick start guide
+- Architecture documentation in docs/development/architecture.md
+- CONTRIBUTING.md with development guidelines
+- Inline code documentation with examples
+
+### Infrastructure
+- Cross-platform support (macOS, Linux, Windows)
+- Cobra CLI framework for command structure
+- Viper for configuration management
+- Standard Go project layout
 
 ---
 
-For more details on each change, see the [commit history](https://github.com/jjuanrivvera/canvas-cli/commits/main).
-
-For planned features and roadmap, see the [Unreleased](#unreleased) section above.
+[Unreleased]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.0...v1.8.1
+[1.8.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.6.1...v1.7.0
+[1.6.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.3...v1.6.0
+[1.5.3]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.3.1...v1.4.0
+[1.3.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/jjuanrivvera/canvas-cli/releases/tag/v1.0.0

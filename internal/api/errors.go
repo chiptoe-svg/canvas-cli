@@ -58,9 +58,28 @@ func (e *SoftError) Error() string {
 	return fmt.Sprintf("Canvas API error: %s (status: %s)", e.Message, e.Status)
 }
 
+// knownSoftErrorStatuses is the set of Canvas-documented status values that
+// appear in soft-error responses. Legitimate Canvas entities (courses,
+// assignments, etc.) may have their own status fields (e.g. "published",
+// "active", "deleted") that must NOT be misidentified as soft errors.
+var knownSoftErrorStatuses = map[string]bool{
+	"unauthorized":          true,
+	"forbidden":             true,
+	"not_found":             true,
+	"bad_request":           true,
+	"unprocessable_entity":  true,
+	"internal_server_error": true,
+	"service_unavailable":   true,
+	"maintenance":           true,
+}
+
 // checkSoftError inspects a response body for Canvas error patterns
 // that are returned with HTTP 200 status codes (e.g., maintenance mode).
 // Known patterns include: {"message":"...","status":"unauthorized"}
+//
+// To avoid false positives on legitimate entities that carry a "status" field
+// (e.g. {"status":"published"}), we only treat responses as soft errors when
+// the status value is a recognised Canvas error token AND a message is present.
 func checkSoftError(body []byte) error {
 	var probe struct {
 		Status  string `json:"status"`
@@ -71,8 +90,8 @@ func checkSoftError(body []byte) error {
 		return nil // not a JSON object — not a soft error
 	}
 
-	// Canvas uses "status" field with error-like values in soft error responses
-	if probe.Message != "" && probe.Status != "" && probe.Status != "ok" {
+	// Both fields must be present and the status must be a known error token.
+	if probe.Message != "" && knownSoftErrorStatuses[probe.Status] {
 		return &SoftError{
 			Status:  probe.Status,
 			Message: probe.Message,

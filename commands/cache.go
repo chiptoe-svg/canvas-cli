@@ -11,6 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	"github.com/jjuanrivvera/canvas-cli/internal/cache"
 	"github.com/jjuanrivvera/canvas-cli/internal/config"
 )
@@ -29,40 +31,43 @@ Examples:
   canvas cache clear --all              # Clear all cache entries`,
 }
 
-var cacheStatsCmd = &cobra.Command{
-	Use:   "stats",
-	Short: "Show cache statistics",
-	Long:  `Display statistics about the cache including size, entry counts, and hit rates.`,
-	RunE:  runCacheStats,
+func init() {
+	rootCmd.AddCommand(cacheCmd)
+	cacheCmd.AddCommand(newCacheStatsCmd())
+	cacheCmd.AddCommand(newCacheClearCmd())
 }
 
-var cacheClearCmd = &cobra.Command{
-	Use:   "clear",
-	Short: "Clear cache entries",
-	Long: `Clear cached responses to free up disk space or force fresh data.
+func newCacheStatsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "stats",
+		Short: "Show cache statistics",
+		Long:  `Display statistics about the cache including size, entry counts, and hit rates.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runCacheStats(cmd)
+		},
+	}
+}
+
+func newCacheClearCmd() *cobra.Command {
+	opts := &options.CacheClearOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "clear",
+		Short: "Clear cache entries",
+		Long: `Clear cached responses to free up disk space or force fresh data.
 
 By default, only expired entries are cleared. Use --all to clear everything.
 
 Examples:
   canvas cache clear          # Clear expired entries only
   canvas cache clear --all    # Clear all entries`,
-	RunE: runCacheClear,
-}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runCacheClear(cmd, opts)
+		},
+	}
 
-// Cache command flags
-var (
-	cacheClearAll bool
-)
-
-func init() {
-	rootCmd.AddCommand(cacheCmd)
-
-	// Add subcommands
-	cacheCmd.AddCommand(cacheStatsCmd)
-	cacheCmd.AddCommand(cacheClearCmd)
-
-	// Flags for clear command
-	cacheClearCmd.Flags().BoolVar(&cacheClearAll, "all", false, "Clear all cache entries (not just expired)")
+	cmd.Flags().BoolVar(&opts.All, "all", false, "Clear all cache entries (not just expired)")
+	return cmd
 }
 
 func getCacheDir() (string, error) {
@@ -73,7 +78,11 @@ func getCacheDir() (string, error) {
 	return filepath.Join(configDir, "cache"), nil
 }
 
-func runCacheStats(_ *cobra.Command, _ []string) error {
+func runCacheStats(cmd *cobra.Command) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "cache.stats", nil)
+
 	cacheDir, err := getCacheDir()
 	if err != nil {
 		return err
@@ -82,6 +91,7 @@ func runCacheStats(_ *cobra.Command, _ []string) error {
 	// Check if cache directory exists
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		fmt.Println("Cache is empty (no cache directory).")
+		logger.LogCommandComplete(ctx, "cache.stats", 0)
 		return nil
 	}
 
@@ -116,10 +126,17 @@ func runCacheStats(_ *cobra.Command, _ []string) error {
 		fmt.Printf("\nActive rate: %.1f%%\n", activePercent)
 	}
 
+	logger.LogCommandComplete(ctx, "cache.stats", stats.Total)
 	return nil
 }
 
-func runCacheClear(_ *cobra.Command, _ []string) error {
+func runCacheClear(cmd *cobra.Command, opts *options.CacheClearOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "cache.clear", map[string]interface{}{
+		"all": opts.All,
+	})
+
 	cacheDir, err := getCacheDir()
 	if err != nil {
 		return err
@@ -128,6 +145,7 @@ func runCacheClear(_ *cobra.Command, _ []string) error {
 	// Check if cache directory exists
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		fmt.Println("Cache is already empty.")
+		logger.LogCommandComplete(ctx, "cache.clear", 0)
 		return nil
 	}
 
@@ -136,7 +154,7 @@ func runCacheClear(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to open cache: %w", err)
 	}
 
-	if cacheClearAll {
+	if opts.All {
 		// Confirm clearing all
 		fmt.Print("Are you sure you want to clear ALL cache entries? [y/N]: ")
 		reader := bufio.NewReader(os.Stdin)
@@ -148,6 +166,7 @@ func runCacheClear(_ *cobra.Command, _ []string) error {
 		response = strings.TrimSpace(strings.ToLower(response))
 		if response != "y" && response != "yes" {
 			fmt.Println("Cancelled.")
+			logger.LogCommandComplete(ctx, "cache.clear", 0)
 			return nil
 		}
 
@@ -160,6 +179,7 @@ func runCacheClear(_ *cobra.Command, _ []string) error {
 		}
 
 		fmt.Printf("Cleared %d cache entries.\n", totalBefore)
+		logger.LogCommandComplete(ctx, "cache.clear", totalBefore)
 	} else {
 		// Clear only expired entries
 		stats, _ := diskCache.Stats()
@@ -167,6 +187,7 @@ func runCacheClear(_ *cobra.Command, _ []string) error {
 
 		if expiredBefore == 0 {
 			fmt.Println("No expired entries to clear.")
+			logger.LogCommandComplete(ctx, "cache.clear", 0)
 			return nil
 		}
 
@@ -176,6 +197,7 @@ func runCacheClear(_ *cobra.Command, _ []string) error {
 		}
 
 		fmt.Printf("Cleared %d expired cache entries.\n", expiredBefore)
+		logger.LogCommandComplete(ctx, "cache.clear", expiredBefore)
 	}
 
 	return nil
