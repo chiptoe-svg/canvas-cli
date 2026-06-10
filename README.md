@@ -52,9 +52,25 @@ Requires Go 1.25+ (or Go 1.24+ with automatic toolchain download).
 go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
 ```
 
+### Docker
+
+```bash
+docker run --rm ghcr.io/jjuanrivvera/canvas-cli:latest version
+```
+
+Images are published to GHCR for every release (`:latest`, `:v1`, and exact
+versions). Pass credentials via environment variables:
+
+```bash
+docker run --rm -e CANVAS_URL -e CANVAS_TOKEN ghcr.io/jjuanrivvera/canvas-cli:latest courses list
+```
+
 ### Binary Download
 
 Download from [GitHub Releases](https://github.com/jjuanrivvera/canvas-cli/releases).
+Release checksums are signed with [cosign](https://github.com/sigstore/cosign)
+(keyless) and archives ship with SBOMs — verification instructions are in the
+[`.goreleaser.yaml`](.goreleaser.yaml) `signs` section.
 
 ## Quick Start
 
@@ -145,6 +161,34 @@ Sensitive flags (`--show-token`, `--config`) are automatically excluded from MCP
 For full setup (Claude Desktop, Claude Code CLI, Cursor, VS Code, OpenCode, Codex), auth precedence, and troubleshooting, see:
 
 - [MCP Integration Guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/mcp/)
+
+## AI Agent Skill
+
+Canvas CLI ships an **agent skill** that teaches AI coding agents (Claude Code,
+Cursor, Codex, Gemini CLI, Windsurf, Copilot, …) how to drive it — commands,
+flags, safety rules (`--dry-run` previews), and common grading/content
+workflows. Install the skill across every agent you have with one command:
+
+```bash
+npx skills add jjuanrivvera/canvas-cli
+```
+
+Or use one of the built-in / native paths:
+
+```bash
+canvas skills install --global              # write the bundled skill (no Node needed)
+canvas skills install --agent cursor        # target a specific agent
+
+# Native Claude Code plugin:
+#   /plugin marketplace add jjuanrivvera/canvas-cli
+#   /plugin install canvas-cli@canvas
+```
+
+The skill wraps this binary, so install the CLI (above) and authenticate first.
+For structured tool access (Claude Desktop, etc.) use the MCP server mode
+described above — the two can coexist.
+
+See the [Agent Skill guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-skill/) for details.
 
 ## Contributing
 
