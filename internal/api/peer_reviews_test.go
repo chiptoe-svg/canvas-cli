@@ -27,14 +27,7 @@ func TestPeerReviewsService_List(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPeerReviewsService(client)
 	reviews, err := service.List(context.Background(), 1, 10, nil)
@@ -82,14 +75,7 @@ func TestPeerReviewsService_ListWithInclude(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPeerReviewsService(client)
 	opts := &ListPeerReviewsOptions{
@@ -127,14 +113,7 @@ func TestPeerReviewsService_ListForSubmission(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPeerReviewsService(client)
 	reviews, err := service.ListForSubmission(context.Background(), 1, 10, 500, nil)
@@ -175,14 +154,7 @@ func TestPeerReviewsService_Create(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPeerReviewsService(client)
 	params := &CreatePeerReviewParams{
@@ -223,17 +195,10 @@ func TestPeerReviewsService_Delete(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPeerReviewsService(client)
-	err = service.Delete(context.Background(), 1, 10, 500, 300)
+	err := service.Delete(context.Background(), 1, 10, 500, 300)
 	if err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}

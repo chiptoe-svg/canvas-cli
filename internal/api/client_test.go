@@ -108,14 +108,7 @@ func TestClient_GetVersion(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	// Initially version should be nil (not detected yet)
 	version := client.GetVersion()
@@ -137,14 +130,7 @@ func TestClient_SupportsFeature(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	// Test some feature checks
 	tests := []struct {
@@ -178,14 +164,7 @@ func TestClient_GetVersion_AfterDetection(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	// Trigger version detection by making a request
 	ctx := context.Background()
@@ -494,14 +473,7 @@ func TestClient_SetQuotaTotal(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	// Default quota
 	defaultQuota := client.GetQuotaTotal()
@@ -535,17 +507,10 @@ func TestClient_UserAgent_Default(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	// Make a request to trigger User-Agent header
-	_, err = client.Get(context.Background(), "/api/v1/courses")
+	_, err := client.Get(context.Background(), "/api/v1/courses")
 	if err != nil {
 		t.Fatalf("Request failed: %v", err)
 	}
@@ -615,18 +580,11 @@ func TestClient_GetJSON_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
 	var course Course
-	err = client.GetJSON(ctx, "/api/v1/courses/123", &course)
+	err := client.GetJSON(ctx, "/api/v1/courses/123", &course)
 	if err == nil {
 		t.Fatal("expected error for soft error response, got nil")
 	}
@@ -650,18 +608,11 @@ func TestClient_PostJSON_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
 	var result map[string]interface{}
-	err = client.PostJSON(ctx, "/api/v1/accounts/1/courses", map[string]string{"name": "test"}, &result)
+	err := client.PostJSON(ctx, "/api/v1/accounts/1/courses", map[string]string{"name": "test"}, &result)
 	if err == nil {
 		t.Fatal("expected error for soft error response, got nil")
 	}
@@ -685,18 +636,11 @@ func TestClient_PutJSON_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
 	var result map[string]interface{}
-	err = client.PutJSON(ctx, "/api/v1/courses/123", map[string]string{"name": "test"}, &result)
+	err := client.PutJSON(ctx, "/api/v1/courses/123", map[string]string{"name": "test"}, &result)
 	if err == nil {
 		t.Fatal("expected error for soft error response, got nil")
 	}
@@ -720,18 +664,11 @@ func TestClient_PostJSON_NilResult_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
 	// Pass nil result — the P2 fix ensures we still check for soft errors
-	err = client.PostJSON(ctx, "/api/v1/modules/1/items/2/mark_read", nil, nil)
+	err := client.PostJSON(ctx, "/api/v1/modules/1/items/2/mark_read", nil, nil)
 	if err == nil {
 		t.Fatal("expected error for soft error response with nil result, got nil")
 	}
@@ -755,17 +692,10 @@ func TestClient_PutJSON_NilResult_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
-	err = client.PutJSON(ctx, "/api/v1/some/endpoint", nil, nil)
+	err := client.PutJSON(ctx, "/api/v1/some/endpoint", nil, nil)
 	if err == nil {
 		t.Fatal("expected error for soft error response with nil result, got nil")
 	}
@@ -790,17 +720,10 @@ func TestClient_GetAllPagesGeneric_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
-	_, err = GetAllPagesGeneric[Course](client, ctx, "/api/v1/courses")
+	_, err := GetAllPagesGeneric[Course](client, ctx, "/api/v1/courses")
 	if err == nil {
 		t.Fatal("expected error for soft error response in paginated request, got nil")
 	}
@@ -824,18 +747,11 @@ func TestClient_GetAllPages_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	ctx := context.Background()
 	var courses []Course
-	err = client.GetAllPages(ctx, "/api/v1/courses", &courses)
+	err := client.GetAllPages(ctx, "/api/v1/courses", &courses)
 	if err == nil {
 		t.Fatal("expected error for soft error response in paginated request, got nil")
 	}

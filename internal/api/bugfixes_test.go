@@ -223,17 +223,10 @@ func TestSubmissionsService_BulkGrade_ProgressID(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
-	_, err = service.BulkGrade(context.Background(), 1, 1, &BulkGradeParams{
+	_, err := service.BulkGrade(context.Background(), 1, 1, &BulkGradeParams{
 		GradeData: map[int64]GradeData{10: {PostedGrade: "A"}},
 	})
 	if err != nil {

@@ -54,14 +54,7 @@ func TestFilesService_ListCourseFiles(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -103,14 +96,7 @@ func TestFilesService_ListCourseFiles_WithOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -150,14 +136,7 @@ func TestFilesService_ListFolderFiles(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -189,14 +168,7 @@ func TestFilesService_ListUserFiles(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -234,14 +206,7 @@ func TestFilesService_Get(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -278,19 +243,12 @@ func TestFilesService_Get_WithInclude(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
 
-	_, err = service.Get(ctx, 123, []string{"user"})
+	_, err := service.Get(ctx, 123, []string{"user"})
 	if err != nil {
 		t.Fatalf("Get failed: %v", err)
 	}
@@ -315,19 +273,12 @@ func TestFilesService_Delete(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
 
-	err = service.Delete(ctx, 123)
+	err := service.Delete(ctx, 123)
 	if err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
@@ -350,14 +301,7 @@ func TestFilesService_GetCourseQuota(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -392,14 +336,7 @@ func TestFilesService_GetUserQuota(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -447,14 +384,7 @@ func TestFilesService_Update(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -512,14 +442,7 @@ func TestFilesService_UploadToCourse(t *testing.T) {
 	defer server.Close()
 	uploadURL = server.URL + "/upload"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -570,14 +493,7 @@ func TestFilesService_Download(t *testing.T) {
 	defer server.Close()
 	downloadURL = server.URL + "/download/test.pdf"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -586,7 +502,7 @@ func TestFilesService_Download(t *testing.T) {
 	tempDir := t.TempDir()
 	destPath := filepath.Join(tempDir, "downloaded.pdf")
 
-	err = service.Download(ctx, 123, destPath)
+	err := service.Download(ctx, 123, destPath)
 	if err != nil {
 		t.Fatalf("Download failed: %v", err)
 	}
@@ -638,14 +554,7 @@ func TestFilesService_UploadToFolder(t *testing.T) {
 	defer server.Close()
 	uploadURL = server.URL + "/upload"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -700,14 +609,7 @@ func TestFilesService_UploadToUser(t *testing.T) {
 	defer server.Close()
 	uploadURL = server.URL + "/upload"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -777,14 +679,7 @@ func TestFilesService_Upload_WithRedirect(t *testing.T) {
 	uploadURL = server.URL + "/upload_storage"
 	confirmURL = server.URL + "/confirm"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	ctx := context.Background()
@@ -829,17 +724,10 @@ func TestFilesService_Upload_RedirectMissingLocation(t *testing.T) {
 	defer server.Close()
 	uploadURL = server.URL + "/upload_no_loc"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
-	_, err = service.UploadToCourse(context.Background(), 300, testFile, &UploadParams{})
+	_, err := service.UploadToCourse(context.Background(), 300, testFile, &UploadParams{})
 	if err == nil {
 		t.Fatal("expected error for redirect with no Location header")
 	}
@@ -885,17 +773,10 @@ func TestFilesService_Upload_ConfirmationFailure(t *testing.T) {
 	uploadURL = server.URL + "/upload_cf"
 	confirmURL = server.URL + "/confirm_fail"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
-	_, err = service.UploadToCourse(context.Background(), 400, testFile, &UploadParams{})
+	_, err := service.UploadToCourse(context.Background(), 400, testFile, &UploadParams{})
 	if err == nil {
 		t.Fatal("expected error when confirmation fails with 500")
 	}
@@ -976,17 +857,10 @@ func TestFilesService_Upload_Step2Failure(t *testing.T) {
 	defer server.Close()
 	uploadURL = server.URL + "/upload_fail"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
-	_, err = service.UploadToCourse(context.Background(), 600, testFile, &UploadParams{})
+	_, err := service.UploadToCourse(context.Background(), 600, testFile, &UploadParams{})
 	if err == nil {
 		t.Fatal("expected error when step 2 storage upload fails")
 	}
@@ -1035,14 +909,7 @@ func TestFilesService_Upload_WithUploadParams(t *testing.T) {
 	defer server.Close()
 	uploadURL = server.URL + "/upload_params"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	file, err := service.UploadToCourse(context.Background(), 700, testFile, &UploadParams{
@@ -1068,17 +935,10 @@ func TestFilesService_Upload_FileNotFound(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
-	_, err = service.UploadToCourse(context.Background(), 800, "/nonexistent/path/file.txt", &UploadParams{})
+	_, err := service.UploadToCourse(context.Background(), 800, "/nonexistent/path/file.txt", &UploadParams{})
 	if err == nil {
 		t.Fatal("expected error when source file doesn't exist")
 	}
@@ -1101,18 +961,11 @@ func TestFilesService_Download_NoURL(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	tempDir := t.TempDir()
-	err = service.Download(context.Background(), 999, filepath.Join(tempDir, "out.txt"))
+	err := service.Download(context.Background(), 999, filepath.Join(tempDir, "out.txt"))
 	if err == nil {
 		t.Fatal("expected error when file has no download URL")
 	}
@@ -1144,18 +997,11 @@ func TestFilesService_Download_HTTPError(t *testing.T) {
 	defer server.Close()
 	downloadURL = server.URL + "/download_fail"
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewFilesService(client)
 	tempDir := t.TempDir()
-	err = service.Download(context.Background(), 111, filepath.Join(tempDir, "out.txt"))
+	err := service.Download(context.Background(), 111, filepath.Join(tempDir, "out.txt"))
 	if err == nil {
 		t.Fatal("expected error when download returns 403")
 	}

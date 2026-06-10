@@ -63,17 +63,7 @@ have been removed.
    - **Files/Areas:** `internal/api/*.go`
    - **Priority:** Low
 
-5. **Duplicated Test Client Construction**
-   - **Problem:** ~476 duplicated `NewClient(ClientConfig{...})` blocks across
-     `internal/api` tests.
-   - **Impact:** Boilerplate; config changes require mass edits.
-   - **Status:** Identified
-   - **Next Steps:** Add a shared `newTestClient(t, server)` helper and migrate
-     call sites incrementally.
-   - **Files/Areas:** `internal/api/*_test.go`
-   - **Priority:** Low
-
-6. **No Binary-Level Integration Tests**
+5. **No Binary-Level Integration Tests**
    - **Problem:** There are no end-to-end tests that exercise the compiled
      `canvas` binary (no `test/integration` suite exists).
    - **Impact:** Flag parsing, alias expansion, exit codes, and output routing
@@ -83,7 +73,7 @@ have been removed.
      against a mock Canvas server.
    - **Priority:** Low
 
-7. **No Golden-File Formatter Tests**
+6. **No Golden-File Formatter Tests**
    - **Problem:** `internal/output` formatters (table/JSON/YAML/CSV) are tested
      with inline assertions, not golden files.
    - **Impact:** Output regressions (column order, truncation, spacing) are
@@ -92,7 +82,7 @@ have been removed.
    - **Files/Areas:** `internal/output/`
    - **Priority:** Low
 
-8. **Benchmark Test Suite**
+7. **Benchmark Test Suite**
    - **Problem:** No automated performance regression detection.
    - **Impact:** Performance changes not caught until production.
    - **Status:** Planned
@@ -100,7 +90,7 @@ have been removed.
      limiter, cache).
    - **Priority:** Low
 
-9. **Additional Platform Coverage in Auth Tests**
+8. **Additional Platform Coverage in Auth Tests**
     - **Problem:** Platform-specific auth code (macOS ioreg, Windows
       PowerShell) has limited coverage on Linux CI.
     - **Impact:** Some platform-specific code paths only exercised by the
@@ -127,6 +117,11 @@ have been removed.
 - **Misleading `commands/testing` framework removed** (June 2026) — the package
   never wired `getAPIClient()` to its mock server, making it a trap for
   contributors. Deleted in favour of `commands/internal/testing`.
+- **Duplicated test client construction deduped** (June 2026) — added
+  `newTestClient(t, serverURL)` helper in `internal/api/testhelpers_test.go`
+  and migrated 201 of the 201 identical `NewClient(ClientConfig{BaseURL:
+  server.URL, Token: "test-token", RequestsPerSec: 10})` blocks via a scripted
+  replacement.
 
 ---
 

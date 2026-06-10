@@ -40,14 +40,7 @@ func TestCalendarService_List(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
@@ -87,14 +80,7 @@ func TestCalendarService_ListWithOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
@@ -140,14 +126,7 @@ func TestCalendarService_Get(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
@@ -204,14 +183,7 @@ func TestCalendarService_Create(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
@@ -258,14 +230,7 @@ func TestCalendarService_Update(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
@@ -303,19 +268,12 @@ func TestCalendarService_Delete(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
 
-	err = service.Delete(ctx, 1, nil)
+	err := service.Delete(ctx, 1, nil)
 	if err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
@@ -336,14 +294,7 @@ func TestCalendarService_DeleteWithOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()
@@ -353,7 +304,7 @@ func TestCalendarService_DeleteWithOptions(t *testing.T) {
 		CancelReason: "Series cancelled",
 	}
 
-	err = service.Delete(ctx, 1, opts)
+	err := service.Delete(ctx, 1, opts)
 	if err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
@@ -385,14 +336,7 @@ func TestCalendarService_Reserve(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCalendarService(client)
 	ctx := context.Background()

@@ -37,14 +37,7 @@ func TestSubmissionsService_Get(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -106,14 +99,7 @@ func TestSubmissionsService_List(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -182,14 +168,7 @@ func TestSubmissionsService_ListMultiple(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -234,14 +213,7 @@ func TestSubmissionsService_Grade(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -290,14 +262,7 @@ func TestSubmissionsService_Submit(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -338,19 +303,12 @@ func TestSubmissionsService_MarkAsRead(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
 
-	err = service.MarkAsRead(ctx, 123, 456, 789)
+	err := service.MarkAsRead(ctx, 123, 456, 789)
 	if err != nil {
 		t.Fatalf("MarkAsRead failed: %v", err)
 	}
@@ -389,19 +347,12 @@ func TestSubmissionsService_MarkAsUnread(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
 
-	err = service.MarkAsUnread(ctx, 123, 456, 789)
+	err := service.MarkAsUnread(ctx, 123, 456, 789)
 	if err != nil {
 		t.Fatalf("MarkAsUnread failed: %v", err)
 	}
@@ -434,14 +385,7 @@ func TestSubmissionsService_InitiateFileUpload(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -490,14 +434,7 @@ func TestSubmissionsService_BulkGrade(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -513,7 +450,7 @@ func TestSubmissionsService_BulkGrade(t *testing.T) {
 		},
 	}
 
-	_, err = service.BulkGrade(ctx, 123, 456, params)
+	_, err := service.BulkGrade(ctx, 123, 456, params)
 	if err != nil {
 		t.Fatalf("BulkGrade failed: %v", err)
 	}
@@ -548,14 +485,7 @@ func TestSubmissionsService_Grade_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -605,14 +535,7 @@ func TestSubmissionsService_Grade_WithMediaComment(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -627,7 +550,7 @@ func TestSubmissionsService_Grade_WithMediaComment(t *testing.T) {
 		},
 	}
 
-	_, err = service.Grade(ctx, 123, 456, 789, params)
+	_, err := service.Grade(ctx, 123, 456, 789, params)
 	if err != nil {
 		t.Fatalf("Grade failed: %v", err)
 	}
@@ -673,14 +596,7 @@ func TestSubmissionsService_ListMultiple_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -744,14 +660,7 @@ func TestSubmissionsService_Get_WithIncludes(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -804,14 +713,7 @@ func TestSubmissionsService_List_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -861,14 +763,7 @@ func TestSubmissionsService_Submit_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -917,14 +812,7 @@ func TestSubmissionsService_Submit_OnlineURL(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -957,14 +845,7 @@ func TestSubmissionsService_BulkGrade_WithRubric(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
@@ -986,7 +867,7 @@ func TestSubmissionsService_BulkGrade_WithRubric(t *testing.T) {
 		},
 	}
 
-	_, err = service.BulkGrade(ctx, 123, 456, params)
+	_, err := service.BulkGrade(ctx, 123, 456, params)
 	if err != nil {
 		t.Fatalf("BulkGrade failed: %v", err)
 	}
@@ -1019,14 +900,7 @@ func TestSubmissionsService_DeleteComment(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSubmissionsService(client)
 	ctx := context.Background()
