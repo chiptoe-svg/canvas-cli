@@ -50,7 +50,7 @@ canvas webhook listen [flags]
 ### Options
 
 ```
-      --addr string            Server address to listen on (default ":8080")
+      --addr string            Server address to listen on (default binds only loopback; use 0.0.0.0:8080 to bind all interfaces) (default "127.0.0.1:8080")
       --canvas-data-services   Use Canvas Data Services JWK URL for JWT verification
       --events strings         Event types to handle (comma-separated)
   -h, --help                   help for listen

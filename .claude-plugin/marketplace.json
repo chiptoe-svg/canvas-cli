@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "canvas",
+  "owner": {
+    "name": "Juan Rivera",
+    "url": "https://github.com/jjuanrivvera"
+  },
+  "plugins": [
+    {
+      "name": "canvas-cli",
+      "source": "./",
+      "version": "1.9.0",
+      "description": "Manage Canvas LMS from the terminal — courses, assignments, submissions and grading, modules, pages, quizzes, users, enrollments, files, and analytics.",
+      "homepage": "https://github.com/jjuanrivvera/canvas-cli",
+      "keywords": ["canvas", "lms", "education", "instructure", "cli"]
+    }
+  ]
+}
