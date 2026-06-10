@@ -47,6 +47,13 @@ This starts a server on `http://localhost:8080` that:
 - Provides a health check at `/health`
 - Logs all incoming events to stdout
 
+!!! note "Loopback by default (since v1.9.0)"
+    The listener binds to `127.0.0.1` by default, so it is only reachable
+    from the local machine. To receive events from Canvas, expose it through
+    a tunnel (ngrok, Cloudflare Tunnel) or bind to `0.0.0.0` explicitly
+    behind a reverse proxy. The CLI prints a warning when started without
+    signature verification configured.
+
 ### Step 2: Test the Listener
 
 In another terminal, simulate an event:
@@ -72,7 +79,8 @@ canvas webhook listen --addr :9000
 # Listen on specific interface
 canvas webhook listen --addr 127.0.0.1:8080
 
-# Listen on all interfaces
+# Listen on all interfaces (exposes the listener to your network — configure
+# --secret or JWT verification before doing this)
 canvas webhook listen --addr 0.0.0.0:8080
 ```
 

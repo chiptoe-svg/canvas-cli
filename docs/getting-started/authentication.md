@@ -180,8 +180,16 @@ canvas courses list
 Canvas CLI checks for credentials in this order:
 
 1. **Environment variables** (CANVAS_URL + CANVAS_TOKEN) - highest priority
-2. **API Token** in config (set via `canvas auth token set`)
+2. **API Token** (set via `canvas auth token set`, stored in your system keyring)
 3. **OAuth tokens** (stored in system keychain, set via `canvas auth login`)
+
+!!! note "Token storage (since v1.9.0)"
+    `canvas auth token set` stores API tokens in the OS keyring (with an
+    encrypted-file fallback) instead of writing them to `config.yaml`.
+    Tokens saved in `config.yaml` by older versions keep working — re-run
+    `canvas auth token set` to migrate them to secure storage. When env
+    vars are set, an explicit `--instance` flag is ignored and a warning
+    is printed to stderr.
 
 **CI/CD Example (GitHub Actions):**
 

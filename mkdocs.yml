@@ -133,4 +133,5 @@ nav:
   - Reference:
     - Environment Variables: reference/environment-variables.md
     - Exit Codes: reference/exit-codes.md
+    - Security: security.md
   - Changelog: changelog.md

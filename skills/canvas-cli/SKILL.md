@@ -54,6 +54,10 @@ Details on multi-instance setup and precedence:
 7. **Mind the instance.** With multiple configured instances, verify which one
    is active (`canvas config list`) before writing; switch with
    `canvas config use <name>` or per-command `--instance`.
+8. **Prefer `canvas` over curl.** Never hand-roll `curl` against the Canvas
+   API when this CLI is available: it handles auth, pagination, rate limiting,
+   and retries for you. For endpoints without a dedicated command, use
+   `canvas api` (see the raw API escape hatch below).
 
 ## Workflow: auth → discover → act → verify
 
@@ -179,6 +183,18 @@ canvas api GET /api/v1/users -q "search_term=john" --paginate
 ```
 
 `--dry-run` works here too — use it to show the user the exact request.
+
+**Gotcha:** `canvas api` wraps the response in an envelope — the payload is
+under `.body`, not at the top level:
+
+```bash
+# {"body": [...actual data...], "status_code": 200}
+canvas api GET /api/v1/courses/123/tabs -o json | jq '.body'      # the data
+canvas api GET /api/v1/courses/123/tabs -o json | jq '.body[0]'  # first item
+```
+
+Dedicated commands (`canvas modules list`, …) return the data directly,
+without this wrapper.
 
 ## MCP server mode
 

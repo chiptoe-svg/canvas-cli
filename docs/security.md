@@ -2,11 +2,12 @@
 
 ## Supported Versions
 
+Only the latest minor release line receives security fixes.
+
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.1.x   | :white_check_mark: |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 1.9.x   | :white_check_mark: |
+| < 1.9   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -29,34 +30,61 @@ We take security seriously. If you discover a security vulnerability, please rep
 - **Fix Timeline**: Critical vulnerabilities will be addressed within 7 days
 - **Disclosure**: We will coordinate with you on public disclosure timing
 
+## Supply-Chain Security
+
+Since v1.9.0 every release is verifiable end to end:
+
+- **Signed checksums**: `checksums.txt` is signed keylessly with
+  [cosign](https://github.com/sigstore/cosign) (Sigstore) by the GitHub
+  Actions release workflow — see
+  [verification instructions](getting-started/installation.md#verifying-a-downloaded-release)
+- **SBOMs**: every archive ships a Software Bill of Materials (`*.sbom.json`)
+- **Fail-closed self-update**: `canvas update` refuses to install a binary
+  whose checksums cannot be downloaded and verified
+- **Distroless Docker image**: `ghcr.io/jjuanrivvera/canvas-cli` is built from
+  `distroless/static` and runs as a non-root user with no shell inside
+
 ## Security Best Practices
 
 ### Token Storage
 
-Canvas CLI stores authentication tokens securely:
+Canvas CLI stores authentication tokens securely — both OAuth tokens and
+static API tokens set via `canvas auth token set`:
 
 - **macOS**: Keychain (preferred)
 - **Linux**: Secret Service API or encrypted file
 - **Windows**: Windows Credential Manager or encrypted file
 
+Tokens written to `config.yaml` by versions before 1.9.0 keep working;
+re-run `canvas auth token set` to migrate them into secure storage.
+
+### Network Security
+
+- All API communication uses HTTPS — `http://` instance URLs are rejected
+  for anything but loopback hosts
+- The OAuth callback server binds to `127.0.0.1` only
+- The webhook listener defaults to `127.0.0.1:8080` and warns loudly when
+  started without signature verification configured
+
 ### Configuration Security
 
-- Never commit `.canvas-cli.yaml` or any file containing tokens
-- The CLI automatically adds sensitive files to `.gitignore`
-- Use environment variables (`CANVAS_TOKEN`) for CI/CD environments
+- Never commit `config.yaml` or any file containing tokens
+- Configuration and history directories are created with `0700` permissions
+- Use environment variables (`CANVAS_URL`/`CANVAS_TOKEN`) for CI/CD environments
 
 ### API Security
 
-- All API communication uses HTTPS
-- Tokens are never logged or displayed
-- Rate limiting prevents accidental API abuse
+- Tokens are never logged. They are redacted in `--dry-run` output unless you
+  explicitly opt in with the `--show-token` flag
+- Adaptive rate limiting prevents accidental API abuse
 
 ## Security Scanning
 
-This project uses automated security tools:
+This project uses automated security tools in CI:
 
+- **govulncheck**: Vulnerability scanning (blocking — a reachable
+  vulnerability fails the build)
 - **gosec**: Static analysis for security issues
-- **govulncheck**: Dependency vulnerability scanning
 - **Dependabot**: Automated dependency updates
 
 ## Dependencies

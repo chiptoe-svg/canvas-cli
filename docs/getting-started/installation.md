@@ -51,16 +51,17 @@ canvas version
 ### Method 3: Download Binary (All Platforms)
 
 1. Visit the [Releases page](https://github.com/jjuanrivvera/canvas-cli/releases)
-2. Download the appropriate binary for your platform:
-   - **macOS (Intel)**: `canvas_v1.0.0_Darwin_x86_64.tar.gz`
-   - **macOS (Apple Silicon)**: `canvas_v1.0.0_Darwin_arm64.tar.gz`
-   - **Linux (64-bit)**: `canvas_v1.0.0_Linux_x86_64.tar.gz`
-   - **Windows (64-bit)**: `canvas_v1.0.0_Windows_x86_64.zip`
+2. Download the appropriate archive for your platform:
+   - **macOS (Intel)**: `canvas-cli_darwin_x86_64.tar.gz`
+   - **macOS (Apple Silicon)**: `canvas-cli_darwin_arm64.tar.gz`
+   - **Linux (64-bit)**: `canvas-cli_linux_x86_64.tar.gz`
+   - **Linux (ARM64)**: `canvas-cli_linux_arm64.tar.gz`
+   - **Windows (64-bit)**: `canvas-cli_windows_x86_64.zip`
 
 3. Extract the archive:
    ```bash
    # macOS/Linux
-   tar -xzf canvas_*.tar.gz
+   tar -xzf canvas-cli_*.tar.gz
 
    # Windows - use your preferred extraction tool
    ```
@@ -77,6 +78,29 @@ canvas version
    ```bash
    canvas version
    ```
+
+#### Verifying a downloaded release
+
+Every release ships a `checksums.txt` signed keylessly with
+[cosign](https://github.com/sigstore/cosign), and each archive includes a
+Software Bill of Materials (`*.sbom.json`).
+
+```bash
+# 1. Verify the checksums file signature (requires cosign)
+cosign verify-blob \
+  --certificate checksums.txt.pem \
+  --signature checksums.txt.sig \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp 'https://github.com/jjuanrivvera/canvas-cli.*' \
+  checksums.txt
+
+# 2. Verify your archive against the checksums
+shasum -a 256 --check --ignore-missing checksums.txt
+```
+
+!!! tip "Self-update verifies too"
+    `canvas update` downloads the matching `checksums.txt` and refuses to
+    install a binary it cannot verify.
 
 ### Method 4: Docker
 
@@ -217,6 +241,13 @@ On macOS, you may need to allow the app in System Preferences:
 
 ## Updating
 
+### Self-Update (built in)
+
+```bash
+# Check for and install the latest release (checksum-verified)
+canvas update
+```
+
 ### Homebrew
 
 ```bash
@@ -276,3 +307,4 @@ After installation, continue with:
 - [Authentication Guide](authentication.md) - Set up OAuth
 - [Command Reference](../commands/index.md) - Learn available commands
 - [Tutorials](../tutorials/index.md) - See common use cases
+- [AI Agent Skill](../user-guide/agent-skill.md) - Let Claude Code, Cursor, and other agents drive the CLI

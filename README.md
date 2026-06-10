@@ -34,6 +34,8 @@
 - **Interactive Mode** - REPL shell with command history and completion
 - **265 Commands** - Full coverage of Canvas LMS resources
 - **MCP Server** - Use as an AI agent tool via Model Context Protocol
+- **AI Agent Skill** - Bundled skill for Claude Code, Cursor, and other agents (`canvas skills install`)
+- **Signed Releases** - cosign-signed checksums, SBOMs, and a distroless Docker image
 
 ## Installation
 
@@ -84,8 +86,8 @@ canvas courses list
 # Get assignments for a course
 canvas assignments list --course-id <course-id>
 
-# Start interactive mode
-canvas shell
+# Start interactive mode (alias: canvas shell)
+canvas repl
 ```
 
 ## Command Overview

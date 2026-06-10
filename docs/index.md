@@ -17,8 +17,11 @@
 - **Bulk Operations** - Grade submissions in bulk from CSV files
 - **Course Synchronization** - Sync content between Canvas instances
 - **Intelligent Caching** - Fast responses with automatic cache invalidation
-- **Secure Authentication** - OAuth 2.0 with PKCE flow
+- **Secure Authentication** - OAuth 2.0 with PKCE flow, tokens stored in your system keyring
 - **MCP Integration** - Use Canvas CLI as an MCP server for AI coding assistants
+- **AI Agent Skill** - Bundled skill that teaches Claude Code, Cursor, and other agents how to drive the CLI
+- **Docker Image** - Distroless image on GHCR for containerized and CI usage
+- **Signed Releases** - cosign-signed checksums and SBOMs on every release
 
 ## Quick Start
 
@@ -35,9 +38,16 @@
     go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
     ```
 
+=== "Docker"
+
+    ```bash
+    docker run --rm ghcr.io/jjuanrivvera/canvas-cli:latest version
+    ```
+
 === "Binary Download"
 
     Download the latest release from [GitHub Releases](https://github.com/jjuanrivvera/canvas-cli/releases).
+    Checksums are signed with cosign — see [Installation](getting-started/installation.md) for verification steps.
 
 Then authenticate with Canvas:
 
@@ -58,7 +68,7 @@ canvas assignments list --course-id 123
 canvas submissions grade 456 --course-id 123 --score 95
 
 # Bulk grade from CSV
-canvas submissions bulk-grade --course-id 123 --csv grades.csv
+canvas submissions bulk-grade --course-id 123 --csv-file grades.csv
 
 # Export data as JSON
 canvas users list --course-id 123 --output json
@@ -99,6 +109,14 @@ canvas users list --course-id 123 --output json
     Step-by-step guides for common workflows
 
     [:octicons-arrow-right-24: Tutorials](tutorials/index.md)
+
+-   :material-robot:{ .lg .middle } **AI Agent Skill**
+
+    ---
+
+    Teach Claude Code, Cursor, and other AI agents to drive Canvas CLI
+
+    [:octicons-arrow-right-24: Agent Skill](user-guide/agent-skill.md)
 
 </div>
 

@@ -27,7 +27,7 @@ Canvas CLI is a command-line interface for interacting with Canvas LMS. It provi
 
     ---
 
-    Multiple installation methods including Homebrew, Go, and binary downloads
+    Multiple installation methods including Homebrew, Go, Docker, and binary downloads
 
     [:octicons-arrow-right-24: Install now](installation.md)
 
