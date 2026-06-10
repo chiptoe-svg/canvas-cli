@@ -316,6 +316,18 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		return c.handleDryRun(method, fullURL, token, body)
 	}
 
+	// Buffer the body once so each retry attempt gets a fresh reader.
+	// Retrying with the same io.Reader would send an empty body on the second
+	// attempt because the reader is already at EOF.
+	var bodyBytes []byte
+	if body != nil {
+		var readErr error
+		bodyBytes, readErr = io.ReadAll(body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read request body: %w", readErr)
+		}
+	}
+
 	// Wait for rate limiter
 	if err := c.rateLimiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("rate limiter error: %w", err)
@@ -323,7 +335,12 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 
 	// Execute with retry
 	return c.retryPolicy.ExecuteWithRetry(ctx, func() (*http.Response, error) {
-		req, err := http.NewRequestWithContext(ctx, method, fullURL, body)
+		var reqBody io.Reader
+		if bodyBytes != nil {
+			reqBody = bytes.NewReader(bodyBytes)
+		}
+
+		req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %w", err)
 		}
@@ -402,7 +419,10 @@ func (c *Client) updateRateLimitFromHeaders(resp *http.Response) {
 	remaining := resp.Header.Get("X-Rate-Limit-Remaining")
 	if remaining != "" {
 		if remainingFloat, err := strconv.ParseFloat(remaining, 64); err == nil {
-			c.rateLimiter.AdjustRate(remainingFloat, c.quotaTotal)
+			c.mu.RLock()
+			total := c.quotaTotal
+			c.mu.RUnlock()
+			c.rateLimiter.AdjustRate(remainingFloat, total)
 		}
 	}
 }
@@ -479,9 +499,40 @@ func (c *Client) Put(ctx context.Context, path string, body io.Reader) (*http.Re
 	return c.doRequest(ctx, http.MethodPut, path, body)
 }
 
-// Delete performs a DELETE request
+// Delete performs a DELETE request.
+// It drains and closes the response body before returning, which keeps the
+// underlying connection eligible for reuse. Callers that need to decode the
+// response body should use DeleteJSON instead.
 func (c *Client) Delete(ctx context.Context, path string) (*http.Response, error) {
-	return c.doRequest(ctx, http.MethodDelete, path, nil)
+	resp, err := c.doRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return resp, err
+	}
+	// Drain and close so the connection can be reused.
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck
+	resp.Body.Close()
+	return resp, nil
+}
+
+// DeleteJSON performs a DELETE request and decodes the JSON response body into
+// result. If result is nil the body is discarded. This is the preferred method
+// when the Canvas DELETE endpoint returns a meaningful JSON body.
+func (c *Client) DeleteJSON(ctx context.Context, path string, result interface{}) error {
+	resp, err := c.doRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read delete response body: %w", err)
+	}
+
+	if result != nil {
+		return json.Unmarshal(bodyBytes, result)
+	}
+	return nil
 }
 
 // GetJSON performs a GET request and decodes JSON response
@@ -584,6 +635,11 @@ func (c *Client) PutJSON(ctx context.Context, path string, body interface{}, res
 	return nil
 }
 
+// maxPaginationPages is an upper bound on the number of pages fetched in a
+// single GetAllPages / GetAllPagesGeneric call. A misbehaving server that keeps
+// returning the same Link: next header would otherwise loop forever.
+const maxPaginationPages = 10_000
+
 // GetAllPagesGeneric fetches all pages of a paginated endpoint using generics
 // This is the preferred method for type-safe pagination with better performance
 // If caching is enabled, cached responses will be returned when available
@@ -600,8 +656,14 @@ func GetAllPagesGeneric[T any](c *Client, ctx context.Context, path string) ([]T
 
 	var allResults []T
 	currentURL := path
+	pageCount := 0
 
 	for currentURL != "" {
+		pageCount++
+		if pageCount > maxPaginationPages {
+			return nil, fmt.Errorf("pagination aborted: exceeded %d pages (possible infinite loop from repeated Link header)", maxPaginationPages)
+		}
+
 		resp, err := c.Get(ctx, currentURL)
 		if err != nil {
 			return nil, err
@@ -639,12 +701,17 @@ func GetAllPagesGeneric[T any](c *Client, ctx context.Context, path string) ([]T
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse next URL: %w", err)
 			}
-			// Handle empty query string properly to avoid trailing '?'
+			// Detect same-URL cycle before following the link.
+			var next string
 			if nextURL.RawQuery != "" {
-				currentURL = nextURL.Path + "?" + nextURL.RawQuery
+				next = nextURL.Path + "?" + nextURL.RawQuery
 			} else {
-				currentURL = nextURL.Path
+				next = nextURL.Path
 			}
+			if next == currentURL {
+				return nil, fmt.Errorf("pagination aborted: server returned identical next page URL %q", next)
+			}
+			currentURL = next
 		} else {
 			currentURL = ""
 		}
@@ -679,8 +746,14 @@ func (c *Client) GetAllPages(ctx context.Context, path string, result interface{
 
 	var allResults []json.RawMessage
 	currentURL := path
+	pageCount := 0
 
 	for currentURL != "" {
+		pageCount++
+		if pageCount > maxPaginationPages {
+			return fmt.Errorf("pagination aborted: exceeded %d pages (possible infinite loop from repeated Link header)", maxPaginationPages)
+		}
+
 		resp, err := c.Get(ctx, currentURL)
 		if err != nil {
 			return err
@@ -718,12 +791,16 @@ func (c *Client) GetAllPages(ctx context.Context, path string, result interface{
 			if err != nil {
 				return fmt.Errorf("failed to parse next URL: %w", err)
 			}
-			// Handle empty query string properly to avoid trailing '?'
+			var next string
 			if nextURL.RawQuery != "" {
-				currentURL = nextURL.Path + "?" + nextURL.RawQuery
+				next = nextURL.Path + "?" + nextURL.RawQuery
 			} else {
-				currentURL = nextURL.Path
+				next = nextURL.Path
 			}
+			if next == currentURL {
+				return fmt.Errorf("pagination aborted: server returned identical next page URL %q", next)
+			}
+			currentURL = next
 		} else {
 			currentURL = ""
 		}

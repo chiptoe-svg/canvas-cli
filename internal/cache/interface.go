@@ -125,3 +125,13 @@ func (c *MultiTierCache) MemoryStats() Stats {
 func (c *MultiTierCache) DiskStats() (Stats, error) {
 	return c.disk.Stats()
 }
+
+// Close stops the cleanup goroutines in both cache tiers.
+func (c *MultiTierCache) Close() error {
+	memErr := c.memory.Close()
+	diskErr := c.disk.Close()
+	if memErr != nil {
+		return memErr
+	}
+	return diskErr
+}

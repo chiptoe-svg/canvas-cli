@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -178,14 +177,8 @@ func (s *OverridesService) Update(ctx context.Context, courseID, assignmentID, o
 func (s *OverridesService) Delete(ctx context.Context, courseID, assignmentID, overrideID int64) (*AssignmentOverride, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/overrides/%d", courseID, assignmentID, overrideID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var override AssignmentOverride
-	if err := json.NewDecoder(resp.Body).Decode(&override); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &override); err != nil {
 		return nil, err
 	}
 

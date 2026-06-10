@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -326,14 +325,8 @@ func (s *GradesService) UpdateCustomColumn(ctx context.Context, courseID, column
 func (s *GradesService) DeleteCustomColumn(ctx context.Context, courseID, columnID int64) (*CustomGradebookColumn, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/custom_gradebook_columns/%d", courseID, columnID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var column CustomGradebookColumn
-	if err := json.NewDecoder(resp.Body).Decode(&column); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &column); err != nil {
 		return nil, err
 	}
 

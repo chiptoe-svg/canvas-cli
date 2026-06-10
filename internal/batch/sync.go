@@ -288,20 +288,18 @@ func (s *SyncOperation) SyncAssignments(ctx context.Context, sourceCourseID, tar
 		return result, nil
 	}
 
-	// Convert assignments to interface slice for batch processor
-	items := make([]interface{}, len(assignments))
-	for i, a := range assignments {
-		items[i] = a
+	// Build a slice of pointers so ProcessGeneric receives *api.Assignment values,
+	// avoiding the value/pointer type-assertion mismatch that caused panics.
+	ptrs := make([]*api.Assignment, len(assignments))
+	for i := range assignments {
+		ptrs[i] = &assignments[i]
 	}
 
-	// Use batch processor for concurrent sync
-	// In interactive mode, don't stop on first error (allow user to resolve conflicts)
-	// In non-interactive mode, stop on first error
-	processor := New(defaultConcurrency, !s.interactive, NewConsoleProgress(time.Second))
-
-	summary, err := processor.Process(ctx, items, func(ctx context.Context, item interface{}) error {
-		assignment := item.(*api.Assignment)
-		return s.CopyAssignment(ctx, sourceCourseID, targetCourseID, assignment.ID)
+	// Use typed batch processor for concurrent sync.
+	// In interactive mode, don't stop on first error (allow user to resolve conflicts).
+	// In non-interactive mode, stop on first error.
+	summary, err := ProcessGeneric(ctx, defaultConcurrency, !s.interactive, NewConsoleProgress(time.Second), ptrs, func(ctx context.Context, a *api.Assignment) error {
+		return s.CopyAssignment(ctx, sourceCourseID, targetCourseID, a.ID)
 	})
 
 	if summary != nil {

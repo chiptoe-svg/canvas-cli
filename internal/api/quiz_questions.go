@@ -257,11 +257,6 @@ func (s *QuizQuestionsService) Update(ctx context.Context, courseID, quizID, que
 func (s *QuizQuestionsService) Delete(ctx context.Context, courseID, quizID, questionID int64) error {
 	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/questions/%d", courseID, quizID, questionID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return nil
+	_, err := s.client.Delete(ctx, path)
+	return err
 }

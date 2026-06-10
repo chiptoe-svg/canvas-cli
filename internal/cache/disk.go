@@ -12,8 +12,10 @@ import (
 
 // DiskCache represents a disk-based cache with TTL support
 type DiskCache struct {
-	dir string
-	ttl time.Duration
+	dir    string
+	ttl    time.Duration
+	stopCh chan struct{} // Channel to stop the cleanup goroutine
+	closed bool          // Flag to track if cache has been closed
 }
 
 // NewDiskCache creates a new disk-based cache
@@ -24,14 +26,25 @@ func NewDiskCache(dir string, ttl time.Duration) (*DiskCache, error) {
 	}
 
 	c := &DiskCache{
-		dir: dir,
-		ttl: ttl,
+		dir:    dir,
+		ttl:    ttl,
+		stopCh: make(chan struct{}),
 	}
 
 	// Clean up expired files on startup
 	go c.cleanup()
 
 	return c, nil
+}
+
+// Close stops the cleanup goroutine. Should be called when the cache is no longer needed.
+func (c *DiskCache) Close() error {
+	if c.closed {
+		return nil
+	}
+	c.closed = true
+	close(c.stopCh)
+	return nil
 }
 
 // diskItem represents a cached item stored on disk
@@ -150,8 +163,13 @@ func (c *DiskCache) cleanup() {
 	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		c.removeExpired()
+	for {
+		select {
+		case <-ticker.C:
+			c.removeExpired()
+		case <-c.stopCh:
+			return // Stop cleanup goroutine when cache is closed
+		}
 	}
 }
 

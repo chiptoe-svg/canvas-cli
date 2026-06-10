@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -328,14 +327,8 @@ func (s *ConversationsService) MarkAllAsRead(ctx context.Context) error {
 func (s *ConversationsService) Delete(ctx context.Context, conversationID int64) (*Conversation, error) {
 	path := fmt.Sprintf("/api/v1/conversations/%d", conversationID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var conversation Conversation
-	if err := json.NewDecoder(resp.Body).Decode(&conversation); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &conversation); err != nil {
 		return nil, err
 	}
 

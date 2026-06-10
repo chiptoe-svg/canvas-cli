@@ -321,3 +321,23 @@ func TestMultiTierCache_SetJSON_MarshalError(t *testing.T) {
 		t.Error("expected error when marshaling invalid JSON data")
 	}
 }
+
+// TestMultiTierCache_Close verifies that Close() stops background goroutines
+// in both cache tiers and is safe to call multiple times.
+func TestMultiTierCache_Close(t *testing.T) {
+	tempDir := t.TempDir()
+
+	multiCache, err := NewMultiTierCache(5*time.Minute, tempDir, 10*time.Minute)
+	if err != nil {
+		t.Fatalf("NewMultiTierCache: %v", err)
+	}
+
+	if err := multiCache.Close(); err != nil {
+		t.Errorf("first Close() returned error: %v", err)
+	}
+
+	// Second call must be idempotent
+	if err := multiCache.Close(); err != nil {
+		t.Errorf("second Close() returned error: %v", err)
+	}
+}

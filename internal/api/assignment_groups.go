@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -254,14 +253,8 @@ func (s *AssignmentGroupsService) Delete(ctx context.Context, courseID, groupID 
 		path += "?" + query.Encode()
 	}
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var group AssignmentGroup
-	if err := json.NewDecoder(resp.Body).Decode(&group); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &group); err != nil {
 		return nil, err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -88,6 +89,25 @@ func (p *RetryPolicy) GetBackoff(attempt int) time.Duration {
 	return backoff
 }
 
+// retryAfterDelay parses the Retry-After header from a 429 response and returns
+// the duration to wait. It supports the seconds form only. If the header is
+// absent or unparseable, it returns 0 so the caller falls back to exponential
+// backoff.
+func retryAfterDelay(resp *http.Response) time.Duration {
+	if resp == nil {
+		return 0
+	}
+	val := resp.Header.Get("Retry-After")
+	if val == "" {
+		return 0
+	}
+	secs, err := strconv.ParseFloat(val, 64)
+	if err != nil || secs <= 0 {
+		return 0
+	}
+	return time.Duration(secs * float64(time.Second))
+}
+
 // ExecuteWithRetry executes a function with retry logic
 func (p *RetryPolicy) ExecuteWithRetry(ctx context.Context, fn func() (*http.Response, error)) (*http.Response, error) {
 	var resp *http.Response
@@ -107,6 +127,13 @@ func (p *RetryPolicy) ExecuteWithRetry(ctx context.Context, fn func() (*http.Res
 		}
 
 		backoff := p.GetBackoff(attempt)
+
+		// Honour the server's Retry-After hint on 429, but never wait less than
+		// the exponential backoff so we don't hammer a struggling server.
+		if serverHint := retryAfterDelay(resp); serverHint > backoff {
+			backoff = serverHint
+		}
+
 		p.Logger.Warn("Request failed, retrying",
 			"attempt", attempt+1,
 			"max_retries", p.MaxRetries,
@@ -114,7 +141,7 @@ func (p *RetryPolicy) ExecuteWithRetry(ctx context.Context, fn func() (*http.Res
 			"error", err,
 		)
 
-		// Wait before retrying
+		// Wait before retrying, respecting context cancellation.
 		select {
 		case <-ctx.Done():
 			return resp, ctx.Err()

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -306,14 +305,8 @@ func (s *GroupsService) Update(ctx context.Context, groupID int64, params *Updat
 func (s *GroupsService) Delete(ctx context.Context, groupID int64) (*Group, error) {
 	path := fmt.Sprintf("/api/v1/groups/%d", groupID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var group Group
-	if err := json.NewDecoder(resp.Body).Decode(&group); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &group); err != nil {
 		return nil, err
 	}
 
@@ -352,13 +345,8 @@ func (s *GroupsService) AddMember(ctx context.Context, groupID, userID int64) (*
 func (s *GroupsService) RemoveMember(ctx context.Context, groupID, membershipID int64) error {
 	path := fmt.Sprintf("/api/v1/groups/%d/memberships/%d", groupID, membershipID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return nil
+	_, err := s.client.Delete(ctx, path)
+	return err
 }
 
 // ListCategoriesOptions holds options for listing group categories
@@ -569,14 +557,8 @@ func (s *GroupsService) UpdateCategory(ctx context.Context, categoryID int64, pa
 func (s *GroupsService) DeleteCategory(ctx context.Context, categoryID int64) (*GroupCategory, error) {
 	path := fmt.Sprintf("/api/v1/group_categories/%d", categoryID)
 
-	resp, err := s.client.Delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var category GroupCategory
-	if err := json.NewDecoder(resp.Body).Decode(&category); err != nil {
+	if err := s.client.DeleteJSON(ctx, path, &category); err != nil {
 		return nil, err
 	}
 
