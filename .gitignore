@@ -1,7 +1,8 @@
 # Binaries
+# Root-anchored so it only matches the built binary, not skills/canvas-cli/
 bin/
 dist/
-canvas-cli
+/canvas-cli
 *.exe
 *.exe~
 *.dll
