@@ -509,9 +509,10 @@ func (c *Client) Delete(ctx context.Context, path string) (*http.Response, error
 	if err != nil {
 		return resp, err
 	}
-	// Drain and close so the connection can be reused.
-	io.Copy(io.Discard, resp.Body) // #nosec G104 -- drain errors irrelevant for connection reuse  //nolint:errcheck
-	resp.Body.Close()              // #nosec G104 -- close error irrelevant for connection reuse   //nolint:errcheck
+	// Drain and close so the connection can be reused; both errors are
+	// irrelevant to the caller (the DELETE itself already succeeded).
+	_, _ = io.Copy(io.Discard, resp.Body)
+	_ = resp.Body.Close()
 	return resp, nil
 }
 
