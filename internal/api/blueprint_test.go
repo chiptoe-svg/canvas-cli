@@ -28,14 +28,7 @@ func TestBlueprintService_GetTemplate(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	template, err := service.GetTemplate(context.Background(), 1, "")
@@ -71,14 +64,7 @@ func TestBlueprintService_ListAssociatedCourses(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	courses, err := service.ListAssociatedCourses(context.Background(), 1, "", nil)
@@ -113,21 +99,14 @@ func TestBlueprintService_UpdateAssociations(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	params := &UpdateAssociationsParams{
 		CourseIDsToAdd: []int64{100, 101},
 	}
 
-	err = service.UpdateAssociations(context.Background(), 1, "", params)
+	err := service.UpdateAssociations(context.Background(), 1, "", params)
 	if err != nil {
 		t.Fatalf("UpdateAssociations failed: %v", err)
 	}
@@ -157,14 +136,7 @@ func TestBlueprintService_BeginSync(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	params := &SyncParams{
@@ -200,14 +172,7 @@ func TestBlueprintService_ListUnsyncedChanges(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	changes, err := service.ListUnsyncedChanges(context.Background(), 1, "")
@@ -243,14 +208,7 @@ func TestBlueprintService_ListMigrations(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	migrations, err := service.ListMigrations(context.Background(), 1, "", nil)
@@ -419,14 +377,7 @@ func TestBlueprintService_GetMigration(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewBlueprintService(client)
 	migration, err := service.GetMigration(context.Background(), 1, "", 123, nil)

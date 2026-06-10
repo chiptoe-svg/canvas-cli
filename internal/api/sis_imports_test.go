@@ -31,14 +31,7 @@ func TestSISImportsService_List(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSISImportsService(client)
 	imports, err := service.List(context.Background(), 1, nil)
@@ -82,14 +75,7 @@ func TestSISImportsService_Get(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSISImportsService(client)
 	sisImport, err := service.Get(context.Background(), 1, 123)
@@ -128,14 +114,7 @@ func TestSISImportsService_Abort(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSISImportsService(client)
 	sisImport, err := service.Abort(context.Background(), 1, 123)
@@ -167,14 +146,7 @@ func TestSISImportsService_ListErrors(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSISImportsService(client)
 	errors, err := service.ListErrors(context.Background(), 1, 123)
@@ -213,14 +185,7 @@ func TestSISImportsService_ListWithOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewSISImportsService(client)
 	opts := &ListSISImportsOptions{

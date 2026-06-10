@@ -30,14 +30,7 @@ func TestExternalToolsService_ListByCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	tools, err := service.ListByCourse(context.Background(), 123, nil)
@@ -72,14 +65,7 @@ func TestExternalToolsService_ListByAccount(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	tools, err := service.ListByAccount(context.Background(), 1, nil)
@@ -113,14 +99,7 @@ func TestExternalToolsService_GetByCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	tool, err := service.GetByCourse(context.Background(), 123, 456)
@@ -161,14 +140,7 @@ func TestExternalToolsService_CreateInCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	params := &CreateExternalToolParams{
@@ -216,14 +188,7 @@ func TestExternalToolsService_UpdateInCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	name := "Updated Tool"
@@ -262,14 +227,7 @@ func TestExternalToolsService_DeleteFromCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	tool, err := service.DeleteFromCourse(context.Background(), 123, 456)
@@ -315,14 +273,7 @@ func TestExternalToolsService_GetSessionlessLaunchURLForCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	params := &SessionlessLaunchParams{
@@ -370,14 +321,7 @@ func TestExternalToolsService_ListWithOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewExternalToolsService(client)
 	selectable := true

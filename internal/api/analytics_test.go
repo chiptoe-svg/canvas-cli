@@ -27,14 +27,7 @@ func TestAnalyticsService_GetCourseActivity(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	activity, err := service.GetCourseActivity(context.Background(), 123)
@@ -70,14 +63,7 @@ func TestAnalyticsService_GetCourseAssignments(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	assignments, err := service.GetCourseAssignments(context.Background(), 123)
@@ -113,14 +99,7 @@ func TestAnalyticsService_GetStudentSummaries(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	summaries, err := service.GetStudentSummaries(context.Background(), 123, nil)
@@ -155,14 +134,7 @@ func TestAnalyticsService_GetUserActivity(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	activity, err := service.GetUserActivity(context.Background(), 123, 456)
@@ -193,14 +165,7 @@ func TestAnalyticsService_GetUserAssignments(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	assignments, err := service.GetUserAssignments(context.Background(), 123, 456)
@@ -236,14 +201,7 @@ func TestAnalyticsService_GetUserCommunication(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	communication, err := service.GetUserCommunication(context.Background(), 123, 456)
@@ -278,14 +236,7 @@ func TestAnalyticsService_GetDepartmentStatistics(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	stats, err := service.GetDepartmentStatistics(context.Background(), 1, nil)
@@ -316,14 +267,7 @@ func TestAnalyticsService_GetDepartmentActivity(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	activity, err := service.GetDepartmentActivity(context.Background(), 1, nil)
@@ -355,14 +299,7 @@ func TestAnalyticsService_GetDepartmentGrades(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewAnalyticsService(client)
 	grades, err := service.GetDepartmentGrades(context.Background(), 1, nil)

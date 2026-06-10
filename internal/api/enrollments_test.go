@@ -54,14 +54,7 @@ func TestEnrollmentsService_ListCourse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -112,14 +105,7 @@ func TestEnrollmentsService_ListSection(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -169,14 +155,7 @@ func TestEnrollmentsService_ListUser(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -222,14 +201,7 @@ func TestEnrollmentsService_EnrollUser(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -288,14 +260,7 @@ func TestEnrollmentsService_Conclude(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -339,14 +304,7 @@ func TestEnrollmentsService_Reactivate(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -392,19 +350,12 @@ func TestEnrollmentsService_Accept(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
 
-	err = service.Accept(ctx, 123, 456)
+	err := service.Accept(ctx, 123, 456)
 	if err != nil {
 		t.Fatalf("Accept failed: %v", err)
 	}
@@ -428,19 +379,12 @@ func TestEnrollmentsService_Reject(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
 
-	err = service.Reject(ctx, 123, 456)
+	err := service.Reject(ctx, 123, 456)
 	if err != nil {
 		t.Fatalf("Reject failed: %v", err)
 	}
@@ -473,14 +417,7 @@ func TestEnrollmentsService_UpdateLastAttended(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -555,14 +492,7 @@ func TestEnrollmentsService_ListSection_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -656,14 +586,7 @@ func TestEnrollmentsService_ListUser_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -736,14 +659,7 @@ func TestEnrollmentsService_ListCourse_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
@@ -790,14 +706,7 @@ func TestEnrollmentsService_EnrollUser_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewEnrollmentsService(client)
 	ctx := context.Background()
