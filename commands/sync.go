@@ -1,12 +1,13 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
 	"github.com/jjuanrivvera/canvas-cli/internal/auth"
 	"github.com/jjuanrivvera/canvas-cli/internal/batch"
@@ -25,10 +26,19 @@ This is useful for:
 - Synchronizing development and production environments`,
 }
 
-var syncAssignmentsCmd = &cobra.Command{
-	Use:   "assignments <source-instance> <source-course-id> <target-instance> <target-course-id>",
-	Short: "Sync assignments between instances",
-	Long: `Synchronize all assignments from a source course to a target course.
+func init() {
+	rootCmd.AddCommand(syncCmd)
+	syncCmd.AddCommand(newSyncAssignmentsCmd())
+	syncCmd.AddCommand(newSyncCourseCmd())
+}
+
+func newSyncAssignmentsCmd() *cobra.Command {
+	opts := &options.SyncAssignmentsOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "assignments <source-instance> <source-course-id> <target-instance> <target-course-id>",
+		Short: "Sync assignments between instances",
+		Long: `Synchronize all assignments from a source course to a target course.
 
 The source and target can be on different Canvas instances.
 
@@ -38,14 +48,23 @@ Examples:
 
   # Sync with interactive conflict resolution
   canvas sync assignments prod 12345 staging 67890 --interactive`,
-	Args: ExactArgsWithUsage(4, "source-instance", "source-course-id", "target-instance", "target-course-id"),
-	RunE: runSyncAssignments,
+		Args: ExactArgsWithUsage(4, "source-instance", "source-course-id", "target-instance", "target-course-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runSyncAssignments(cmd, args, opts)
+		},
+	}
+
+	cmd.Flags().BoolVarP(&opts.Interactive, "interactive", "i", false, "Enable interactive conflict resolution")
+	return cmd
 }
 
-var syncCourseCmd = &cobra.Command{
-	Use:   "course <source-instance> <source-course-id> <target-instance> <target-course-id>",
-	Short: "Sync entire course between instances",
-	Long: `Synchronize an entire course structure including assignments, files, and settings.
+func newSyncCourseCmd() *cobra.Command {
+	opts := &options.SyncCourseOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "course <source-instance> <source-course-id> <target-instance> <target-course-id>",
+		Short: "Sync entire course between instances",
+		Long: `Synchronize an entire course structure including assignments, files, and settings.
 
 The source and target can be on different Canvas instances.
 
@@ -55,24 +74,19 @@ Examples:
 
   # Sync with interactive conflict resolution
   canvas sync course prod 12345 staging 67890 --interactive`,
-	Args: ExactArgsWithUsage(4, "source-instance", "source-course-id", "target-instance", "target-course-id"),
-	RunE: runSyncCourse,
+		Args: ExactArgsWithUsage(4, "source-instance", "source-course-id", "target-instance", "target-course-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runSyncCourse(cmd, args, opts)
+		},
+	}
+
+	cmd.Flags().BoolVarP(&opts.Interactive, "interactive", "i", false, "Enable interactive conflict resolution")
+	return cmd
 }
 
-var (
-	syncInteractive bool
-)
-
-func init() {
-	rootCmd.AddCommand(syncCmd)
-	syncCmd.AddCommand(syncAssignmentsCmd)
-	syncCmd.AddCommand(syncCourseCmd)
-
-	syncCmd.PersistentFlags().BoolVarP(&syncInteractive, "interactive", "i", false, "Enable interactive conflict resolution")
-}
-
-func runSyncAssignments(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
+func runSyncAssignments(cmd *cobra.Command, args []string, opts *options.SyncAssignmentsOptions) error {
+	ctx := cmd.Context()
+	logger := logging.NewCommandLogger(verbose)
 
 	sourceInstance := args[0]
 	sourceCourseID, err := strconv.ParseInt(args[1], 10, 64)
@@ -86,6 +100,14 @@ func runSyncAssignments(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid target course ID: %w", err)
 	}
 
+	logger.LogCommandStart(ctx, "sync.assignments", map[string]interface{}{
+		"source_instance":  sourceInstance,
+		"source_course_id": sourceCourseID,
+		"target_instance":  targetInstance,
+		"target_course_id": targetCourseID,
+		"interactive":      opts.Interactive,
+	})
+
 	// Create API clients for both instances
 	sourceClient, err := getAPIClientForInstance(sourceInstance)
 	if err != nil {
@@ -98,37 +120,40 @@ func runSyncAssignments(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create sync operation
-	syncOp := batch.NewSyncOperation(sourceClient, targetClient, syncInteractive)
+	syncOp := batch.NewSyncOperation(sourceClient, targetClient, opts.Interactive)
 
-	fmt.Printf("🔄 Syncing assignments from %s (course %d) to %s (course %d)\n\n",
+	fmt.Printf("Syncing assignments from %s (course %d) to %s (course %d)\n\n",
 		sourceInstance, sourceCourseID, targetInstance, targetCourseID)
 
 	// Perform sync
 	result, err := syncOp.SyncAssignments(ctx, sourceCourseID, targetCourseID)
 	if err != nil {
-		fmt.Printf("\n❌ Sync failed: %v\n", err)
+		logger.LogCommandError(ctx, "sync.assignments", err, nil)
+		fmt.Printf("\nSync failed: %v\n", err)
 		return err
 	}
 
 	// Display results
-	fmt.Printf("\n✅ Sync complete!\n")
+	fmt.Printf("\nSync complete!\n")
 	fmt.Printf("Total assignments: %d\n", result.TotalItems)
 	fmt.Printf("Synced: %d\n", result.SyncedItems)
 	fmt.Printf("Skipped: %d\n", result.SkippedItems)
 	fmt.Printf("Failed: %d\n", result.FailedItems)
 
 	if len(result.Errors) > 0 {
-		fmt.Println("\n⚠️  Errors:")
-		for _, err := range result.Errors {
-			fmt.Printf("  - %v\n", err)
+		fmt.Println("\nErrors:")
+		for _, syncErr := range result.Errors {
+			fmt.Printf("  - %v\n", syncErr)
 		}
 	}
 
+	logger.LogCommandComplete(ctx, "sync.assignments", result.SyncedItems)
 	return nil
 }
 
-func runSyncCourse(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
+func runSyncCourse(cmd *cobra.Command, args []string, opts *options.SyncCourseOptions) error {
+	ctx := cmd.Context()
+	logger := logging.NewCommandLogger(verbose)
 
 	sourceInstance := args[0]
 	sourceCourseID, err := strconv.ParseInt(args[1], 10, 64)
@@ -142,6 +167,14 @@ func runSyncCourse(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid target course ID: %w", err)
 	}
 
+	logger.LogCommandStart(ctx, "sync.course", map[string]interface{}{
+		"source_instance":  sourceInstance,
+		"source_course_id": sourceCourseID,
+		"target_instance":  targetInstance,
+		"target_course_id": targetCourseID,
+		"interactive":      opts.Interactive,
+	})
+
 	// Create API clients for both instances
 	sourceClient, err := getAPIClientForInstance(sourceInstance)
 	if err != nil {
@@ -154,20 +187,21 @@ func runSyncCourse(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create sync operation
-	syncOp := batch.NewSyncOperation(sourceClient, targetClient, syncInteractive)
+	syncOp := batch.NewSyncOperation(sourceClient, targetClient, opts.Interactive)
 
-	fmt.Printf("🔄 Syncing course from %s (course %d) to %s (course %d)\n\n",
+	fmt.Printf("Syncing course from %s (course %d) to %s (course %d)\n\n",
 		sourceInstance, sourceCourseID, targetInstance, targetCourseID)
 
 	// Perform sync
 	err = syncOp.CopyCourse(ctx, sourceCourseID, targetCourseID)
 	if err != nil {
-		fmt.Printf("\n❌ Sync failed: %v\n", err)
+		logger.LogCommandError(ctx, "sync.course", err, nil)
+		fmt.Printf("\nSync failed: %v\n", err)
 		return err
 	}
 
-	fmt.Printf("\n✅ Course sync complete!\n")
-
+	fmt.Printf("\nCourse sync complete!\n")
+	logger.LogCommandComplete(ctx, "sync.course", 1)
 	return nil
 }
 
