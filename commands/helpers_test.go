@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
@@ -401,10 +402,8 @@ func TestGetAPIClient_UserAgentSet(t *testing.T) {
 // TestGetAPIClient_InstanceFlagWarning verifies that a warning is printed to stderr
 // when both --instance and CANVAS_URL/CANVAS_TOKEN env vars are set.
 func TestGetAPIClient_InstanceFlagWarning(t *testing.T) {
-	os.Setenv("CANVAS_URL", "https://test.instructure.com")
-	os.Setenv("CANVAS_TOKEN", "test-token-123")
-	defer os.Unsetenv("CANVAS_URL")
-	defer os.Unsetenv("CANVAS_TOKEN")
+	t.Setenv("CANVAS_URL", "https://test.instructure.com")
+	t.Setenv("CANVAS_TOKEN", "test-token-123")
 
 	// Simulate --instance being set
 	origInstanceURL := instanceURL
@@ -438,9 +437,9 @@ func TestGetAPIClient_InstanceFlagWarning(t *testing.T) {
 // TestGetAPIClient_ErrorMessageUsesConfigList verifies that the error for unknown
 // instance names references 'canvas config list' (not 'canvas auth list').
 func TestGetAPIClient_ErrorMessageUsesConfigList(t *testing.T) {
-	// Ensure no env vars are set
-	os.Unsetenv("CANVAS_URL")
-	os.Unsetenv("CANVAS_TOKEN")
+	// Ensure no env vars are set (t.Setenv to "" restores originals on cleanup)
+	t.Setenv("CANVAS_URL", "")
+	t.Setenv("CANVAS_TOKEN", "")
 
 	// Set a non-existent instance
 	origInstanceURL := instanceURL
