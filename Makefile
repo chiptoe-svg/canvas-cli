@@ -22,7 +22,7 @@ help:
 	@echo "  make vet          - Run go vet"
 	@echo "  make run          - Build and run the CLI"
 	@echo "  make deps         - Download dependencies"
-	@echo "  make release      - Build binaries for all platforms"
+	@echo "  make release      - Build snapshot release for all platforms (GoReleaser)"
 	@echo "  make setup-hooks  - Install git pre-commit hooks"
 	@echo ""
 	@echo "Documentation:"
@@ -100,28 +100,13 @@ deps:
 	@go mod tidy
 	@echo "✓ Dependencies downloaded"
 
-# Build for all platforms
+# Snapshot release build via GoReleaser (same pipeline as tagged releases:
+# ldflags, archives, checksums) without publishing anything.
 release:
-	@echo "Building release binaries..."
-	@mkdir -p dist
-
-	@echo "Building for Linux (amd64)..."
-	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 ./cmd/canvas
-
-	@echo "Building for Linux (arm64)..."
-	@GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 ./cmd/canvas
-
-	@echo "Building for macOS (amd64)..."
-	@GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 ./cmd/canvas
-
-	@echo "Building for macOS (arm64)..."
-	@GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 ./cmd/canvas
-
-	@echo "Building for Windows (amd64)..."
-	@GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe ./cmd/canvas
-
-	@echo "✓ Release binaries built in dist/"
-	@ls -lh dist/
+	@which goreleaser > /dev/null || (echo "goreleaser not installed. Install: https://goreleaser.com/install/" && exit 1)
+	@echo "Building snapshot release with GoReleaser..."
+	@goreleaser release --snapshot --clean
+	@echo "✓ Snapshot release built in dist/"
 
 # Development build with verbose output
 dev: fmt vet
@@ -137,7 +122,8 @@ setup-hooks:
 docs-gen:
 	@echo "Generating CLI reference documentation..."
 	@go run ./tools/gendocs/main.go
-	@echo "✓ CLI docs generated in docs/commands/"
+	@cp CHANGELOG.md docs/changelog.md
+	@echo "✓ CLI docs generated in docs/commands/ (changelog synced)"
 
 docs-serve: docs-gen
 	@echo "Serving documentation at http://localhost:8000..."
