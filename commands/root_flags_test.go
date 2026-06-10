@@ -15,7 +15,13 @@ func TestRootQuietFlagHasNoShorthand(t *testing.T) {
 }
 
 func TestAPIQueryFlagKeepsQShorthand(t *testing.T) {
-	flag := apiCmd.Flags().Lookup("query")
+	cmd, _, err := rootCmd.Find([]string{"api"})
+	if err != nil || cmd == nil {
+		t.Fatal("expected api command to be registered on root command")
+		return
+	}
+
+	flag := cmd.Flags().Lookup("query")
 	if flag == nil {
 		t.Fatal("expected query flag to exist on api command")
 		return

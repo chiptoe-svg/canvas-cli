@@ -222,7 +222,7 @@ func TestSubmissionsDeleteCommentCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "delete comment successfully",
-			Args: []string{"--course-id", "1", "--assignment-id", "100", "--user-id", "10", "--comment-id", "5"},
+			Args: []string{"--course-id", "1", "--assignment-id", "100", "--user-id", "10", "--comment-id", "5", "--force"},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/courses/1": courseMock,
 				"/api/v1/courses/1/assignments/100/submissions/10/comments/5": cmdtest.NewMockResponse(`{

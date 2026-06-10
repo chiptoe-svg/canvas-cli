@@ -1,10 +1,13 @@
 package commands
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 
 	"github.com/jjuanrivvera/canvas-cli/internal/config"
 )
@@ -33,12 +36,20 @@ func captureRunOutput(fn func()) string {
 	return string(buf[:n])
 }
 
+// newTelemetryCmdWithContext returns a minimal cobra.Command for use in telemetry tests.
+func newTelemetryCmdWithContext() *cobra.Command {
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	return cmd
+}
+
 // TestTelemetryEnableCmd verifies enable writes to config and prints confirmation.
 func TestTelemetryEnableCmd(t *testing.T) {
 	setupTelemetryTestHome(t)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryEnable(telemetryEnableCmd, []string{})
+		err := runTelemetryEnable(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -53,8 +64,9 @@ func TestTelemetryEnableCmd(t *testing.T) {
 func TestTelemetryDisableCmd(t *testing.T) {
 	setupTelemetryTestHome(t)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryDisable(telemetryDisableCmd, []string{})
+		err := runTelemetryDisable(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -69,8 +81,9 @@ func TestTelemetryDisableCmd(t *testing.T) {
 func TestTelemetryStatusCmd_Disabled(t *testing.T) {
 	setupTelemetryTestHome(t)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryStatus(telemetryStatusCmd, []string{})
+		err := runTelemetryStatus(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -85,12 +98,14 @@ func TestTelemetryStatusCmd_Disabled(t *testing.T) {
 func TestTelemetryStatusCmd_Enabled(t *testing.T) {
 	setupTelemetryTestHome(t)
 
+	cmd := newTelemetryCmdWithContext()
+
 	// Enable telemetry first.
-	_ = runTelemetryEnable(telemetryEnableCmd, []string{})
+	_ = runTelemetryEnable(cmd)
 	config.ResetCache()
 
 	out := captureRunOutput(func() {
-		err := runTelemetryStatus(telemetryStatusCmd, []string{})
+		err := runTelemetryStatus(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -105,8 +120,9 @@ func TestTelemetryStatusCmd_Enabled(t *testing.T) {
 func TestTelemetryShowCmd_NoData(t *testing.T) {
 	setupTelemetryTestHome(t)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryShow(telemetryShowCmd, []string{})
+		err := runTelemetryShow(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -128,8 +144,9 @@ func TestTelemetryShowCmd_WithData(t *testing.T) {
 	}
 	_ = os.WriteFile(filepath.Join(telDir, "event1.json"), []byte(`{"event":"test"}`), 0600)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryShow(telemetryShowCmd, []string{})
+		err := runTelemetryShow(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -144,8 +161,9 @@ func TestTelemetryShowCmd_WithData(t *testing.T) {
 func TestTelemetryClearCmd_NoData(t *testing.T) {
 	setupTelemetryTestHome(t)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryClear(telemetryClearCmd, []string{})
+		err := runTelemetryClear(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -167,8 +185,9 @@ func TestTelemetryClearCmd_WithData(t *testing.T) {
 	filePath := filepath.Join(telDir, "event1.json")
 	_ = os.WriteFile(filePath, []byte(`{"event":"test"}`), 0600)
 
+	cmd := newTelemetryCmdWithContext()
 	out := captureRunOutput(func() {
-		err := runTelemetryClear(telemetryClearCmd, []string{})
+		err := runTelemetryClear(cmd)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
