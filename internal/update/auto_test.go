@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -316,10 +318,15 @@ func TestUpdater_CheckAndUpdate_NewerVersionAvailable(t *testing.T) {
 		archive = buildTarGzArchive(t, []byte("new binary"))
 	}
 
+	// Compute the correct checksum so verification passes.
+	h := sha256.Sum256(archive)
+	checksumContent := fmt.Sprintf("%s  %s\n", hex.EncodeToString(h[:]), archiveName)
+
 	release := Release{
 		TagName: "v9.9.9",
 		Assets: []Asset{
 			{Name: archiveName, BrowserDownloadURL: "/download/binary"},
+			{Name: "checksums.txt", BrowserDownloadURL: "/download/checksums"},
 		},
 	}
 
@@ -328,6 +335,9 @@ func TestUpdater_CheckAndUpdate_NewerVersionAvailable(t *testing.T) {
 		case "/download/binary":
 			w.WriteHeader(http.StatusOK)
 			w.Write(archive)
+		case "/download/checksums":
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, checksumContent)
 		default:
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(release)
@@ -393,18 +403,28 @@ func TestUpdater_CheckAndUpdate_DownloadFails(t *testing.T) {
 	}
 	archiveName := fmt.Sprintf("canvas-cli_%s_%s%s", runtime.GOOS, archName, ext)
 
+	// Include checksums.txt in the release so we reach the download step.
+	// The binary download endpoint returns 500 to trigger the error.
 	release := Release{
 		TagName: "v9.9.9",
-		Assets:  []Asset{{Name: archiveName, BrowserDownloadURL: "/fail"}},
+		Assets: []Asset{
+			{Name: archiveName, BrowserDownloadURL: "/fail"},
+			{Name: "checksums.txt", BrowserDownloadURL: "/checksums"},
+		},
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/fail" {
+		switch r.URL.Path {
+		case "/fail":
 			w.WriteHeader(http.StatusInternalServerError)
-			return
+		case "/checksums":
+			// Content doesn't matter — we never reach checksum verification
+			// because the binary download fails first.
+			fmt.Fprint(w, "deadbeef  "+archiveName+"\n")
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(release)
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(release)
 	}))
 	defer server.Close()
 
