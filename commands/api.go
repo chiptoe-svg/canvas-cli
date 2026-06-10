@@ -9,13 +9,22 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
 )
 
-var apiCmd = &cobra.Command{
-	Use:   "api <METHOD> <PATH>",
-	Short: "Make raw API requests to Canvas",
-	Long: `Make raw API requests to any Canvas API endpoint.
+func init() {
+	rootCmd.AddCommand(newAPICmd())
+}
+
+func newAPICmd() *cobra.Command {
+	opts := &options.APIOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "api <METHOD> <PATH>",
+		Short: "Make raw API requests to Canvas",
+		Long: `Make raw API requests to any Canvas API endpoint.
 
 This command provides direct access to the Canvas API for advanced use cases
 or endpoints not yet supported by dedicated commands.
@@ -43,33 +52,31 @@ Examples:
 
   # Read body from file
   canvas api POST /api/v1/accounts/1/courses --data-file course.json`,
-	Args: ExactArgsWithUsage(2, "method", "path"),
-	RunE: runAPICommand,
+		Args: ExactArgsWithUsage(2, "method", "path"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+			return runAPICommand(cmd, args, client, opts)
+		},
+	}
+
+	cmd.Flags().StringVarP(&opts.Data, "data", "d", "", "JSON data for request body")
+	cmd.Flags().StringVar(&opts.DataFile, "data-file", "", "Read JSON data from file")
+	cmd.Flags().StringArrayVarP(&opts.Query, "query", "q", nil, "Query parameters (key=value, repeatable)")
+	cmd.Flags().StringArrayVarP(&opts.Headers, "header", "H", nil, "Custom headers (key:value, repeatable)")
+	cmd.Flags().BoolVar(&opts.Paginate, "paginate", false, "Follow pagination links (GET only)")
+	cmd.Flags().BoolVar(&opts.RawOutput, "raw", false, "Output raw response without formatting")
+	cmd.Flags().BoolVar(&opts.ShowHeaders, "show-headers", false, "Include response headers in output")
+
+	return cmd
 }
 
-var (
-	apiData        string
-	apiDataFile    string
-	apiQuery       []string
-	apiHeaders     []string
-	apiPaginate    bool
-	apiRawOutput   bool
-	apiShowHeaders bool
-)
+func runAPICommand(cmd *cobra.Command, args []string, client *api.Client, opts *options.APIOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
 
-func init() {
-	rootCmd.AddCommand(apiCmd)
-
-	apiCmd.Flags().StringVarP(&apiData, "data", "d", "", "JSON data for request body")
-	apiCmd.Flags().StringVar(&apiDataFile, "data-file", "", "Read JSON data from file")
-	apiCmd.Flags().StringArrayVarP(&apiQuery, "query", "q", nil, "Query parameters (key=value, repeatable)")
-	apiCmd.Flags().StringArrayVarP(&apiHeaders, "header", "H", nil, "Custom headers (key:value, repeatable)")
-	apiCmd.Flags().BoolVar(&apiPaginate, "paginate", false, "Follow pagination links (GET only)")
-	apiCmd.Flags().BoolVar(&apiRawOutput, "raw", false, "Output raw response without formatting")
-	apiCmd.Flags().BoolVar(&apiShowHeaders, "show-headers", false, "Include response headers in output")
-}
-
-func runAPICommand(cmd *cobra.Command, args []string) error {
 	method := strings.ToUpper(args[0])
 	path := args[1]
 
@@ -81,37 +88,42 @@ func runAPICommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unsupported HTTP method: %s (use GET, POST, PUT, DELETE, PATCH, or HEAD)", method)
 	}
 
-	// Get API client
-	client, err := getAPIClient()
-	if err != nil {
-		return err
-	}
+	logger.LogCommandStart(ctx, "api.request", map[string]interface{}{
+		"method": method,
+		"path":   path,
+	})
+
 	service := api.NewRawService(client)
 
 	// Build request options
-	opts := &api.RawRequestOptions{
-		Paginate: apiPaginate && method == "GET",
+	reqOpts := &api.RawRequestOptions{
+		Paginate: opts.Paginate && method == "GET",
 	}
 
-	// Parse body from --data or --data-file
-	if apiData != "" && apiDataFile != "" {
+	// Parse body from --data or --data-file.
+	// Use Flags().Changed() rather than empty-string checks so that stale
+	// values from a previous cobra Execute() call do not leak between tests.
+	dataChanged := cmd.Flags().Changed("data")
+	dataFileChanged := cmd.Flags().Changed("data-file")
+
+	if dataChanged && dataFileChanged {
 		return fmt.Errorf("cannot use both --data and --data-file")
 	}
 
-	if apiData != "" {
+	if dataChanged {
 		var body interface{}
-		if err := json.Unmarshal([]byte(apiData), &body); err != nil {
+		if err := json.Unmarshal([]byte(opts.Data), &body); err != nil {
 			return fmt.Errorf("invalid JSON in --data: %w", err)
 		}
-		opts.Body = body
+		reqOpts.Body = body
 	}
 
-	if apiDataFile != "" {
+	if dataFileChanged {
 		var reader io.Reader
-		if apiDataFile == "-" {
+		if opts.DataFile == "-" {
 			reader = cmd.InOrStdin()
 		} else {
-			file, err := os.Open(apiDataFile)
+			file, err := os.Open(opts.DataFile)
 			if err != nil {
 				return fmt.Errorf("failed to open data file: %w", err)
 			}
@@ -128,13 +140,15 @@ func runAPICommand(cmd *cobra.Command, args []string) error {
 		if err := json.Unmarshal(data, &body); err != nil {
 			return fmt.Errorf("invalid JSON in data file: %w", err)
 		}
-		opts.Body = body
+		reqOpts.Body = body
 	}
 
-	// Parse query parameters
-	if len(apiQuery) > 0 {
+	// Parse query parameters.
+	// Guard with Changed() to avoid accumulating values from previous Execute() calls
+	// when the cobra command is reused (e.g., in tests).
+	if cmd.Flags().Changed("query") {
 		query := make(map[string][]string)
-		for _, q := range apiQuery {
+		for _, q := range opts.Query {
 			parts := strings.SplitN(q, "=", 2)
 			if len(parts) != 2 {
 				return fmt.Errorf("invalid query parameter format: %s (use key=value)", q)
@@ -143,71 +157,76 @@ func runAPICommand(cmd *cobra.Command, args []string) error {
 			value := parts[1]
 			query[key] = append(query[key], value)
 		}
-		opts.Query = query
+		reqOpts.Query = query
 	}
 
-	// Parse custom headers
-	if len(apiHeaders) > 0 {
+	// Parse custom headers.
+	// Same Changed() guard as for query params.
+	if cmd.Flags().Changed("header") {
 		headers := make(map[string]string)
-		for _, h := range apiHeaders {
+		for _, h := range opts.Headers {
 			parts := strings.SplitN(h, ":", 2)
 			if len(parts) != 2 {
 				return fmt.Errorf("invalid header format: %s (use key:value)", h)
 			}
 			headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 		}
-		opts.Headers = headers
+		reqOpts.Headers = headers
 	}
 
 	// Make the request
-	resp, err := service.Request(cmd.Context(), method, path, opts)
+	resp, err := service.Request(ctx, method, path, reqOpts)
 	if err != nil {
+		logger.LogCommandError(ctx, "api.request", err, map[string]interface{}{
+			"method": method,
+			"path":   path,
+		})
 		return err
 	}
 
-	// Output the response
-	return outputAPIResponse(cmd, resp)
+	logger.LogCommandComplete(ctx, "api.request", 1)
+	return outputAPIResponse(cmd, resp, opts)
 }
 
-func outputAPIResponse(cmd *cobra.Command, resp *api.RawResponse) error {
+func outputAPIResponse(cmd *cobra.Command, resp *api.RawResponse, opts *options.APIOptions) error {
 	// If raw output, just print the body
-	if apiRawOutput {
+	if opts.RawOutput {
 		cmd.Println(string(resp.Body))
 		return nil
 	}
 
 	// Build output structure
-	output := make(map[string]interface{})
-	output["status_code"] = resp.StatusCode
+	out := make(map[string]interface{})
+	out["status_code"] = resp.StatusCode
 
-	if apiShowHeaders {
+	if opts.ShowHeaders {
 		headers := make(map[string]string)
 		for key, values := range resp.Headers {
 			if len(values) > 0 {
 				headers[key] = values[0]
 			}
 		}
-		output["headers"] = headers
+		out["headers"] = headers
 	}
 
 	// Parse body as JSON if possible
 	if len(resp.Body) > 0 {
 		var body interface{}
 		if err := json.Unmarshal(resp.Body, &body); err == nil {
-			output["body"] = body
+			out["body"] = body
 		} else {
-			output["body"] = string(resp.Body)
+			out["body"] = string(resp.Body)
 		}
 	}
 
 	// Add pagination info if available
 	if resp.Pagination != nil && resp.Pagination.HasNextPage() {
-		output["pagination"] = map[string]interface{}{
+		out["pagination"] = map[string]interface{}{
 			"has_next": resp.Pagination.HasNextPage(),
 			"next":     resp.Pagination.Next,
 		}
 	}
 
 	// Format output based on output format flag
-	return formatOutput(output, nil)
+	return formatOutput(out, nil)
 }

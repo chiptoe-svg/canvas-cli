@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
 	"github.com/jjuanrivvera/canvas-cli/internal/config"
 )
 
@@ -51,55 +52,79 @@ Examples:
   canvas telemetry clear`,
 }
 
-var telemetryEnableCmd = &cobra.Command{
-	Use:   "enable",
-	Short: "Enable telemetry collection",
-	Long: `Enable anonymous usage data collection.
+func init() {
+	rootCmd.AddCommand(telemetryCmd)
+	telemetryCmd.AddCommand(newTelemetryEnableCmd())
+	telemetryCmd.AddCommand(newTelemetryDisableCmd())
+	telemetryCmd.AddCommand(newTelemetryStatusCmd())
+	telemetryCmd.AddCommand(newTelemetryShowCmd())
+	telemetryCmd.AddCommand(newTelemetryClearCmd())
+}
+
+func newTelemetryEnableCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "enable",
+		Short: "Enable telemetry collection",
+		Long: `Enable anonymous usage data collection.
 
 By enabling telemetry, you help improve Canvas CLI. All data is
 collected anonymously and stored locally. You can disable telemetry
 at any time or clear all collected data.`,
-	RunE: runTelemetryEnable,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTelemetryEnable(cmd)
+		},
+	}
 }
 
-var telemetryDisableCmd = &cobra.Command{
-	Use:   "disable",
-	Short: "Disable telemetry collection",
-	Long:  `Disable telemetry collection. Previously collected data is preserved unless you run 'canvas telemetry clear'.`,
-	RunE:  runTelemetryDisable,
+func newTelemetryDisableCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "disable",
+		Short: "Disable telemetry collection",
+		Long:  `Disable telemetry collection. Previously collected data is preserved unless you run 'canvas telemetry clear'.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTelemetryDisable(cmd)
+		},
+	}
 }
 
-var telemetryStatusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "Show telemetry status",
-	Long:  `Display current telemetry configuration and statistics.`,
-	RunE:  runTelemetryStatus,
+func newTelemetryStatusCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Show telemetry status",
+		Long:  `Display current telemetry configuration and statistics.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTelemetryStatus(cmd)
+		},
+	}
 }
 
-var telemetryShowCmd = &cobra.Command{
-	Use:   "show",
-	Short: "Show collected telemetry data",
-	Long:  `Display telemetry data files and their contents.`,
-	RunE:  runTelemetryShow,
+func newTelemetryShowCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "show",
+		Short: "Show collected telemetry data",
+		Long:  `Display telemetry data files and their contents.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTelemetryShow(cmd)
+		},
+	}
 }
 
-var telemetryClearCmd = &cobra.Command{
-	Use:   "clear",
-	Short: "Clear all telemetry data",
-	Long:  `Delete all collected telemetry data. This does not disable telemetry.`,
-	RunE:  runTelemetryClear,
+func newTelemetryClearCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "clear",
+		Short: "Clear all telemetry data",
+		Long:  `Delete all collected telemetry data. This does not disable telemetry.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runTelemetryClear(cmd)
+		},
+	}
 }
 
-func init() {
-	rootCmd.AddCommand(telemetryCmd)
-	telemetryCmd.AddCommand(telemetryEnableCmd)
-	telemetryCmd.AddCommand(telemetryDisableCmd)
-	telemetryCmd.AddCommand(telemetryStatusCmd)
-	telemetryCmd.AddCommand(telemetryShowCmd)
-	telemetryCmd.AddCommand(telemetryClearCmd)
-}
+func runTelemetryEnable(cmd *cobra.Command) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "telemetry.enable", nil)
 
-func runTelemetryEnable(cmd *cobra.Command, args []string) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -115,26 +140,31 @@ func runTelemetryEnable(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Println("✓ Telemetry enabled")
+	fmt.Println("Telemetry enabled")
 	fmt.Println()
 	fmt.Println("Thank you for helping improve Canvas CLI!")
 	fmt.Println()
 	fmt.Println("What's collected:")
-	fmt.Println("  • Command usage and performance")
-	fmt.Println("  • Error rates and types")
-	fmt.Println("  • System information (OS, architecture)")
+	fmt.Println("  - Command usage and performance")
+	fmt.Println("  - Error rates and types")
+	fmt.Println("  - System information (OS, architecture)")
 	fmt.Println()
 	fmt.Println("What's NOT collected:")
-	fmt.Println("  • Canvas credentials or tokens")
-	fmt.Println("  • Course content or user data")
-	fmt.Println("  • Personal information")
+	fmt.Println("  - Canvas credentials or tokens")
+	fmt.Println("  - Course content or user data")
+	fmt.Println("  - Personal information")
 	fmt.Println()
 	fmt.Println("You can disable telemetry anytime with: canvas telemetry disable")
 
+	logger.LogCommandComplete(ctx, "telemetry.enable", 1)
 	return nil
 }
 
-func runTelemetryDisable(cmd *cobra.Command, args []string) error {
+func runTelemetryDisable(cmd *cobra.Command) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "telemetry.disable", nil)
+
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -150,15 +180,20 @@ func runTelemetryDisable(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Println("✓ Telemetry disabled")
+	fmt.Println("Telemetry disabled")
 	fmt.Println()
 	fmt.Println("Note: Previously collected data is still stored.")
 	fmt.Println("To remove it, run: canvas telemetry clear")
 
+	logger.LogCommandComplete(ctx, "telemetry.disable", 1)
 	return nil
 }
 
-func runTelemetryStatus(cmd *cobra.Command, args []string) error {
+func runTelemetryStatus(cmd *cobra.Command) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "telemetry.status", nil)
+
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -174,9 +209,9 @@ func runTelemetryStatus(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	if enabled {
-		fmt.Println("Status: ✓ Enabled")
+		fmt.Println("Status: Enabled")
 	} else {
-		fmt.Println("Status: ✗ Disabled")
+		fmt.Println("Status: Disabled")
 	}
 
 	// Check for telemetry data
@@ -190,6 +225,7 @@ func runTelemetryStatus(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("Data files: 0")
+			logger.LogCommandComplete(ctx, "telemetry.status", 0)
 			return nil
 		}
 		return fmt.Errorf("failed to read telemetry directory: %w", err)
@@ -218,10 +254,15 @@ func runTelemetryStatus(cmd *cobra.Command, args []string) error {
 		fmt.Println("To clear data: canvas telemetry clear")
 	}
 
+	logger.LogCommandComplete(ctx, "telemetry.status", eventFiles)
 	return nil
 }
 
-func runTelemetryShow(cmd *cobra.Command, args []string) error {
+func runTelemetryShow(cmd *cobra.Command) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "telemetry.show", nil)
+
 	configDir, err := config.GetConfigDir()
 	if err != nil {
 		return fmt.Errorf("failed to get config directory: %w", err)
@@ -232,6 +273,7 @@ func runTelemetryShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("No telemetry data collected yet.")
+			logger.LogCommandComplete(ctx, "telemetry.show", 0)
 			return nil
 		}
 		return fmt.Errorf("failed to read telemetry directory: %w", err)
@@ -247,6 +289,7 @@ func runTelemetryShow(cmd *cobra.Command, args []string) error {
 
 	if len(eventFiles) == 0 {
 		fmt.Println("No telemetry data collected yet.")
+		logger.LogCommandComplete(ctx, "telemetry.show", 0)
 		return nil
 	}
 
@@ -255,8 +298,8 @@ func runTelemetryShow(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	for _, filename := range eventFiles {
-		filepath := filepath.Join(telemetryDir, filename)
-		info, err := os.Stat(filepath)
+		filePath := filepath.Join(telemetryDir, filename)
+		info, err := os.Stat(filePath)
 		if err != nil {
 			continue
 		}
@@ -264,17 +307,22 @@ func runTelemetryShow(cmd *cobra.Command, args []string) error {
 		fmt.Printf("File: %s\n", filename)
 		fmt.Printf("Size: %d bytes\n", info.Size())
 		fmt.Printf("Modified: %s\n", info.ModTime().Format("2006-01-02 15:04:05"))
-		fmt.Printf("Path: %s\n", filepath)
+		fmt.Printf("Path: %s\n", filePath)
 		fmt.Println()
 	}
 
 	fmt.Printf("Total files: %d\n", len(eventFiles))
 	fmt.Printf("Directory: %s\n", telemetryDir)
 
+	logger.LogCommandComplete(ctx, "telemetry.show", len(eventFiles))
 	return nil
 }
 
-func runTelemetryClear(cmd *cobra.Command, args []string) error {
+func runTelemetryClear(cmd *cobra.Command) error {
+	logger := logging.NewCommandLogger(verbose)
+	ctx := cmd.Context()
+	logger.LogCommandStart(ctx, "telemetry.clear", nil)
+
 	configDir, err := config.GetConfigDir()
 	if err != nil {
 		return fmt.Errorf("failed to get config directory: %w", err)
@@ -285,6 +333,7 @@ func runTelemetryClear(cmd *cobra.Command, args []string) error {
 	// Check if directory exists
 	if _, err := os.Stat(telemetryDir); os.IsNotExist(err) {
 		fmt.Println("No telemetry data to clear.")
+		logger.LogCommandComplete(ctx, "telemetry.clear", 0)
 		return nil
 	}
 
@@ -297,8 +346,8 @@ func runTelemetryClear(cmd *cobra.Command, args []string) error {
 	removed := 0
 	for _, file := range files {
 		if !file.IsDir() && filepath.Ext(file.Name()) == ".json" {
-			filepath := filepath.Join(telemetryDir, file.Name())
-			if err := os.Remove(filepath); err != nil {
+			filePath := filepath.Join(telemetryDir, file.Name())
+			if err := os.Remove(filePath); err != nil {
 				fmt.Printf("Warning: failed to remove %s: %v\n", file.Name(), err)
 			} else {
 				removed++
@@ -309,8 +358,9 @@ func runTelemetryClear(cmd *cobra.Command, args []string) error {
 	if removed == 0 {
 		fmt.Println("No telemetry data to clear.")
 	} else {
-		fmt.Printf("✓ Cleared %d telemetry data file(s)\n", removed)
+		fmt.Printf("Cleared %d telemetry data file(s)\n", removed)
 	}
 
+	logger.LogCommandComplete(ctx, "telemetry.clear", removed)
 	return nil
 }

@@ -698,7 +698,7 @@ func runModulesList(ctx context.Context, client *api.Client, opts *options.Modul
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -743,7 +743,7 @@ func runModulesGet(ctx context.Context, client *api.Client, opts *options.Module
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.get", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -778,7 +778,7 @@ func runModulesCreate(ctx context.Context, client *api.Client, opts *options.Mod
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.create", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -822,7 +822,7 @@ func runModulesUpdate(ctx context.Context, client *api.Client, opts *options.Mod
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.update", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -882,7 +882,7 @@ func runModulesDelete(ctx context.Context, client *api.Client, opts *options.Mod
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.delete", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -924,7 +924,7 @@ func runModulesRelock(ctx context.Context, client *api.Client, opts *options.Mod
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.relock", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -959,7 +959,7 @@ func runModulesPublish(ctx context.Context, client *api.Client, opts *options.Mo
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.publish", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -999,7 +999,7 @@ func runModulesUnpublish(ctx context.Context, client *api.Client, opts *options.
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.unpublish", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -1040,7 +1040,7 @@ func runModulesItemsList(ctx context.Context, client *api.Client, opts *options.
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.items.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -1082,7 +1082,7 @@ func runModulesItemsGet(ctx context.Context, client *api.Client, opts *options.M
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.items.get", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -1119,7 +1119,7 @@ func runModulesItemsCreate(ctx context.Context, client *api.Client, opts *option
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.items.create", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -1173,7 +1173,7 @@ func runModulesItemsUpdate(ctx context.Context, client *api.Client, opts *option
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.items.update", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -1238,7 +1238,7 @@ func runModulesItemsDelete(ctx context.Context, client *api.Client, opts *option
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.items.delete", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -1282,7 +1282,7 @@ func runModulesItemsDone(ctx context.Context, client *api.Client, opts *options.
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "modules.items.done", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})

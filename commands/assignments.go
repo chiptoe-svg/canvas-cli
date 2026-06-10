@@ -180,7 +180,10 @@ Examples:
 	cmd.Flags().StringSliceVar(&opts.SubmissionTypes, "submission-types", []string{}, "Submission types (online_text_entry, online_url, online_upload, media_recording, none)")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Assignment group ID")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Position in the assignment group")
-	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with assignment data")
+	// --json-file is the preferred flag name; --json is kept for backward compatibility
+	cmd.Flags().StringVar(&opts.JSONFile, "json-file", "", "JSON file with assignment data")
+	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with assignment data (deprecated: use --json-file)")
+	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 	cmd.Flags().BoolVar(&opts.Stdin, "stdin", false, "Read JSON from stdin")
 	cmd.MarkFlagRequired("course-id")
 
@@ -241,7 +244,9 @@ Examples:
 	cmd.Flags().StringSliceVar(&opts.SubmissionTypes, "submission-types", []string{}, "Submission types")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Assignment group ID")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Position in the assignment group")
-	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with assignment data")
+	cmd.Flags().StringVar(&opts.JSONFile, "json-file", "", "JSON file with assignment data")
+	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with assignment data (deprecated: use --json-file)")
+	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 	cmd.Flags().BoolVar(&opts.Stdin, "stdin", false, "Read JSON from stdin")
 	cmd.MarkFlagRequired("course-id")
 
@@ -300,7 +305,7 @@ func runAssignmentsList(ctx context.Context, client *api.Client, opts *options.A
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "assignments.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -341,7 +346,7 @@ func runAssignmentsGet(ctx context.Context, client *api.Client, opts *options.As
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "assignments.get", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -376,7 +381,7 @@ func runAssignmentsCreate(ctx context.Context, client *api.Client, cmd *cobra.Co
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "assignments.create", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -489,7 +494,7 @@ func runAssignmentsUpdate(ctx context.Context, client *api.Client, cmd *cobra.Co
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "assignments.update", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})
@@ -624,7 +629,7 @@ func runAssignmentsDelete(ctx context.Context, client *api.Client, opts *options
 	})
 
 	// Validate course ID exists
-	if _, err := validateCourseID(client, opts.CourseID); err != nil {
+	if _, err := validateCourseID(ctx, client, opts.CourseID); err != nil {
 		logger.LogCommandError(ctx, "assignments.delete", err, map[string]interface{}{
 			"course_id": opts.CourseID,
 		})

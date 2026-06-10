@@ -597,16 +597,13 @@ func runGradesColumnsDelete(ctx context.Context, client *api.Client, opts *optio
 		"force":     opts.Force,
 	})
 
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete custom column %d.\n", opts.ColumnID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			logger.LogCommandComplete(ctx, "grades.columns.delete", 0)
-			return nil
-		}
+	ok, confirmErr := confirmDelete("custom column", opts.ColumnID, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		logger.LogCommandComplete(ctx, "grades.columns.delete", 0)
+		return nil
 	}
 
 	service := api.NewGradesService(client)

@@ -660,15 +660,14 @@ func runOutcomesUnlink(ctx context.Context, client *api.Client, opts *options.Ou
 		"outcome_id": opts.OutcomeID,
 	})
 
-	if !opts.Force {
-		fmt.Printf("WARNING: This will unlink outcome %d from group %d.\n", opts.OutcomeID, opts.GroupID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Unlink cancelled")
-			return nil
-		}
+	ok, confirmErr := confirmDeleteWithDetails("outcome link", opts.OutcomeID, map[string]interface{}{
+		"group_id": opts.GroupID,
+	}, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
 	}
 
 	service := api.NewOutcomesService(client)

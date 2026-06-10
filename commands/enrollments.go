@@ -457,15 +457,14 @@ func runEnrollmentsConclude(ctx context.Context, client *api.Client, opts *optio
 		"task":          opts.Task,
 	})
 
-	// Confirmation for delete
-	if opts.Task == "delete" && !opts.Force {
-		fmt.Printf("WARNING: This will permanently delete enrollment %d.\n", opts.EnrollmentID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
+	// Confirmation for permanent deletion
+	if opts.Task == "delete" {
+		ok, confirmErr := confirmDelete("enrollment", opts.EnrollmentID, opts.Force)
+		if confirmErr != nil {
+			return confirmErr
+		}
+		if !ok {
 			logger.LogCommandComplete(ctx, "enrollments.conclude", 0)
-			fmt.Println("Delete cancelled")
 			return nil
 		}
 	}

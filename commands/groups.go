@@ -1045,15 +1045,14 @@ func runGroupsCategoriesDelete(ctx context.Context, client *api.Client, opts *op
 	})
 
 	// Confirm deletion
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete category %d and all groups in it.\n", opts.CategoryID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Cancelled.")
-			return nil
-		}
+	ok, confirmErr := confirmDeleteWithDetails("group category", opts.CategoryID, map[string]interface{}{
+		"warning": "This will delete the category and all groups in it",
+	}, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
 	}
 
 	service := api.NewGroupsService(client)

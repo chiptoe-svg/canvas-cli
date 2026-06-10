@@ -1,9 +1,13 @@
 package commands
 
 import (
+	"context"
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
+
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	"github.com/jjuanrivvera/canvas-cli/internal/config"
 )
 
@@ -16,11 +20,19 @@ func setupSyncTestHome(t *testing.T) {
 	t.Cleanup(config.ResetCache)
 }
 
+// newTestCmdWithContext returns a minimal cobra.Command whose Context() returns a
+// background context.  Used to satisfy the cmd parameter of run* functions.
+func newTestCmdWithContext() *cobra.Command {
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+	return cmd
+}
+
 func TestSyncAssignmentsCmd_InvalidSourceID(t *testing.T) {
 	setupSyncTestHome(t)
 
-	// Call RunE directly with invalid args
-	err := runSyncAssignments(syncAssignmentsCmd, []string{"source-inst", "notanumber", "target-inst", "789"})
+	cmd := newTestCmdWithContext()
+	err := runSyncAssignments(cmd, []string{"source-inst", "notanumber", "target-inst", "789"}, &options.SyncAssignmentsOptions{})
 	if err == nil {
 		t.Error("expected error for invalid source course ID")
 		return
@@ -33,7 +45,8 @@ func TestSyncAssignmentsCmd_InvalidSourceID(t *testing.T) {
 func TestSyncAssignmentsCmd_InvalidTargetID(t *testing.T) {
 	setupSyncTestHome(t)
 
-	err := runSyncAssignments(syncAssignmentsCmd, []string{"source-inst", "123", "target-inst", "notanumber"})
+	cmd := newTestCmdWithContext()
+	err := runSyncAssignments(cmd, []string{"source-inst", "123", "target-inst", "notanumber"}, &options.SyncAssignmentsOptions{})
 	if err == nil {
 		t.Error("expected error for invalid target course ID")
 		return
@@ -46,7 +59,8 @@ func TestSyncAssignmentsCmd_InvalidTargetID(t *testing.T) {
 func TestSyncAssignmentsCmd_MissingInstance(t *testing.T) {
 	setupSyncTestHome(t)
 
-	err := runSyncAssignments(syncAssignmentsCmd, []string{"nonexistent-inst", "123", "another-nonexistent", "456"})
+	cmd := newTestCmdWithContext()
+	err := runSyncAssignments(cmd, []string{"nonexistent-inst", "123", "another-nonexistent", "456"}, &options.SyncAssignmentsOptions{})
 	if err == nil {
 		t.Error("expected error when instance is not configured")
 		return
@@ -60,7 +74,8 @@ func TestSyncAssignmentsCmd_MissingInstance(t *testing.T) {
 func TestSyncCourseCmd_InvalidSourceID(t *testing.T) {
 	setupSyncTestHome(t)
 
-	err := runSyncCourse(syncCourseCmd, []string{"source-inst", "notanumber", "target-inst", "789"})
+	cmd := newTestCmdWithContext()
+	err := runSyncCourse(cmd, []string{"source-inst", "notanumber", "target-inst", "789"}, &options.SyncCourseOptions{})
 	if err == nil {
 		t.Error("expected error for invalid source course ID")
 		return
@@ -73,7 +88,8 @@ func TestSyncCourseCmd_InvalidSourceID(t *testing.T) {
 func TestSyncCourseCmd_InvalidTargetID(t *testing.T) {
 	setupSyncTestHome(t)
 
-	err := runSyncCourse(syncCourseCmd, []string{"source-inst", "123", "target-inst", "notanumber"})
+	cmd := newTestCmdWithContext()
+	err := runSyncCourse(cmd, []string{"source-inst", "123", "target-inst", "notanumber"}, &options.SyncCourseOptions{})
 	if err == nil {
 		t.Error("expected error for invalid target course ID")
 		return
@@ -86,7 +102,8 @@ func TestSyncCourseCmd_InvalidTargetID(t *testing.T) {
 func TestSyncCourseCmd_MissingInstance(t *testing.T) {
 	setupSyncTestHome(t)
 
-	err := runSyncCourse(syncCourseCmd, []string{"nonexistent-inst", "123", "another-nonexistent", "456"})
+	cmd := newTestCmdWithContext()
+	err := runSyncCourse(cmd, []string{"nonexistent-inst", "123", "another-nonexistent", "456"}, &options.SyncCourseOptions{})
 	if err == nil {
 		t.Error("expected error when instance is not configured")
 		return

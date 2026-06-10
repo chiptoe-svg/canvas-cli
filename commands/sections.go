@@ -455,15 +455,14 @@ func runSectionsDelete(ctx context.Context, client *api.Client, opts *options.Se
 	})
 
 	// Confirmation
-	if !opts.Force {
-		fmt.Printf("WARNING: This will delete section %d and may remove students from the course.\n", opts.SectionID)
-		fmt.Print("Type 'yes' to confirm: ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if confirm != "yes" {
-			fmt.Println("Delete cancelled")
-			return nil
-		}
+	ok, err := confirmDeleteWithDetails("section", opts.SectionID, map[string]interface{}{
+		"warning": "This will delete the section and may remove students from the course",
+	}, opts.Force)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
 	}
 
 	sectionsService := api.NewSectionsService(client)
