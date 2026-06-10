@@ -1,11 +1,10 @@
 module github.com/jjuanrivvera/canvas-cli
 
-go 1.25.0
-
-// CI reads this via actions/setup-go (go-version-file: go.mod). Keep it on the
-// latest 1.25.x patch — the blocking govulncheck job fails on stdlib
-// vulnerabilities fixed in patch releases.
-toolchain go1.25.11
+// CI reads this via actions/setup-go (go-version-file: go.mod), which honors
+// the go directive but not a toolchain directive. Keep this on the latest
+// 1.25.x patch — the blocking govulncheck job fails on stdlib vulnerabilities
+// fixed in patch releases.
+go 1.25.11
 
 require (
 	github.com/chzyer/readline v1.5.1
