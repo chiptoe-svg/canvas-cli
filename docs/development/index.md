@@ -80,6 +80,7 @@ git push origin feature/my-feature
 | `make build` | Build binary to `bin/canvas` |
 | `make dev` | Build with fmt and vet |
 | `make test` | Run all tests |
+| `make test-integration` | Run binary-level integration tests |
 | `make test-coverage` | Run tests with coverage |
 | `make lint` | Run golangci-lint |
 | `make fmt` | Format code |
@@ -100,6 +101,18 @@ canvas-cli/
 │   └── output/       # Output formatters
 ├── tools/            # Development tools
 └── docs/             # Documentation
+```
+
+## Integration Tests
+
+A binary-level integration suite lives in `test/integration/` and is guarded by the `integration` build tag, so it is invisible to the normal `go test ./...` run. The suite compiles the binary once in `TestMain`, then exercises it as a black box against a lightweight `httptest` mock Canvas server. It covers version output, help, unknown-command errors, JSON/CSV/table output, auth failure, alias expansion, context propagation, `--dry-run` token redaction, and the REPL help surface.
+
+Run it with:
+
+```bash
+go test -tags integration -v -timeout 5m ./test/integration/
+# or
+make test-integration
 ```
 
 ## Code Style

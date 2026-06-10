@@ -1,4 +1,4 @@
-.PHONY: help build test clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy
+.PHONY: help build test test-integration clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy
 
 # Variables
 BINARY_NAME=canvas
@@ -15,6 +15,7 @@ help:
 	@echo "  make install      - Install the binary to /usr/local/bin"
 	@echo "  make uninstall    - Remove the binary from /usr/local/bin"
 	@echo "  make test         - Run tests"
+	@echo "  make test-integration - Run binary-level integration tests"
 	@echo "  make test-coverage - Run tests with coverage"
 	@echo "  make clean        - Remove build artifacts"
 	@echo "  make fmt          - Format code"
@@ -54,6 +55,11 @@ uninstall:
 test:
 	@echo "Running tests..."
 	@go test -v ./...
+
+# Run binary-level integration tests (requires compiled binary; skipped by default)
+test-integration:
+	@echo "Running integration tests..."
+	@go test -tags integration -v -timeout 5m ./test/integration/
 
 # Run tests with coverage
 test-coverage:
