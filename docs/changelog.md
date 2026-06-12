@@ -14,6 +14,31 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.9.1] - 2026-06-11
+
+### Security
+
+- The OAuth callback server and webhook listener now set a read-header
+  timeout (slowloris hardening)
+- gosec static analysis is now a blocking CI gate (283-finding backlog
+  resolved: real fixes plus justified suppressions)
+- Self-update state directory permissions tightened
+
+### Changed
+
+- Releases are built with current GitHub Actions runtimes (Node 24);
+  cosign stays on the v2 line so published verification instructions
+  keep working
+- Dependabot now keeps GitHub Actions and Go dependencies current
+
+### Internal
+
+- New binary-level integration test suite (`make test-integration`)
+  exercising the compiled CLI against a mock Canvas server
+- New `make check` target running every CI gate locally
+- Removed the misleading legacy command test framework; deduplicated
+  ~200 test client constructions behind a shared helper
+
 ## [1.9.0] - 2026-06-10
 
 ### Added
@@ -664,7 +689,8 @@ This release adds comprehensive write command support across all Canvas API reso
 
 ---
 
-[Unreleased]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.9.1...HEAD
+[1.9.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.7.0...v1.8.0
