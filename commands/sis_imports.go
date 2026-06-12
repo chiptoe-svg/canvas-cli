@@ -109,7 +109,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -164,8 +164,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.DiffingID, "diffing-data-set-identifier", "", "Diffing dataset identifier")
 	cmd.Flags().BoolVar(&opts.DiffingRemaster, "diffing-remaster-data-set", false, "Remaster diffing dataset")
 	cmd.Flags().Float64Var(&opts.ChangeThreshold, "change-threshold", 0, "Skip if changes below threshold (0.0-1.0)")
-	cmd.MarkFlagRequired("account-id")
-	cmd.MarkFlagRequired("file")
+	mustMarkRequired(cmd, "account-id", "file")
 
 	return cmd
 }
@@ -202,7 +201,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -243,7 +242,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
 	cmd.Flags().BoolVar(&opts.BatchMode, "batch-mode", false, "Use batch mode for restore")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -280,7 +279,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }

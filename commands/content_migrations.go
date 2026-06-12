@@ -64,7 +64,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -101,7 +101,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -152,8 +152,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.Selective, "selective", false, "Enable selective import")
 	cmd.Flags().StringVar(&opts.CopyOptions, "copy-options", "", "JSON with copy options")
 	cmd.Flags().StringVar(&opts.DateShift, "date-shift", "", "JSON with date shift options")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("type")
+	mustMarkRequired(cmd, "course-id", "type")
 
 	return cmd
 }
@@ -185,7 +184,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -226,7 +225,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.ContentType, "type", "", "Content type filter")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -263,7 +262,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }

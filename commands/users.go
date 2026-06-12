@@ -224,7 +224,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.JSONFile, "json", "", "JSON file with user data (deprecated: use --json-file)")
 	_ = cmd.Flags().MarkDeprecated("json", "use --json-file instead")
 	cmd.Flags().BoolVar(&opts.Stdin, "stdin", false, "Read JSON from stdin")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -607,7 +607,7 @@ func runUsersUpdate(ctx context.Context, client *api.Client, opts *options.Users
 
 func readUserJSON(filePath string, useStdin bool) ([]byte, error) {
 	if filePath != "" {
-		return os.ReadFile(filePath)
+		return os.ReadFile(filePath) // #nosec G304 -- filePath comes from the --file flag, user-controlled by design
 	}
 	if useStdin {
 		return io.ReadAll(os.Stdin)

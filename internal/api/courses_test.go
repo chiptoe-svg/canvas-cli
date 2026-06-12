@@ -50,14 +50,7 @@ func TestCoursesService_List(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -110,14 +103,7 @@ func TestCoursesService_Get(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -164,14 +150,7 @@ func TestCoursesService_Create(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -223,14 +202,7 @@ func TestCoursesService_Update(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -278,19 +250,12 @@ func TestCoursesService_Delete(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
 
-	err = service.Delete(ctx, 123, "delete")
+	err := service.Delete(ctx, 123, "delete")
 	if err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
@@ -366,14 +331,7 @@ func TestCoursesService_Create_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -479,14 +437,7 @@ func TestCoursesService_Update_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -561,14 +512,7 @@ func TestCoursesService_Create_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -601,14 +545,7 @@ func TestCoursesService_Update_SoftError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -641,14 +578,7 @@ func TestCoursesService_Create_ZeroID(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -658,7 +588,7 @@ func TestCoursesService_Create_ZeroID(t *testing.T) {
 		Name:      "Some Course",
 	}
 
-	_, err = service.Create(ctx, params)
+	_, err := service.Create(ctx, params)
 	if err == nil {
 		t.Fatal("expected error for zero ID course response")
 	}
@@ -718,14 +648,7 @@ func TestCoursesService_Get_WithIncludes(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()
@@ -776,14 +699,7 @@ func TestCoursesService_List_WithAllOptions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewCoursesService(client)
 	ctx := context.Background()

@@ -62,9 +62,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "assignment-id")
 
 	return cmd
 }
@@ -101,9 +101,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "assignment-id")
 
 	return cmd
 }
@@ -137,9 +137,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "assignment-id")
 	cmd.Flags().StringVar(&opts.StudentIDs, "student-ids", "", "Comma-separated student IDs")
 	cmd.Flags().Int64Var(&opts.SectionID, "section-id", 0, "Section ID")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
@@ -191,9 +191,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "assignment-id")
 	cmd.Flags().StringVar(&opts.StudentIDs, "student-ids", "", "Comma-separated student IDs")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Override title")
 	cmd.Flags().StringVar(&opts.DueAt, "due-at", "", "Due date (ISO 8601)")
@@ -236,9 +236,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "assignment-id")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
 
 	return cmd

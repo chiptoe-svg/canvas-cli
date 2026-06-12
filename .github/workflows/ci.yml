@@ -58,13 +58,13 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
           govulncheck ./...
 
-      # -no-fail: the codebase currently carries ~300 open gosec findings
-      # (mostly G104 unchecked errors), so gosec is report-only until that
-      # backlog is burned down. Tracked in TECHNICAL_DEBT.md.
+      # All gosec findings have been resolved (G104 via mustMarkRequired helper
+      # and #nosec annotations with justifications; remaining rules fixed or
+      # annotated). gosec now enforces a zero-finding gate on every PR.
       - name: Run Gosec
         uses: securego/gosec@v2.27.1
         with:
-          args: '-no-fail -fmt text ./...'
+          args: '-fmt text ./...'
 
   # Test matrix
   test:
@@ -122,6 +122,21 @@ jobs:
       - name: Build
         shell: bash
         run: go build -v ./cmd/canvas
+
+  # Binary-level integration tests (compiled binary + mock Canvas server)
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run integration tests
+        env:
+          CANVAS_CLI_MACHINE_ID: test-machine-id-ci
+        run: go test -tags integration -v -timeout 5m ./test/integration/
 
   # Build artifacts
   build:

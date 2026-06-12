@@ -59,14 +59,7 @@ func TestFilesService_Download_PathTraversal(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	// Download with empty destPath should be rejected immediately.
 	ctx := context.Background()
@@ -115,14 +108,7 @@ func TestFilesService_Download_WritesToExpectedPath(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	tmpDir := t.TempDir()
 	dest := filepath.Join(tmpDir, "report.pdf")

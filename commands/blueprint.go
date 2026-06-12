@@ -83,7 +83,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -116,7 +116,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -150,8 +150,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
 	cmd.Flags().StringVar(&opts.CourseIDsStr, "course-ids-to-add", "", "Comma-separated course IDs to add")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("course-ids-to-add")
+	mustMarkRequired(cmd, "course-id", "course-ids-to-add")
 
 	return cmd
 }
@@ -185,8 +184,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
 	cmd.Flags().StringVar(&opts.CourseIDsStr, "course-ids-to-remove", "", "Comma-separated course IDs to remove")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("course-ids-to-remove")
+	mustMarkRequired(cmd, "course-id", "course-ids-to-remove")
 
 	return cmd
 }
@@ -229,7 +227,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.Notify, "send-notification", false, "Send notification to users")
 	cmd.Flags().BoolVar(&opts.CopySettings, "copy-settings", false, "Copy course settings")
 	cmd.Flags().BoolVar(&opts.Publish, "publish", false, "Publish synced content")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -262,7 +260,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -295,7 +293,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -337,7 +335,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.TemplateID, "template-id", "default", "Blueprint template ID")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", nil, "Include options (user)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }

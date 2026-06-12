@@ -64,7 +64,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data (assignments, discussion_topic, rules)")
 
 	return cmd
@@ -103,7 +103,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data (assignments, discussion_topic, rules)")
 
 	return cmd
@@ -136,9 +136,9 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Group name (required)")
-	cmd.MarkFlagRequired("name")
+	mustMarkRequired(cmd, "name")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Position in course")
 	cmd.Flags().Float64Var(&opts.Weight, "weight", 0, "Group weight percentage (0-100)")
 	cmd.Flags().IntVar(&opts.DropLowest, "drop-lowest", 0, "Number of lowest scores to drop")
@@ -188,7 +188,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Group name")
 	cmd.Flags().IntVar(&opts.Position, "position", 0, "Position in course")
 	cmd.Flags().Float64Var(&opts.Weight, "weight", 0, "Group weight percentage (0-100)")
@@ -234,7 +234,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
 	cmd.Flags().Int64Var(&opts.MoveTo, "move-to", 0, "Move assignments to another group before deleting")
 

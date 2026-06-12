@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 -- MD5 is used only for cache filename hashing, not for any cryptographic purpose
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -96,8 +96,9 @@ func getVersionCachePath(baseURL string) string {
 			"suggestion", "Check directory permissions or disk space")
 	}
 
-	// Hash the baseURL to create a unique cache file name
-	hash := md5.Sum([]byte(baseURL))
+	// Hash the baseURL to create a unique cache file name — MD5 is used as a
+	// fast filename-safe hash, not for any cryptographic purpose.
+	hash := md5.Sum([]byte(baseURL)) // #nosec G401 -- non-cryptographic use: converts URL to a valid cache filename
 	filename := "version_" + hex.EncodeToString(hash[:]) + ".json"
 
 	return filepath.Join(cacheDir, filename)
@@ -107,7 +108,7 @@ func getVersionCachePath(baseURL string) string {
 func loadCachedVersion(baseURL string) (*CanvasVersion, bool, bool) {
 	cachePath := getVersionCachePath(baseURL)
 
-	data, err := os.ReadFile(cachePath)
+	data, err := os.ReadFile(cachePath) // #nosec G304 -- cachePath is derived from an MD5 hash of the base URL, constructed internally
 	if err != nil {
 		return nil, false, false
 	}
@@ -119,7 +120,7 @@ func loadCachedVersion(baseURL string) (*CanvasVersion, bool, bool) {
 
 	// Check if expired (24 hours)
 	if time.Now().After(item.Expiration) {
-		os.Remove(cachePath)
+		os.Remove(cachePath) // #nosec G104 -- best-effort cleanup of expired version cache file
 		return nil, false, false
 	}
 

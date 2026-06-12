@@ -1,4 +1,4 @@
-.PHONY: help build test clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy
+.PHONY: help build test test-integration clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy
 
 # Variables
 BINARY_NAME=canvas
@@ -14,7 +14,9 @@ help:
 	@echo "  make build        - Build the binary"
 	@echo "  make install      - Install the binary to /usr/local/bin"
 	@echo "  make uninstall    - Remove the binary from /usr/local/bin"
+	@echo "  make check        - Run everything CI runs: fmt-check, vet, lint, gosec, tests, integration"
 	@echo "  make test         - Run tests"
+	@echo "  make test-integration - Run binary-level integration tests"
 	@echo "  make test-coverage - Run tests with coverage"
 	@echo "  make clean        - Remove build artifacts"
 	@echo "  make fmt          - Format code"
@@ -50,10 +52,31 @@ uninstall:
 	@sudo rm -f /usr/local/bin/$(BINARY_NAME)
 	@echo "✓ Uninstalled"
 
+# Run everything CI runs, locally
+check: vet lint
+	@echo "Checking formatting..."
+	@unformatted=$$(gofmt -l . | grep -v '^.claude' || true); \
+	if [ -n "$$unformatted" ]; then echo "✗ Needs gofmt:"; echo "$$unformatted"; exit 1; fi
+	@echo "✓ Formatting clean"
+	@if command -v gosec > /dev/null; then \
+		echo "Running gosec..."; gosec -quiet ./... && echo "✓ Gosec clean"; \
+	else echo "⚠ gosec not installed — skipping (CI enforces it)"; fi
+	@echo "Running tests (-race)..."
+	@go test -race ./...
+	@echo "✓ Tests pass"
+	@$(MAKE) --no-print-directory test-integration
+	@echo ""
+	@echo "✓ All checks passed"
+
 # Run tests
 test:
 	@echo "Running tests..."
 	@go test -v ./...
+
+# Run binary-level integration tests (requires compiled binary; skipped by default)
+test-integration:
+	@echo "Running integration tests..."
+	@go test -tags integration -v -timeout 5m ./test/integration/
 
 # Run tests with coverage
 test-coverage:

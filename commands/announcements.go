@@ -68,7 +68,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.ActiveOnly, "active-only", false, "Only return active announcements")
 	cmd.Flags().BoolVar(&opts.LatestOnly, "latest-only", false, "Only return the latest announcement per context")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include: sections, sections_user_count")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -105,7 +105,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -141,8 +141,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.Message, "message", "", "Announcement message (HTML)")
 	cmd.Flags().StringVar(&opts.DelayedAt, "delayed-at", "", "Delay posting until (ISO 8601)")
 	cmd.Flags().BoolVar(&opts.Published, "published", true, "Publish the announcement (default: true)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "course-id", "title")
 
 	return cmd
 }
@@ -188,7 +187,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.Title, "title", "", "New announcement title")
 	cmd.Flags().StringVar(&opts.Message, "message", "", "New announcement message")
 	cmd.Flags().StringVar(&opts.DelayedAt, "delayed-at", "", "Delay posting until")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -236,7 +235,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }

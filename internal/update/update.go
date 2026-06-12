@@ -369,22 +369,22 @@ func (u *Updater) applyUpdate(newBinary []byte) error {
 
 	// Write the new binary
 	if _, err := tmpFile.Write(newBinary); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		_ = tmpFile.Close()    // best-effort close before removing temp file on error path
+		_ = os.Remove(tmpPath) // best-effort cleanup of temp file on error path
 		return fmt.Errorf("failed to write new binary: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close() // error closing temp file before chmod is non-critical; file contents were written successfully
 
-	// Make it executable
-	if err := os.Chmod(tmpPath, 0755); err != nil {
-		os.Remove(tmpPath)
+	// Make it executable — 0755 is required so users on the same system can run the binary.
+	if err := os.Chmod(tmpPath, 0755); err != nil { // #nosec G302 -- binary must be world-executable
+		_ = os.Remove(tmpPath) // best-effort cleanup of temp file on chmod error path
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 
 	// Backup the old binary
 	backupPath := execPath + ".bak"
 	if err := os.Rename(execPath, backupPath); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath) // best-effort cleanup of temp file on error path
 		return fmt.Errorf("failed to backup old binary: %w", err)
 	}
 
@@ -392,12 +392,12 @@ func (u *Updater) applyUpdate(newBinary []byte) error {
 	if err := os.Rename(tmpPath, execPath); err != nil {
 		// Try to restore the backup (ignore restore error - best effort)
 		_ = os.Rename(backupPath, execPath)
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath) // best-effort cleanup of temp file on error path
 		return fmt.Errorf("failed to install new binary: %w", err)
 	}
 
-	// Remove backup
-	os.Remove(backupPath)
+	// Remove backup — best-effort; a stale .bak is harmless.
+	_ = os.Remove(backupPath)
 
 	return nil
 }
@@ -429,7 +429,7 @@ func parseVersion(v string) [3]int {
 	for i := 0; i < 3 && i < len(parts); i++ {
 		// Strip any pre-release suffix
 		numStr := strings.Split(parts[i], "-")[0]
-		fmt.Sscanf(numStr, "%d", &result[i])
+		fmt.Sscanf(numStr, "%d", &result[i]) // #nosec G104 -- parse failure leaves element zero, which is correct for a missing/malformed version component
 	}
 
 	return result

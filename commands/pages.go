@@ -72,7 +72,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search by page title")
 	cmd.Flags().StringVar(&opts.Published, "published", "", "Filter by published status: true, false")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (body)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -103,7 +103,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -131,7 +131,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -168,8 +168,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish the page")
 	cmd.Flags().BoolVar(&opts.FrontPage, "front-page", false, "Set as front page")
 	cmd.Flags().StringVar(&opts.PublishAt, "publish-at", "", "Schedule publication date (ISO 8601)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "course-id", "title")
 
 	return cmd
 }
@@ -216,7 +215,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish the page")
 	cmd.Flags().BoolVar(&opts.FrontPage, "front-page", false, "Set as front page")
 	cmd.Flags().StringVar(&opts.PublishAt, "publish-at", "", "Schedule publication date (ISO 8601)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -247,7 +246,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -277,7 +276,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -307,7 +306,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -342,7 +341,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }

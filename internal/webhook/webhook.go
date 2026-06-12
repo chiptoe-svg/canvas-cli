@@ -96,8 +96,9 @@ func (l *Listener) Start(ctx context.Context) error {
 	}
 
 	l.server = &http.Server{
-		Addr:    l.addr,
-		Handler: handler,
+		Addr:              l.addr,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	l.logger.Printf("Starting webhook listener on %s\n", l.addr)

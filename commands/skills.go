@@ -80,9 +80,11 @@ func newSkillsInstallCmd() *cobra.Command {
 					return rerr
 				}
 				dst := filepath.Join(target, filepath.FromSlash(f))
+				// #nosec G301 -- skill directories must be accessible to AI agents and tools
 				if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 					return err
 				}
+				// #nosec G306 -- skill documentation files are intentionally world-readable
 				if err := os.WriteFile(dst, data, 0o644); err != nil { //nolint:gosec // skill docs are world-readable
 					return err
 				}

@@ -3,69 +3,20 @@
 This document tracks known technical debt in the Canvas CLI project.
 
 **Last Updated:** 2026-06-10
-**Status:** Re-triaged after the v1.9.0 release. Every item here is either
-actively planned with a target, deliberately dormant, or an accepted design
-choice — items that would sit at "Planned" forever have been removed (see
-"Removed Items" for why, so they don't get re-added by a future review).
+**Status:** All actionable debt resolved (v1.10 batch). The only tracked item
+is deliberately dormant with an explicit trigger. Items that would sit at
+"Planned" forever were removed (see "Removed Items" for why, so they don't
+get re-added by a future review).
 
 ---
 
 ## Active Items
 
-1. **Gosec Findings Backlog (CI is report-only)**
-   - **Problem:** gosec reports ~300 findings (mostly G104 unchecked errors,
-     e.g. `cmd.MarkFlagRequired(...)` return values). The CI gosec step runs
-     with `-no-fail` so it cannot gate merges — the scan is decorative.
-   - **Impact:** New, genuine security findings would land unnoticed. This is
-     the only item with permanent, ongoing payoff: every future PR gets a real
-     gate.
-   - **Next Steps:** (1) Add a `mustMarkRequired(cmd, name)` helper (panic on
-     programmer error) and sweep the G104 bulk. (2) Triage the remainder: fix
-     or `#nosec` with written justification. (3) Remove `-no-fail`.
-   - **Effort:** ~half a day.
-   - **Priority:** Important — **Target: v1.10**
-
-2. **No Binary-Level Integration Tests**
-   - **Problem:** Nothing tests the compiled `canvas` binary. Package tests
-     cannot see binary-surface regressions — the June review's findings that
-     weren't code bugs (documented exit codes that didn't exist, a quickstart
-     command that didn't parse, duplicate REPL commands) were all of this kind.
-   - **Impact:** For a CLI, the binary is the product; it currently ships
-     untested as a whole.
-   - **Next Steps:** A deliberately small suite in `test/integration` (build
-     tag `integration`): compile once, drive with `os/exec` against an
-     `httptest` mock Canvas. Cap at ~10–15 cases: env-var auth, `-o json`,
-     exit codes 0/1, alias expansion, `context set`, `--dry-run` redaction.
-     Resist letting it grow into a parallel test universe.
-   - **Effort:** ~a day.
-   - **Priority:** Important — **Target: v1.10**
-
-3. **Old Command Test Framework Is a Trap**
-   - **Problem:** `commands/testing` coexists with the newer
-     `commands/internal/testing` — and the old one never routes
-     `getAPIClient()` to its mock server, so tests written against it look
-     like integration tests but exercise no HTTP dispatch. The next
-     contributor (or AI agent) will copy it.
-   - **Impact:** Actively misleading; the only item where doing nothing
-     misinforms people.
-   - **Next Steps:** Migrate its few remaining usages to
-     `commands/internal/testing`, delete the package.
-   - **Effort:** ~an hour.
-   - **Priority:** Important — **Target: v1.10 (do first)**
-
-4. **Duplicated Test Client Construction** *(timeboxed)*
-   - **Problem:** ~476 duplicated `NewClient(ClientConfig{...})` blocks across
-     `internal/api` tests. Only bites when `ClientConfig` changes shape, which
-     is rare — this is tidiness, not compounding debt.
-   - **Next Steps:** One timeboxed attempt: add `newTestClient(t, serverURL)`
-     and migrate call sites with a scripted regex pass, validated by the full
-     suite + `-race`. **If it isn't done in about an hour, abandon it** and
-     move this to Removed Items.
-   - **Priority:** Low — **Target: opportunistic, alongside the v1.10 batch**
+*None.*
 
 ## Dormant (deliberate — do not act early)
 
-5. **Cosign Pinned to the v2 Line**
+1. **Cosign Pinned to the v2 Line**
    - **Problem:** `release.yml` pins `cosign-release: v2.6.3` because cosign
      v3 changed the sign-blob/verify-blob bundle format, and both
      `.goreleaser.yaml` (`signs:`) and the documented verification
@@ -115,6 +66,22 @@ choice — items that would sit at "Planned" forever have been removed (see
 
 ## Resolved Debt
 
+- **Gosec findings backlog** (June 2026) — 283 findings burned down to 0: the
+  G104 bulk via a `mustMarkRequired` helper, two real fixes (missing
+  `ReadHeaderTimeout` on the OAuth callback and webhook servers, tightened
+  update-state dir perms), and justified `#nosec` annotations for the rest.
+  The CI gosec step is now blocking (`-no-fail` removed).
+- **Binary-level integration tests** (June 2026) — 12-case suite in
+  `test/integration` behind the `integration` build tag: compiled binary
+  driven via `os/exec` against a mock Canvas (env auth, output formats, exit
+  codes, alias expansion, context, `--dry-run` redaction). Separate CI job;
+  `make test-integration` locally.
+- **Old `commands/testing` framework removed** (June 2026) — it never routed
+  `getAPIClient()` to its mock server; deleted in favor of
+  `commands/internal/testing`.
+- **Duplicated test client construction** (June 2026) — shared
+  `newTestClient(t, serverURL)` helper; 201 exact-pattern call sites migrated
+  by script, variant constructions intentionally left explicit.
 - **Package-level flag variables in remaining commands** (June 2026, #37) —
   `api`, `cache`, `sync`, `telemetry`, `repl`, `completion` migrated to the
   options-struct pattern; `shell` became an alias of `repl`.

@@ -62,7 +62,7 @@ Examples:
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (items, content_details)")
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search by module name")
 	cmd.Flags().StringVar(&opts.StudentID, "student-id", "", "Get completion info for this student")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -102,7 +102,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (items, content_details)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -142,8 +142,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.RequireSequentialProgress, "require-sequential-progress", false, "Require sequential progress")
 	cmd.Flags().Int64SliceVar(&opts.PrerequisiteModuleIDs, "prerequisite-modules", []int64{}, "IDs of prerequisite modules")
 	cmd.Flags().BoolVar(&opts.PublishFinalGrade, "publish-final-grade", false, "Publish final grade on completion")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("name")
+	mustMarkRequired(cmd, "course-id", "name")
 
 	return cmd
 }
@@ -199,7 +198,7 @@ Examples:
 	cmd.Flags().Int64SliceVar(&opts.PrerequisiteModuleIDs, "prerequisite-modules", []int64{}, "IDs of prerequisite modules")
 	cmd.Flags().BoolVar(&opts.PublishFinalGrade, "publish-final-grade", false, "Publish final grade on completion")
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish the module")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -238,7 +237,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -280,7 +279,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -321,7 +320,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -361,7 +360,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -413,8 +412,7 @@ Examples:
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (content_details)")
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search by item title")
 	cmd.Flags().StringVar(&opts.StudentID, "student-id", "", "Get completion info for this student")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("module-id")
+	mustMarkRequired(cmd, "course-id", "module-id")
 
 	return cmd
 }
@@ -455,8 +453,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.ModuleID, "module-id", 0, "Module ID (required)")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (content_details)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("module-id")
+	mustMarkRequired(cmd, "course-id", "module-id")
 
 	return cmd
 }
@@ -518,9 +515,7 @@ Examples:
 	cmd.Flags().IntVar(&opts.Indent, "indent", 0, "Indent level (0-based)")
 	cmd.Flags().StringVar(&opts.CompletionType, "completion-type", "", "Completion requirement: must_view, must_contribute, must_submit, must_mark_done, min_score")
 	cmd.Flags().Float64Var(&opts.MinScore, "min-score", 0, "Minimum score for min_score completion type")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("module-id")
-	cmd.MarkFlagRequired("type")
+	mustMarkRequired(cmd, "course-id", "module-id", "type")
 
 	return cmd
 }
@@ -580,8 +575,7 @@ Examples:
 	cmd.Flags().Float64Var(&opts.MinScore, "min-score", 0, "Minimum score for min_score completion type")
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish the item")
 	cmd.Flags().Int64Var(&opts.MoveToModule, "move-to-module", 0, "Move item to a different module")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("module-id")
+	mustMarkRequired(cmd, "course-id", "module-id")
 
 	return cmd
 }
@@ -621,8 +615,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.ModuleID, "module-id", 0, "Module ID (required)")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("module-id")
+	mustMarkRequired(cmd, "course-id", "module-id")
 
 	return cmd
 }
@@ -661,8 +654,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.ModuleID, "module-id", 0, "Module ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("module-id")
+	mustMarkRequired(cmd, "course-id", "module-id")
 
 	return cmd
 }

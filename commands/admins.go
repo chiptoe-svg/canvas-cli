@@ -139,8 +139,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.Role, "role", "", "Role name (e.g., AccountAdmin)")
 	cmd.Flags().Int64Var(&opts.RoleID, "role-id", 0, "Role ID")
 	cmd.Flags().BoolVar(&opts.SendConfirmation, "send-confirmation", false, "Send confirmation email")
-	cmd.MarkFlagRequired("account-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "account-id", "user-id")
 
 	return cmd
 }
@@ -175,8 +174,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID to remove (required)")
 	cmd.Flags().Int64Var(&opts.RoleID, "role-id", 0, "Role ID (optional, removes specific role)")
-	cmd.MarkFlagRequired("account-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "account-id", "user-id")
 
 	return cmd
 }
@@ -255,7 +253,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -287,8 +285,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
 	cmd.Flags().StringVar(&opts.Label, "label", "", "Role label (required)")
 	cmd.Flags().StringVar(&opts.BaseRoleType, "base-type", "", "Base role type (AccountMembership, StudentEnrollment, TeacherEnrollment, TaEnrollment, ObserverEnrollment, DesignerEnrollment)")
-	cmd.MarkFlagRequired("account-id")
-	cmd.MarkFlagRequired("label")
+	mustMarkRequired(cmd, "account-id", "label")
 
 	return cmd
 }
@@ -328,7 +325,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
 	cmd.Flags().StringVar(&opts.Label, "label", "", "New role label")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -365,7 +362,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }
@@ -402,7 +399,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (required)")
-	cmd.MarkFlagRequired("account-id")
+	mustMarkRequired(cmd, "account-id")
 
 	return cmd
 }

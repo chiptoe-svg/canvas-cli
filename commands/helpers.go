@@ -18,6 +18,17 @@ import (
 	"github.com/jjuanrivvera/canvas-cli/internal/output"
 )
 
+// mustMarkRequired marks a flag as required and panics if the flag does not
+// exist. A missing flag name is a programmer error that would be caught by any
+// test that constructs the command tree, so a panic is the right signal.
+func mustMarkRequired(cmd *cobra.Command, names ...string) {
+	for _, n := range names {
+		if err := cmd.MarkFlagRequired(n); err != nil {
+			panic(err)
+		}
+	}
+}
+
 // getUserAgent returns the User-Agent string with version
 func getUserAgent() string {
 	if version != "" && version != "dev" {
@@ -42,7 +53,7 @@ func getAPIClient() (*api.Client, error) {
 		// Use environment variables for authentication
 		requestsPerSec := 5.0 // Default
 		if envRPS := os.Getenv("CANVAS_REQUESTS_PER_SEC"); envRPS != "" {
-			fmt.Sscanf(envRPS, "%f", &requestsPerSec)
+			fmt.Sscanf(envRPS, "%f", &requestsPerSec) // #nosec G104 -- parse failure keeps the default value; invalid input is not a security concern
 		}
 
 		// Create cache if not disabled

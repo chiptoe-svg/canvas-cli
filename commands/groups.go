@@ -136,8 +136,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.JoinLevel, "join-level", "", "Join level (parent_context_auto_join, parent_context_request, invitation_only)")
 	cmd.Flags().Int64Var(&opts.StorageQuotaMb, "storage-quota-mb", 0, "Storage quota in MB")
 	cmd.Flags().StringVar(&opts.SISGroupID, "sis-group-id", "", "SIS group ID")
-	cmd.MarkFlagRequired("category-id")
-	cmd.MarkFlagRequired("name")
+	mustMarkRequired(cmd, "category-id", "name")
 
 	return cmd
 }
@@ -306,7 +305,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID to add (required)")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "user-id")
 
 	return cmd
 }
@@ -344,7 +343,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.MembershipID, "membership-id", 0, "Membership ID to remove (required)")
-	cmd.MarkFlagRequired("membership-id")
+	mustMarkRequired(cmd, "membership-id")
 
 	return cmd
 }
@@ -458,7 +457,7 @@ Examples:
 	cmd.Flags().IntVar(&opts.CreateGroupCount, "create-group-count", 0, "Number of groups to create")
 	cmd.Flags().IntVar(&opts.SplitGroupCount, "split-group-count", 0, "Number of groups to split students into")
 	cmd.Flags().StringVar(&opts.SISCategoryID, "sis-category-id", "", "SIS category ID")
-	cmd.MarkFlagRequired("name")
+	mustMarkRequired(cmd, "name")
 
 	return cmd
 }

@@ -146,8 +146,7 @@ Examples:
 	cmd.Flags().Int64SliceVar(&opts.AttachmentIDs, "attachment-ids", nil, "Attachment IDs")
 	cmd.Flags().StringVar(&opts.MediaCommentID, "media-comment-id", "", "Media comment ID")
 	cmd.Flags().StringVar(&opts.ContextCode, "context-code", "", "Context code (e.g., course_123)")
-	cmd.MarkFlagRequired("recipients")
-	cmd.MarkFlagRequired("body")
+	mustMarkRequired(cmd, "recipients", "body")
 
 	return cmd
 }
@@ -185,7 +184,7 @@ Examples:
 	cmd.Flags().Int64SliceVar(&opts.AttachmentIDs, "attachment-ids", nil, "Attachment IDs")
 	cmd.Flags().StringVar(&opts.MediaCommentID, "media-comment-id", "", "Media comment ID")
 	cmd.Flags().Int64SliceVar(&opts.IncludedMessages, "included-messages", nil, "Include previous message IDs")
-	cmd.MarkFlagRequired("body")
+	mustMarkRequired(cmd, "body")
 
 	return cmd
 }
@@ -219,7 +218,7 @@ Examples:
 	}
 
 	cmd.Flags().StringVar(&opts.Recipients, "recipients", "", "Recipient IDs to add (comma-separated, required)")
-	cmd.MarkFlagRequired("recipients")
+	mustMarkRequired(cmd, "recipients")
 
 	return cmd
 }

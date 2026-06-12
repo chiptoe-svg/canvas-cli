@@ -61,8 +61,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", nil, "Include options (user, submission_comments)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id")
 
 	return cmd
 }
@@ -95,10 +94,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (required)")
 	cmd.Flags().Int64Var(&opts.SubmissionID, "submission-id", 0, "Submission ID (required)")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "Reviewer user ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("submission-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "submission-id", "user-id")
 
 	return cmd
 }
@@ -142,10 +138,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.SubmissionID, "submission-id", 0, "Submission ID (required)")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "Reviewer user ID (required)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("assignment-id")
-	cmd.MarkFlagRequired("submission-id")
-	cmd.MarkFlagRequired("user-id")
+	mustMarkRequired(cmd, "course-id", "assignment-id", "submission-id", "user-id")
 
 	return cmd
 }

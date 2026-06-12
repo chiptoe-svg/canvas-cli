@@ -303,7 +303,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.LaunchType, "launch-type", "", "Launch type: course_navigation, account_navigation, assessment, module_item")
 	cmd.Flags().Int64Var(&opts.AssignmentID, "assignment-id", 0, "Assignment ID (for assessment launch)")
 	cmd.Flags().Int64Var(&opts.ModuleItemID, "module-item-id", 0, "Module item ID (for module_item launch)")

@@ -124,7 +124,7 @@ func RunCommandTest(t *testing.T, cmd *cobra.Command, tc CommandTestCase) {
 	// console handle blocks forever and hangs the whole package.
 	oldStdin := os.Stdin
 	rIn, wIn, _ := os.Pipe()
-	wIn.Close() // closing the write end makes reads on rIn return EOF
+	wIn.Close() // #nosec G104 -- closing the write end makes reads on rIn return EOF; close error is irrelevant
 	os.Stdin = rIn
 
 	// Capture output - Need to redirect os.Stdout since formatOutput writes directly to it
@@ -156,12 +156,12 @@ func RunCommandTest(t *testing.T, cmd *cobra.Command, tc CommandTestCase) {
 
 	// Restore stdout/stderr/stdin; closing the write ends lets the drain
 	// goroutines see EOF and finish.
-	wOut.Close()
-	wErr.Close()
+	wOut.Close() // #nosec G104 -- signals EOF to drain goroutines; close error is irrelevant in test teardown
+	wErr.Close() // #nosec G104 -- signals EOF to drain goroutines; close error is irrelevant in test teardown
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
 	os.Stdin = oldStdin
-	rIn.Close()
+	rIn.Close() // #nosec G104 -- test teardown cleanup; close error is irrelevant
 
 	// Collect the drained output
 	outputBytes := <-outCh

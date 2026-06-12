@@ -138,8 +138,9 @@ func (f *OAuthFlow) startLocalServer(ctx context.Context) (*oauth2.Token, error)
 	// interface, leaking the authorization code to any host on the same network.
 	mux := http.NewServeMux()
 	server := &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", f.config.CallbackPort),
-		Handler: mux,
+		Addr:              fmt.Sprintf("127.0.0.1:%d", f.config.CallbackPort),
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	// Handle callback
@@ -197,7 +198,7 @@ func (f *OAuthFlow) startLocalServer(ctx context.Context) (*oauth2.Token, error)
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		server.Shutdown(shutdownCtx)
+		server.Shutdown(shutdownCtx) // #nosec G104 -- best-effort shutdown of local OAuth callback server; error is irrelevant at exit
 	}()
 
 	// Generate authorization URL with secure state
@@ -249,7 +250,7 @@ func (f *OAuthFlow) startOOBFlow(ctx context.Context) (*oauth2.Token, error) {
 
 	// Read authorization code from stdin
 	var code string
-	fmt.Scanln(&code)
+	fmt.Scanln(&code) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
 
 	if code == "" {
 		return nil, fmt.Errorf("authorization code is required")
@@ -321,6 +322,8 @@ func openBrowser(url string) {
 // browser, or nil for an unsupported OS. It does not start the command, so it
 // is safe to call in tests without side effects.
 func browserCommand(goos, url string) *exec.Cmd {
+	// #nosec G204 -- url is the OAuth2 authorization URL constructed from the
+	// configured Canvas instance URL, not from arbitrary user input.
 	switch goos {
 	case "darwin":
 		return exec.Command("open", url)

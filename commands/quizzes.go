@@ -92,7 +92,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search term")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -129,7 +129,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -180,8 +180,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.UnlockAt, "unlock-at", "", "Unlock date (ISO 8601)")
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish immediately")
 	cmd.Flags().BoolVar(&opts.AnonymousSubmissions, "anonymous", false, "Anonymous submissions")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("title")
+	mustMarkRequired(cmd, "course-id", "title")
 
 	return cmd
 }
@@ -260,7 +259,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.UnlockAt, "unlock-at", "", "Unlock date (ISO 8601)")
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish quiz")
 	cmd.Flags().BoolVar(&opts.AnonymousSubmissions, "anonymous", false, "Anonymous submissions")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -299,7 +298,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -330,8 +329,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("quiz-id")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
 
 	return cmd
 }
@@ -369,8 +367,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("quiz-id")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
 
 	return cmd
 }
@@ -407,9 +404,7 @@ Examples:
 	cmd.Flags().Float64Var(&opts.PointsPossible, "points", 0, "Points possible")
 	cmd.Flags().StringVar(&opts.CorrectComments, "correct-comments", "", "Comments for correct answer")
 	cmd.Flags().StringVar(&opts.IncorrectComments, "incorrect-comments", "", "Comments for incorrect answer")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("quiz-id")
-	cmd.MarkFlagRequired("text")
+	mustMarkRequired(cmd, "course-id", "quiz-id", "text")
 
 	return cmd
 }
@@ -448,8 +443,7 @@ Examples:
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("quiz-id")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
 
 	return cmd
 }
@@ -480,8 +474,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("quiz-id")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
 
 	return cmd
 }
@@ -519,8 +512,7 @@ Examples:
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
 	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
-	cmd.MarkFlagRequired("course-id")
-	cmd.MarkFlagRequired("quiz-id")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
 
 	return cmd
 }

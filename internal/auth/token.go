@@ -45,8 +45,9 @@ func NewKeyringTokenStore() *KeyringTokenStore {
 
 // Save saves a token to the keyring
 func (s *KeyringTokenStore) Save(instanceName string, token *oauth2.Token) error {
-	// Serialize token to JSON
-	data, err := json.Marshal(token)
+	// Serialize token to JSON — the output goes directly to the system keyring,
+	// not to logs or HTTP responses.
+	data, err := json.Marshal(token) // #nosec G117 -- token marshaled for keyring storage, not logged or returned in responses
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %w", err)
 	}
@@ -118,8 +119,9 @@ func (s *FileTokenStore) Save(instanceName string, token *oauth2.Token) error {
 		return fmt.Errorf("failed to create token directory: %w", err)
 	}
 
-	// Serialize token to JSON
-	data, err := json.Marshal(token)
+	// Serialize token to JSON — the output is immediately AES-GCM encrypted
+	// before being written to disk, not stored or logged in plaintext.
+	data, err := json.Marshal(token) // #nosec G117 -- token marshaled for immediate AES-GCM encryption, not logged or returned in responses
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %w", err)
 	}
@@ -144,8 +146,8 @@ func (s *FileTokenStore) Save(instanceName string, token *oauth2.Token) error {
 func (s *FileTokenStore) Load(instanceName string) (*oauth2.Token, error) {
 	tokenPath := filepath.Join(s.configDir, "tokens", instanceName+"."+tokenFileName)
 
-	// Read encrypted file
-	encrypted, err := os.ReadFile(tokenPath)
+	// Read encrypted file — tokenPath is constructed from the config directory and instance name, both internally managed.
+	encrypted, err := os.ReadFile(tokenPath) // #nosec G304 -- tokenPath is constructed from config dir and a sanitized instance name
 	if err != nil {
 		return nil, fmt.Errorf("failed to read token file: %w", err)
 	}

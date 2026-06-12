@@ -38,14 +38,7 @@ func TestPlannerService_ListItems(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -87,14 +80,7 @@ func TestPlannerService_ListNotes(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -134,14 +120,7 @@ func TestPlannerService_GetNote(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -190,14 +169,7 @@ func TestPlannerService_CreateNote(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -241,14 +213,7 @@ func TestPlannerService_UpdateNote(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -286,19 +251,12 @@ func TestPlannerService_DeleteNote(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
 
-	err = service.DeleteNote(ctx, 1)
+	err := service.DeleteNote(ctx, 1)
 	if err != nil {
 		t.Fatalf("DeleteNote failed: %v", err)
 	}
@@ -329,14 +287,7 @@ func TestPlannerService_ListOverrides(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -389,14 +340,7 @@ func TestPlannerService_CreateOverride(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -443,14 +387,7 @@ func TestPlannerService_UpdateOverride(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
@@ -488,19 +425,12 @@ func TestPlannerService_DeleteOverride(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	client := newTestClient(t, server.URL)
 
 	service := NewPlannerService(client)
 	ctx := context.Background()
 
-	err = service.DeleteOverride(ctx, 1)
+	err := service.DeleteOverride(ctx, 1)
 	if err != nil {
 		t.Fatalf("DeleteOverride failed: %v", err)
 	}
