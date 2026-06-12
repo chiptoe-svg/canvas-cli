@@ -1393,6 +1393,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#integration-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#code-style" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1779,6 +1790,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#integration-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#code-style" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1902,6 +1924,10 @@
 <td>Run all tests</td>
 </tr>
 <tr>
+<td><code>make test-integration</code></td>
+<td>Run binary-level integration tests</td>
+</tr>
+<tr>
 <td><code>make test-coverage</code></td>
 <td>Run tests with coverage</td>
 </tr>
@@ -1932,6 +1958,13 @@
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>│   └── output/       # Output formatters
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>├── tools/            # Development tools
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>└── docs/             # Documentation
+</span></code></pre></div>
+<h2 id="integration-tests">Integration Tests<a class="headerlink" href="#integration-tests" title="Permanent link">&para;</a></h2>
+<p>A binary-level integration suite lives in <code>test/integration/</code> and is guarded by the <code>integration</code> build tag, so it is invisible to the normal <code>go test ./...</code> run. The suite compiles the binary once in <code>TestMain</code>, then exercises it as a black box against a lightweight <code>httptest</code> mock Canvas server. It covers version output, help, unknown-command errors, JSON/CSV/table output, auth failure, alias expansion, context propagation, <code>--dry-run</code> token redaction, and the REPL help surface.</p>
+<p>Run it with:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>go<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-tags<span class="w"> </span>integration<span class="w"> </span>-v<span class="w"> </span>-timeout<span class="w"> </span>5m<span class="w"> </span>./test/integration/
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># or</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>make<span class="w"> </span>test-integration
 </span></code></pre></div>
 <h2 id="code-style">Code Style<a class="headerlink" href="#code-style" title="Permanent link">&para;</a></h2>
 <p>Canvas CLI follows standard Go conventions:</p>
@@ -1968,7 +2001,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="April 29, 2026 20:57:53 UTC"><span class="timeago" datetime="2026-04-29T20:57:53+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="April 29, 2026 20:57:53 UTC">2026-04-29</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="June 10, 2026 20:20:34 UTC"><span class="timeago" datetime="2026-06-10T20:20:34+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="June 10, 2026 20:20:34 UTC">2026-06-10</span>
   </span>
 
     
