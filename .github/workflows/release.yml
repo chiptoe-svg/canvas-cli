@@ -41,7 +41,7 @@ jobs:
       # instructions in the docs use the v2 .sig/.pem flags. Migrate both
       # together when moving to v3 bundles.
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4
+        uses: sigstore/cosign-installer@v4.1.2
         with:
           cosign-release: 'v2.6.3'
 
