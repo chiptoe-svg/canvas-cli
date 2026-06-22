@@ -1,4 +1,4 @@
-.PHONY: help build test test-integration clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy
+.PHONY: help build test test-integration clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy spec-sync spec-coverage
 
 # Variables
 BINARY_NAME=canvas
@@ -32,6 +32,10 @@ help:
 	@echo "  make docs-serve   - Serve documentation locally"
 	@echo "  make docs-build   - Build documentation site"
 	@echo "  make docs-deploy  - Deploy documentation to GitHub Pages"
+	@echo ""
+	@echo "Spec compliance:"
+	@echo "  make spec-sync     - Parse Canvas API docs and regenerate testdata/spec/canvas_endpoints.json"
+	@echo "  make spec-coverage - Print documented endpoint coverage gap report"
 	@echo ""
 
 # Build the binary
@@ -161,3 +165,13 @@ docs-deploy: docs-gen
 	@echo "Deploying documentation to GitHub Pages..."
 	@mkdocs gh-deploy --force
 	@echo "✓ Documentation deployed"
+
+# Spec compliance targets
+spec-sync:
+	@echo "Syncing Canvas API spec manifest..."
+	@go run ./tools/speccheck -sync
+	@echo "✓ Spec manifest updated: testdata/spec/canvas_endpoints.json"
+
+spec-coverage:
+	@echo "Running spec coverage analysis..."
+	@go run ./tools/speccheck -coverage
