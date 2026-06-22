@@ -23,27 +23,33 @@ type specManifest struct {
 	Endpoints []specEndpoint `json:"endpoints"`
 }
 
-// knownUndocumented lists CLI paths that have no matching documented endpoint
-// and have been triaged individually. Every entry MUST have a real justification.
+// knownUndocumented lists CLI paths that have no matching endpoint in the official
+// Canvas Swagger 1.2 spec. Every entry MUST have a real justification explaining
+// why it is legitimately absent from the spec. Do not add entries for actual bugs —
+// fix those in the implementation instead.
+//
+// Refresh the manifest with: make spec-sync
 var knownUndocumented = map[string]string{
-	// Canvas's course-level bulk-grade endpoint is POST /api/v1/courses/:id/submissions/update_grades.
-	// The CLI additionally calls POST /api/v1/courses/:id/assignments/:id/submissions/update_grades
-	// (assignment-scoped bulk grade). Canvas does support this path in practice but it is not
-	// listed in the Canvas REST API documentation captured in .ai/canvas-lms-docs.
-	"/api/v1/courses/:x/assignments/:x/submissions/update_grades": "assignment-scoped bulk-grade endpoint: undocumented Canvas API path supported in practice (docs only list course-level /courses/:id/submissions/update_grades)",
+	// No entries: the official Canvas Swagger 1.2 spec (fetched via make spec-sync)
+	// now documents all paths the CLI currently calls, including the previously
+	// "undocumented" assignment-scoped bulk-grade endpoint
+	// POST /api/v1/courses/:id/assignments/:id/submissions/update_grades.
 }
 
 // TestSpecContract_CLIPathsAreDocumented verifies that every path the CLI
-// calls in internal/api/ matches at least one documented Canvas API endpoint
-// in testdata/spec/canvas_endpoints.json.
+// calls in internal/api/ matches at least one endpoint in the official Canvas
+// Swagger 1.2 spec committed to testdata/spec/canvas_endpoints.json.
 //
-// Refresh testdata/spec/canvas_endpoints.json with: make spec-sync
+// The manifest is sourced from the official Canvas Swagger API (not the gitignored
+// .ai/canvas-lms-docs mirror). Refresh it from a live Canvas host with:
+//
+//	make spec-sync
 //
 // Triage process for failures:
 //
 //	(a) Real CLI bug — path is wrong; fix the implementation, do not allowlist
 //	(b) Normalization artifact — fix normalizePath in tools/speccheck/normalize.go
-//	(c) Legitimately undocumented — add to knownUndocumented with a real comment
+//	(c) Legitimately absent from official spec — add to knownUndocumented with a real comment
 func TestSpecContract_CLIPathsAreDocumented(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "spec", "canvas_endpoints.json"))
 	if err != nil {

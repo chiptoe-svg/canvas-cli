@@ -34,8 +34,9 @@ help:
 	@echo "  make docs-deploy  - Deploy documentation to GitHub Pages"
 	@echo ""
 	@echo "Spec compliance:"
-	@echo "  make spec-sync     - Parse Canvas API docs and regenerate testdata/spec/canvas_endpoints.json"
-	@echo "  make spec-coverage - Print documented endpoint coverage gap report"
+	@echo "  make spec-sync     - Fetch official Canvas Swagger and regenerate testdata/spec/canvas_endpoints.json"
+	@echo "  make spec-sync CANVAS_SPEC_HOST=https://myschool.instructure.com  - Use a specific Canvas host"
+	@echo "  make spec-coverage - Print official Canvas API coverage gap report (network-free)"
 	@echo ""
 
 # Build the binary
@@ -166,12 +167,15 @@ docs-deploy: docs-gen
 	@mkdocs gh-deploy --force
 	@echo "✓ Documentation deployed"
 
-# Spec compliance targets
+# Spec compliance targets.
+# Source of truth: official Canvas Swagger 1.2 API (not .ai/canvas-lms-docs).
+# The default host is https://learn.canvas.net; override with -host or $CANVAS_SPEC_HOST.
+# canvas.instructure.com returns 503 from datacenter IPs — use a real institutional host.
 spec-sync:
-	@echo "Syncing Canvas API spec manifest..."
+	@echo "Fetching official Canvas Swagger and regenerating spec manifest..."
 	@go run ./tools/speccheck -sync
 	@echo "✓ Spec manifest updated: testdata/spec/canvas_endpoints.json"
 
 spec-coverage:
-	@echo "Running spec coverage analysis..."
+	@echo "Running spec coverage analysis (network-free; reads committed manifest)..."
 	@go run ./tools/speccheck -coverage
