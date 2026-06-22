@@ -159,8 +159,8 @@ func TestConferencesListCmd(t *testing.T) {
 			ExpectError: false,
 		},
 		{
-			Name:         "empty conferences",
-			Args:         []string{},
+			Name: "empty conferences",
+			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/conferences": cmdtest.NewMockResponse(`[]`),
 			},
@@ -298,8 +298,8 @@ func TestEpubExportsListCmd(t *testing.T) {
 			ExpectError: false,
 		},
 		{
-			Name:         "empty list",
-			Args:         []string{},
+			Name: "empty list",
+			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/epub_exports": cmdtest.NewMockResponse(`[]`),
 			},
@@ -432,8 +432,8 @@ func TestMediaObjectsListCmd(t *testing.T) {
 			ExpectError: false,
 		},
 		{
-			Name:         "empty list",
-			Args:         []string{},
+			Name: "empty list",
+			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/media_objects": cmdtest.NewMockResponse(`[]`),
 			},
@@ -537,8 +537,8 @@ func TestAuditListCmd(t *testing.T) {
 			ExpectError: true,
 		},
 		{
-			Name:         "empty results",
-			Args:         []string{"--type", "grade-change"},
+			Name: "empty results",
+			Args: []string{"--type", "grade-change"},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/audit/grade_change": cmdtest.NewMockResponse(`[]`),
 			},
