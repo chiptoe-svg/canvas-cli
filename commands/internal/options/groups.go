@@ -252,3 +252,363 @@ func (o *GroupsCategoriesGroupsOptions) Validate() error {
 	}
 	return nil
 }
+
+// GroupsCreateStandaloneOptions contains options for creating a standalone group
+type GroupsCreateStandaloneOptions struct {
+	Name           string
+	Description    string
+	IsPublic       bool
+	JoinLevel      string
+	StorageQuotaMb int64
+	SISGroupID     string
+}
+
+// Validate validates the options
+func (o *GroupsCreateStandaloneOptions) Validate() error {
+	if o.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	return nil
+}
+
+// GroupsMembershipsListOptions contains options for listing memberships
+type GroupsMembershipsListOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsMembershipsListOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsMembershipsGetOptions contains options for getting a single membership
+type GroupsMembershipsGetOptions struct {
+	GroupID      int64
+	MembershipID int64
+}
+
+// Validate validates the options
+func (o *GroupsMembershipsGetOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.MembershipID <= 0 {
+		return fmt.Errorf("membership-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsMembershipsUpdateOptions contains options for updating a membership
+type GroupsMembershipsUpdateOptions struct {
+	GroupID          int64
+	MembershipID     int64
+	WorkflowState    string
+	Moderator        bool
+	WorkflowStateSet bool
+	ModeratorSet     bool
+}
+
+// Validate validates the options
+func (o *GroupsMembershipsUpdateOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.MembershipID <= 0 {
+		return fmt.Errorf("membership-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsUsersGetOptions contains options for getting a group user
+type GroupsUsersGetOptions struct {
+	GroupID int64
+	UserID  int64
+}
+
+// Validate validates the options
+func (o *GroupsUsersGetOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.UserID <= 0 {
+		return fmt.Errorf("user-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsUsersUpdateOptions contains options for updating a group user membership
+type GroupsUsersUpdateOptions struct {
+	GroupID          int64
+	UserID           int64
+	WorkflowState    string
+	Moderator        bool
+	WorkflowStateSet bool
+	ModeratorSet     bool
+}
+
+// Validate validates the options
+func (o *GroupsUsersUpdateOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.UserID <= 0 {
+		return fmt.Errorf("user-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsUsersRemoveOptions contains options for removing a user from a group
+type GroupsUsersRemoveOptions struct {
+	GroupID int64
+	UserID  int64
+}
+
+// Validate validates the options
+func (o *GroupsUsersRemoveOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.UserID <= 0 {
+		return fmt.Errorf("user-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsActivityStreamOptions contains options for getting a group activity stream
+type GroupsActivityStreamOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsActivityStreamOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsPermissionsOptions contains options for getting group permissions
+type GroupsPermissionsOptions struct {
+	GroupID     int64
+	Permissions []string
+}
+
+// Validate validates the options
+func (o *GroupsPermissionsOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsInviteOptions contains options for inviting users to a group
+type GroupsInviteOptions struct {
+	GroupID  int64
+	Invitees []string
+}
+
+// Validate validates the options
+func (o *GroupsInviteOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if len(o.Invitees) == 0 {
+		return fmt.Errorf("at least one invitee email is required")
+	}
+	return nil
+}
+
+// GroupsTabsListOptions contains options for listing group tabs
+type GroupsTabsListOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsTabsListOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsCollaborationsListOptions contains options for listing group collaborations
+type GroupsCollaborationsListOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsCollaborationsListOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsConferencesListOptions contains options for listing group conferences
+type GroupsConferencesListOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsConferencesListOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsExternalFeedsListOptions contains options for listing group external feeds
+type GroupsExternalFeedsListOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsExternalFeedsListOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsExternalFeedsCreateOptions contains options for creating a group external feed
+type GroupsExternalFeedsCreateOptions struct {
+	GroupID   int64
+	URL       string
+	Verbosity string
+	Header    string
+}
+
+// Validate validates the options
+func (o *GroupsExternalFeedsCreateOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.URL == "" {
+		return fmt.Errorf("url is required")
+	}
+	return nil
+}
+
+// GroupsExternalFeedsDeleteOptions contains options for deleting a group external feed
+type GroupsExternalFeedsDeleteOptions struct {
+	GroupID int64
+	FeedID  int64
+}
+
+// Validate validates the options
+func (o *GroupsExternalFeedsDeleteOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.FeedID <= 0 {
+		return fmt.Errorf("feed-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsContentExportsListOptions contains options for listing group content exports
+type GroupsContentExportsListOptions struct {
+	GroupID int64
+}
+
+// Validate validates the options
+func (o *GroupsContentExportsListOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsContentExportsCreateOptions contains options for creating a content export
+type GroupsContentExportsCreateOptions struct {
+	GroupID    int64
+	ExportType string
+}
+
+// Validate validates the options
+func (o *GroupsContentExportsCreateOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.ExportType == "" {
+		return fmt.Errorf("export-type is required")
+	}
+	return nil
+}
+
+// GroupsContentExportsGetOptions contains options for getting a content export
+type GroupsContentExportsGetOptions struct {
+	GroupID  int64
+	ExportID int64
+}
+
+// Validate validates the options
+func (o *GroupsContentExportsGetOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.ExportID <= 0 {
+		return fmt.Errorf("export-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsAssignmentOverrideOptions contains options for getting a group assignment override
+type GroupsAssignmentOverrideOptions struct {
+	GroupID      int64
+	AssignmentID int64
+}
+
+// Validate validates the options
+func (o *GroupsAssignmentOverrideOptions) Validate() error {
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if o.AssignmentID <= 0 {
+		return fmt.Errorf("assignment-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsCategoriesAssignMembersOptions contains options for assigning unassigned members
+type GroupsCategoriesAssignMembersOptions struct {
+	CategoryID int64
+	Sync       bool
+}
+
+// Validate validates the options
+func (o *GroupsCategoriesAssignMembersOptions) Validate() error {
+	if o.CategoryID <= 0 {
+		return fmt.Errorf("category-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsCategoriesUsersListOptions contains options for listing users in a category
+type GroupsCategoriesUsersListOptions struct {
+	CategoryID int64
+}
+
+// Validate validates the options
+func (o *GroupsCategoriesUsersListOptions) Validate() error {
+	if o.CategoryID <= 0 {
+		return fmt.Errorf("category-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// GroupsCategoriesExportOptions contains options for exporting a category
+type GroupsCategoriesExportOptions struct {
+	CategoryID int64
+}
+
+// Validate validates the options
+func (o *GroupsCategoriesExportOptions) Validate() error {
+	if o.CategoryID <= 0 {
+		return fmt.Errorf("category-id is required and must be greater than 0")
+	}
+	return nil
+}
