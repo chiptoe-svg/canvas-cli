@@ -31,17 +31,6 @@ var knownUndocumented = map[string]string{
 	// (assignment-scoped bulk grade). Canvas does support this path in practice but it is not
 	// listed in the Canvas REST API documentation captured in .ai/canvas-lms-docs.
 	"/api/v1/courses/:x/assignments/:x/submissions/update_grades": "assignment-scoped bulk-grade endpoint: undocumented Canvas API path supported in practice (docs only list course-level /courses/:id/submissions/update_grades)",
-
-	// The Canvas documentation renamed this endpoint from /content_list to /selective_data.
-	// The doc has GET /api/v1/courses/:id/content_migrations/:id/selective_data but the CLI
-	// still uses the legacy /content_list path. This is a real CLI bug to fix in a future release.
-	"/api/v1/courses/:x/content_migrations/:x/content_list": "REAL BUG: CLI uses deprecated /content_list path; Canvas API renamed this to /selective_data (see docs content-migrations.md)",
-
-	// The documentation documents PUT /api/v1/courses/:course_id/users/:user_id/last_attended
-	// (user-scoped path). The CLI uses /api/v1/courses/:id/enrollments/:id/last_attended
-	// (enrollment-scoped path). The CLI path structure does not match Canvas's documented path.
-	// This is a real CLI path mismatch to investigate.
-	"/api/v1/courses/:x/enrollments/:x/last_attended": "REAL BUG: CLI uses enrollments/:id/last_attended but Canvas API documents courses/:id/users/:user_id/last_attended (different resource segment)",
 }
 
 // TestSpecContract_CLIPathsAreDocumented verifies that every path the CLI
