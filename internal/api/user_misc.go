@@ -18,17 +18,6 @@ type GradedSubmission struct {
 	WorkflowState string  `json:"workflow_state"`
 }
 
-// Eportfolio represents a Canvas ePortfolio object.
-type Eportfolio struct {
-	ID            int64  `json:"id"`
-	UserID        int64  `json:"user_id"`
-	Name          string `json:"name"`
-	Public        bool   `json:"public"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
-	WorkflowState string `json:"workflow_state"`
-}
-
 // TemporaryEnrollmentStatus holds temporary enrollment status information for a user.
 type TemporaryEnrollmentStatus struct {
 	IsProvider  bool `json:"is_provider"`

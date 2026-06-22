@@ -32,16 +32,6 @@ type ContentExportFile struct {
 	URL string `json:"url"`
 }
 
-// EpubExport represents a Canvas epub export.
-type EpubExport struct {
-	ID            int64              `json:"id"`
-	CreatedAt     string             `json:"created_at,omitempty"`
-	WorkflowState string             `json:"workflow_state"`
-	Attachment    *ContentExportFile `json:"attachment,omitempty"`
-	CourseID      int64              `json:"course_id,omitempty"`
-	UserID        int64              `json:"user_id,omitempty"`
-}
-
 // ListContentExports lists content exports for a course.
 // GET /api/v1/courses/:course_id/content_exports
 func (s *ContentExportsService) List(ctx context.Context, courseID int64) ([]ContentExport, error) {
