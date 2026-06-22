@@ -375,3 +375,325 @@ func (s *PagesService) RevertToRevision(ctx context.Context, courseID int64, url
 
 	return &revision, nil
 }
+
+// pagesContextPath returns the context segment for a pages path: courses/:id or groups/:id.
+// Exactly one of courseID or groupID must be positive; the other should be 0.
+func pagesContextPath(courseID, groupID int64) (string, error) {
+	if courseID > 0 && groupID > 0 {
+		return "", fmt.Errorf("specify either course-id or group-id, not both")
+	}
+	if courseID > 0 {
+		return fmt.Sprintf("courses/%d", courseID), nil
+	}
+	if groupID > 0 {
+		return fmt.Sprintf("groups/%d", groupID), nil
+	}
+	return "", fmt.Errorf("course-id or group-id is required")
+}
+
+// GroupList retrieves all pages for a group
+func (s *PagesService) GroupList(ctx context.Context, groupID int64, opts *ListPagesOptions) ([]Page, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages", groupID)
+
+	if opts != nil {
+		query := url.Values{}
+
+		if opts.Sort != "" {
+			query.Add("sort", opts.Sort)
+		}
+		if opts.Order != "" {
+			query.Add("order", opts.Order)
+		}
+		if opts.SearchTerm != "" {
+			query.Add("search_term", opts.SearchTerm)
+		}
+		if opts.Published != nil {
+			query.Add("published", strconv.FormatBool(*opts.Published))
+		}
+		for _, inc := range opts.Include {
+			query.Add("include[]", inc)
+		}
+		if opts.Page > 0 {
+			query.Add("page", strconv.Itoa(opts.Page))
+		}
+		if opts.PerPage > 0 {
+			query.Add("per_page", strconv.Itoa(opts.PerPage))
+		}
+		if len(query) > 0 {
+			path += "?" + query.Encode()
+		}
+	}
+
+	var pages []Page
+	if err := s.client.GetAllPages(ctx, path, &pages); err != nil {
+		return nil, err
+	}
+
+	return pages, nil
+}
+
+// GroupGet retrieves a single page from a group
+func (s *PagesService) GroupGet(ctx context.Context, groupID int64, urlOrID string) (*Page, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s", groupID, url.PathEscape(urlOrID))
+
+	var page Page
+	if err := s.client.GetJSON(ctx, path, &page); err != nil {
+		return nil, err
+	}
+
+	return &page, nil
+}
+
+// GroupGetFrontPage retrieves the front page for a group
+func (s *PagesService) GroupGetFrontPage(ctx context.Context, groupID int64) (*Page, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/front_page", groupID)
+
+	var page Page
+	if err := s.client.GetJSON(ctx, path, &page); err != nil {
+		return nil, err
+	}
+
+	return &page, nil
+}
+
+// GroupCreate creates a new page in a group
+func (s *PagesService) GroupCreate(ctx context.Context, groupID int64, params *CreatePageParams) (*Page, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if params == nil {
+		return nil, ErrNilParams
+	}
+	if err := ValidateNonEmpty(params.Title, "title"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages", groupID)
+
+	body := map[string]interface{}{
+		"wiki_page": make(map[string]interface{}),
+	}
+
+	pageData := body["wiki_page"].(map[string]interface{})
+	pageData["title"] = params.Title
+
+	if params.Body != "" {
+		pageData["body"] = params.Body
+	}
+	if params.EditingRoles != "" {
+		pageData["editing_roles"] = params.EditingRoles
+	}
+	if params.NotifyOfUpdate {
+		pageData["notify_of_update"] = true
+	}
+	pageData["published"] = params.Published
+	if params.FrontPage {
+		pageData["front_page"] = true
+	}
+	if params.PublishAt != "" {
+		pageData["publish_at"] = params.PublishAt
+	}
+
+	var page Page
+	if err := s.client.PostJSON(ctx, path, body, &page); err != nil {
+		return nil, err
+	}
+
+	return &page, nil
+}
+
+// GroupUpdate updates an existing page in a group
+func (s *PagesService) GroupUpdate(ctx context.Context, groupID int64, urlOrID string, params *UpdatePageParams) (*Page, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s", groupID, url.PathEscape(urlOrID))
+
+	body := map[string]interface{}{
+		"wiki_page": make(map[string]interface{}),
+	}
+
+	pageData := body["wiki_page"].(map[string]interface{})
+
+	if params.Title != nil {
+		pageData["title"] = *params.Title
+	}
+	if params.Body != nil {
+		pageData["body"] = *params.Body
+	}
+	if params.EditingRoles != nil {
+		pageData["editing_roles"] = *params.EditingRoles
+	}
+	if params.NotifyOfUpdate != nil {
+		pageData["notify_of_update"] = *params.NotifyOfUpdate
+	}
+	if params.Published != nil {
+		pageData["published"] = *params.Published
+	}
+	if params.FrontPage != nil {
+		pageData["front_page"] = *params.FrontPage
+	}
+	if params.PublishAt != nil {
+		pageData["publish_at"] = *params.PublishAt
+	}
+
+	var page Page
+	if err := s.client.PutJSON(ctx, path, body, &page); err != nil {
+		return nil, err
+	}
+
+	return &page, nil
+}
+
+// GroupUpdateFrontPage updates the front page of a group
+func (s *PagesService) GroupUpdateFrontPage(ctx context.Context, groupID int64, params *UpdatePageParams) (*Page, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/front_page", groupID)
+
+	body := map[string]interface{}{
+		"wiki_page": make(map[string]interface{}),
+	}
+
+	pageData := body["wiki_page"].(map[string]interface{})
+
+	if params.Title != nil {
+		pageData["title"] = *params.Title
+	}
+	if params.Body != nil {
+		pageData["body"] = *params.Body
+	}
+	if params.EditingRoles != nil {
+		pageData["editing_roles"] = *params.EditingRoles
+	}
+	if params.NotifyOfUpdate != nil {
+		pageData["notify_of_update"] = *params.NotifyOfUpdate
+	}
+	if params.Published != nil {
+		pageData["published"] = *params.Published
+	}
+
+	var page Page
+	if err := s.client.PutJSON(ctx, path, body, &page); err != nil {
+		return nil, err
+	}
+
+	return &page, nil
+}
+
+// GroupDelete deletes a page from a group
+func (s *PagesService) GroupDelete(ctx context.Context, groupID int64, urlOrID string) error {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s", groupID, url.PathEscape(urlOrID))
+	_, err := s.client.Delete(ctx, path)
+	return err
+}
+
+// GroupListRevisions retrieves all revisions for a group page
+func (s *PagesService) GroupListRevisions(ctx context.Context, groupID int64, urlOrID string) ([]PageRevision, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s/revisions", groupID, url.PathEscape(urlOrID))
+
+	var revisions []PageRevision
+	if err := s.client.GetAllPages(ctx, path, &revisions); err != nil {
+		return nil, err
+	}
+
+	return revisions, nil
+}
+
+// GroupGetRevision retrieves a specific revision of a group page
+func (s *PagesService) GroupGetRevision(ctx context.Context, groupID int64, urlOrID string, revisionID int64, summary bool) (*PageRevision, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s/revisions/%d", groupID, url.PathEscape(urlOrID), revisionID)
+	if summary {
+		path += "?summary=1"
+	}
+
+	var revision PageRevision
+	if err := s.client.GetJSON(ctx, path, &revision); err != nil {
+		return nil, err
+	}
+
+	return &revision, nil
+}
+
+// GroupGetLatestRevision retrieves the latest revision of a group page
+func (s *PagesService) GroupGetLatestRevision(ctx context.Context, groupID int64, urlOrID string, summary bool) (*PageRevision, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s/revisions/latest", groupID, url.PathEscape(urlOrID))
+	if summary {
+		path += "?summary=1"
+	}
+
+	var revision PageRevision
+	if err := s.client.GetJSON(ctx, path, &revision); err != nil {
+		return nil, err
+	}
+
+	return &revision, nil
+}
+
+// GroupRevertToRevision reverts a group page to a specific revision
+func (s *PagesService) GroupRevertToRevision(ctx context.Context, groupID int64, urlOrID string, revisionID int64) (*PageRevision, error) {
+	if err := ValidatePositiveID(groupID, "group_id"); err != nil {
+		return nil, err
+	}
+	if err := ValidateNonEmpty(urlOrID, "url_or_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/groups/%d/pages/%s/revisions/%d", groupID, url.PathEscape(urlOrID), revisionID)
+
+	var revision PageRevision
+	if err := s.client.PostJSON(ctx, path, nil, &revision); err != nil {
+		return nil, err
+	}
+
+	return &revision, nil
+}

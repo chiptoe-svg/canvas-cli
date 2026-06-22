@@ -37,6 +37,11 @@ func init() {
 	filesCmd.AddCommand(newFilesDownloadCmd())
 	filesCmd.AddCommand(newFilesDeleteCmd())
 	filesCmd.AddCommand(newFilesQuotaCmd())
+	filesCmd.AddCommand(newFilesResetVerifierCmd())
+	filesCmd.AddCommand(newFilesCopyCmd())
+	filesCmd.AddCommand(newFilesUsageRightsCmd())
+	filesCmd.AddCommand(newFilesRemoveUsageRightsCmd())
+	filesCmd.AddCommand(newFilesLicensesCmd())
 }
 
 func newFilesListCmd() *cobra.Command {
@@ -45,14 +50,15 @@ func newFilesListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List files",
-		Long: `List files in a course, folder, or user's files.
+		Long: `List files in a course, group, folder, or user's files.
 
-You must specify one of --course-id, --folder-id, or --user-id.
+You must specify one of --course-id, --group-id, --folder-id, or --user-id.
 
 Examples:
   canvas files list --course-id 123
-  canvas files list --folder-id 456
-  canvas files list --user-id 789
+  canvas files list --group-id 456
+  canvas files list --folder-id 789
+  canvas files list --user-id 101
   canvas files list --course-id 123 --search "assignment"
   canvas files list --course-id 123 --sort name --order asc`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,6 +76,7 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 	cmd.Flags().Int64Var(&opts.FolderID, "folder-id", 0, "Folder ID")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID")
 	cmd.Flags().StringSliceVar(&opts.ContentTypes, "content-types", []string{}, "Filter by MIME types (comma-separated)")
@@ -240,12 +247,13 @@ func newFilesQuotaCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "quota",
 		Short: "Get storage quota information",
-		Long: `Get storage quota information for a course or user.
+		Long: `Get storage quota information for a course, group, or user.
 
-You must specify either --course-id or --user-id.
+You must specify one of --course-id, --group-id, or --user-id.
 
 Examples:
   canvas files quota --course-id 123
+  canvas files quota --group-id 456
   canvas files quota --user-id 789`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
@@ -262,6 +270,184 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
+	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID")
+
+	return cmd
+}
+
+func newFilesResetVerifierCmd() *cobra.Command {
+	opts := &options.FilesResetVerifierOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "reset-verifier <file-id>",
+		Short: "Reset the link verifier for a file",
+		Long: `Reset the link verifier for a file. Any existing links using the
+previous verifier will no longer automatically grant access.
+
+Examples:
+  canvas files reset-verifier 456`,
+		Args: ExactArgsWithUsage(1, "file-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fileID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid file ID: %s", args[0])
+			}
+			opts.FileID = fileID
+
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runFilesResetVerifier(cmd.Context(), client, opts)
+		},
+	}
+
+	return cmd
+}
+
+func newFilesCopyCmd() *cobra.Command {
+	opts := &options.FilesCopyOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "copy",
+		Short: "Copy a file into a folder",
+		Long: `Copy a file from elsewhere in Canvas into a destination folder.
+
+Examples:
+  canvas files copy --dest-folder-id 20 --source-file-id 10
+  canvas files copy --dest-folder-id 20 --source-file-id 10 --on-duplicate rename`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runFilesCopy(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.DestFolderID, "dest-folder-id", 0, "Destination folder ID (required)")
+	cmd.Flags().Int64Var(&opts.SourceFileID, "source-file-id", 0, "Source file ID to copy (required)")
+	cmd.Flags().StringVar(&opts.OnDuplicate, "on-duplicate", "", "Duplicate handling: overwrite, rename")
+	mustMarkRequired(cmd, "dest-folder-id", "source-file-id")
+
+	return cmd
+}
+
+func newFilesUsageRightsCmd() *cobra.Command {
+	opts := &options.FilesUsageRightsOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "set-usage-rights",
+		Short: "Set copyright and license information on files",
+		Long: `Set copyright and license information for one or more files.
+
+use-justification values: own_copyright, used_by_permission, fair_use,
+public_domain, creative_commons (license required when using creative_commons).
+
+Examples:
+  canvas files set-usage-rights --course-id 123 --file-ids 1,2,3 --use-justification own_copyright
+  canvas files set-usage-rights --group-id 456 --file-ids 5 --use-justification creative_commons --license cc_by`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runFilesSetUsageRights(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
+	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID")
+	cmd.Flags().Int64SliceVar(&opts.FileIDs, "file-ids", []int64{}, "File IDs (comma-separated)")
+	cmd.Flags().Int64SliceVar(&opts.FolderIDs, "folder-ids", []int64{}, "Folder IDs to apply rights to all files within")
+	cmd.Flags().StringVar(&opts.UseJustification, "use-justification", "", "Use justification (required)")
+	cmd.Flags().StringVar(&opts.LegalCopyright, "legal-copyright", "", "Legal copyright line")
+	cmd.Flags().StringVar(&opts.License, "license", "", "License (required for creative_commons)")
+	cmd.Flags().BoolVar(&opts.Publish, "publish", false, "Publish the files after setting rights")
+	mustMarkRequired(cmd, "use-justification")
+
+	return cmd
+}
+
+func newFilesRemoveUsageRightsCmd() *cobra.Command {
+	opts := &options.FilesRemoveUsageRightsOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "remove-usage-rights",
+		Short: "Remove copyright and license information from files",
+		Long: `Remove copyright and license information from one or more files.
+
+Examples:
+  canvas files remove-usage-rights --course-id 123 --file-ids 1,2,3
+  canvas files remove-usage-rights --group-id 456 --folder-ids 10`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runFilesRemoveUsageRights(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
+	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID")
+	cmd.Flags().Int64SliceVar(&opts.FileIDs, "file-ids", []int64{}, "File IDs (comma-separated)")
+	cmd.Flags().Int64SliceVar(&opts.FolderIDs, "folder-ids", []int64{}, "Folder IDs")
+
+	return cmd
+}
+
+func newFilesLicensesCmd() *cobra.Command {
+	opts := &options.FilesLicensesOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "licenses",
+		Short: "List available content licenses",
+		Long: `List content licenses that can be applied to files.
+
+Examples:
+  canvas files licenses --course-id 123
+  canvas files licenses --group-id 456
+  canvas files licenses --user-id 789`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runFilesLicenses(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID")
 
 	return cmd
@@ -271,6 +457,7 @@ func runFilesList(ctx context.Context, client *api.Client, opts *options.FilesLi
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "files.list", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"folder_id": opts.FolderID,
 		"user_id":   opts.UserID,
 	})
@@ -288,17 +475,21 @@ func runFilesList(ctx context.Context, client *api.Client, opts *options.FilesLi
 	var files []api.Attachment
 	var err error
 
-	if opts.CourseID > 0 {
+	switch {
+	case opts.CourseID > 0:
 		files, err = filesService.ListCourseFiles(ctx, opts.CourseID, apiOpts)
-	} else if opts.FolderID > 0 {
+	case opts.GroupID > 0:
+		files, err = filesService.ListGroupFiles(ctx, opts.GroupID, apiOpts)
+	case opts.FolderID > 0:
 		files, err = filesService.ListFolderFiles(ctx, opts.FolderID, apiOpts)
-	} else {
+	default:
 		files, err = filesService.ListUserFiles(ctx, opts.UserID, apiOpts)
 	}
 
 	if err != nil {
 		logger.LogCommandError(ctx, "files.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"folder_id": opts.FolderID,
 			"user_id":   opts.UserID,
 		})
@@ -335,6 +526,7 @@ func runFilesUpload(ctx context.Context, client *api.Client, opts *options.Files
 	logger.LogCommandStart(ctx, "files.upload", map[string]interface{}{
 		"file_path": opts.FilePath,
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"folder_id": opts.FolderID,
 		"user_id":   opts.UserID,
 	})
@@ -361,11 +553,15 @@ func runFilesUpload(ctx context.Context, client *api.Client, opts *options.Files
 	var uploadedFile *api.Attachment
 	var err error
 
-	if opts.CourseID > 0 {
+	switch {
+	case opts.CourseID > 0:
 		uploadedFile, err = filesService.UploadToCourse(ctx, opts.CourseID, opts.FilePath, params)
-	} else if opts.FolderID > 0 {
+	case opts.GroupID > 0:
+		// Canvas groups use the same upload path structure as courses
+		uploadedFile, err = filesService.UploadToFolder(ctx, opts.GroupID, opts.FilePath, params)
+	case opts.FolderID > 0:
 		uploadedFile, err = filesService.UploadToFolder(ctx, opts.FolderID, opts.FilePath, params)
-	} else {
+	default:
 		uploadedFile, err = filesService.UploadToUser(ctx, opts.UserID, opts.FilePath, params)
 	}
 
@@ -373,6 +569,7 @@ func runFilesUpload(ctx context.Context, client *api.Client, opts *options.Files
 		logger.LogCommandError(ctx, "files.upload", err, map[string]interface{}{
 			"file_path": opts.FilePath,
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"folder_id": opts.FolderID,
 			"user_id":   opts.UserID,
 		})
@@ -477,6 +674,7 @@ func runFilesQuota(ctx context.Context, client *api.Client, opts *options.FilesQ
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "files.quota", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"user_id":   opts.UserID,
 	})
 
@@ -485,15 +683,19 @@ func runFilesQuota(ctx context.Context, client *api.Client, opts *options.FilesQ
 	var quota *api.QuotaInfo
 	var err error
 
-	if opts.CourseID > 0 {
+	switch {
+	case opts.CourseID > 0:
 		quota, err = filesService.GetCourseQuota(ctx, opts.CourseID)
-	} else {
+	case opts.GroupID > 0:
+		quota, err = filesService.GetGroupQuota(ctx, opts.GroupID)
+	default:
 		quota, err = filesService.GetUserQuota(ctx, opts.UserID)
 	}
 
 	if err != nil {
 		logger.LogCommandError(ctx, "files.quota", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"user_id":   opts.UserID,
 		})
 		return fmt.Errorf("failed to get quota: %w", err)
@@ -510,6 +712,138 @@ func runFilesQuota(ctx context.Context, client *api.Client, opts *options.FilesQ
 
 	logger.LogCommandComplete(ctx, "files.quota", 1)
 	return nil
+}
+
+func runFilesResetVerifier(ctx context.Context, client *api.Client, opts *options.FilesResetVerifierOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	logger.LogCommandStart(ctx, "files.reset-verifier", map[string]interface{}{
+		"file_id": opts.FileID,
+	})
+
+	filesService := api.NewFilesService(client)
+
+	file, err := filesService.ResetVerifier(ctx, opts.FileID)
+	if err != nil {
+		logger.LogCommandError(ctx, "files.reset-verifier", err, map[string]interface{}{
+			"file_id": opts.FileID,
+		})
+		return fmt.Errorf("failed to reset verifier: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "files.reset-verifier", 1)
+	return formatSuccessOutput(file, "Link verifier reset successfully!")
+}
+
+func runFilesCopy(ctx context.Context, client *api.Client, opts *options.FilesCopyOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	logger.LogCommandStart(ctx, "files.copy", map[string]interface{}{
+		"dest_folder_id": opts.DestFolderID,
+		"source_file_id": opts.SourceFileID,
+	})
+
+	filesService := api.NewFilesService(client)
+
+	file, err := filesService.CopyFile(ctx, opts.DestFolderID, &api.CopyFileParams{
+		SourceFileID: opts.SourceFileID,
+		OnDuplicate:  opts.OnDuplicate,
+	})
+	if err != nil {
+		logger.LogCommandError(ctx, "files.copy", err, map[string]interface{}{
+			"dest_folder_id": opts.DestFolderID,
+			"source_file_id": opts.SourceFileID,
+		})
+		return fmt.Errorf("failed to copy file: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "files.copy", 1)
+	return formatSuccessOutput(file, "File copied successfully!")
+}
+
+func runFilesSetUsageRights(ctx context.Context, client *api.Client, opts *options.FilesUsageRightsOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	logger.LogCommandStart(ctx, "files.set-usage-rights", map[string]interface{}{
+		"course_id":         opts.CourseID,
+		"group_id":          opts.GroupID,
+		"user_id":           opts.UserID,
+		"use_justification": opts.UseJustification,
+	})
+
+	filesService := api.NewFilesService(client)
+
+	params := &api.SetUsageRightsParams{
+		FileIDs:          opts.FileIDs,
+		FolderIDs:        opts.FolderIDs,
+		Publish:          opts.Publish,
+		UseJustification: opts.UseJustification,
+		LegalCopyright:   opts.LegalCopyright,
+		License:          opts.License,
+	}
+
+	rights, err := filesService.SetUsageRights(ctx, opts.CourseID, opts.GroupID, opts.UserID, params)
+	if err != nil {
+		logger.LogCommandError(ctx, "files.set-usage-rights", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
+			"user_id":   opts.UserID,
+		})
+		return fmt.Errorf("failed to set usage rights: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "files.set-usage-rights", 1)
+	return formatSuccessOutput(rights, "Usage rights set successfully!")
+}
+
+func runFilesRemoveUsageRights(ctx context.Context, client *api.Client, opts *options.FilesRemoveUsageRightsOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	logger.LogCommandStart(ctx, "files.remove-usage-rights", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
+		"user_id":   opts.UserID,
+	})
+
+	filesService := api.NewFilesService(client)
+
+	params := &api.RemoveUsageRightsParams{
+		FileIDs:   opts.FileIDs,
+		FolderIDs: opts.FolderIDs,
+	}
+
+	if err := filesService.RemoveUsageRights(ctx, opts.CourseID, opts.GroupID, opts.UserID, params); err != nil {
+		logger.LogCommandError(ctx, "files.remove-usage-rights", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
+			"user_id":   opts.UserID,
+		})
+		return fmt.Errorf("failed to remove usage rights: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "files.remove-usage-rights", 1)
+	printInfo("Usage rights removed successfully\n")
+	return nil
+}
+
+func runFilesLicenses(ctx context.Context, client *api.Client, opts *options.FilesLicensesOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+	logger.LogCommandStart(ctx, "files.licenses", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
+		"user_id":   opts.UserID,
+	})
+
+	filesService := api.NewFilesService(client)
+
+	licenses, err := filesService.ListLicenses(ctx, opts.CourseID, opts.GroupID, opts.UserID)
+	if err != nil {
+		logger.LogCommandError(ctx, "files.licenses", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
+			"user_id":   opts.UserID,
+		})
+		return fmt.Errorf("failed to list licenses: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "files.licenses", len(licenses))
+	return formatEmptyOrOutput(licenses, "No licenses found")
 }
 
 // formatFileSize formats a file size in bytes to a human-readable string
