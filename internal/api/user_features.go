@@ -15,22 +15,6 @@ func NewUserFeaturesService(client *Client) *UserFeaturesService {
 	return &UserFeaturesService{client: client}
 }
 
-// FeatureFlag represents the state of a feature flag
-type FeatureFlag struct {
-	Feature     string                 `json:"feature"`
-	State       string                 `json:"state"`
-	Transitions map[string]interface{} `json:"transitions,omitempty"`
-	Locked      bool                   `json:"locked"`
-	Hidden      bool                   `json:"hidden"`
-}
-
-// Feature represents a Canvas feature with its current flag state
-type Feature struct {
-	Feature     string      `json:"feature"`
-	AppliesTo   string      `json:"applies_to"`
-	FeatureFlag FeatureFlag `json:"feature_flag"`
-}
-
 // List retrieves all features for a user
 func (s *UserFeaturesService) List(ctx context.Context, userID int64) ([]Feature, error) {
 	path := fmt.Sprintf("/api/v1/users/%d/features", userID)

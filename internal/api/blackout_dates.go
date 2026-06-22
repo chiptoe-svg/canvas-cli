@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"io"
 )
 
 // BlackoutDatesService handles blackout date API calls for courses.

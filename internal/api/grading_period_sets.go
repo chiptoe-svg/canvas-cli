@@ -25,17 +25,6 @@ type GradingPeriodSet struct {
 	GradingPeriods                    []GradingPeriod `json:"grading_periods,omitempty"`
 }
 
-// GradingPeriod represents a single grading period.
-type GradingPeriod struct {
-	ID        int64   `json:"id"`
-	Title     string  `json:"title"`
-	StartDate string  `json:"start_date"`
-	EndDate   string  `json:"end_date"`
-	CloseDate string  `json:"close_date"`
-	Weight    float64 `json:"weight"`
-	IsClosed  bool    `json:"is_closed"`
-}
-
 // GradingPeriodSetParams holds create/update parameters for a grading period set.
 type GradingPeriodSetParams struct {
 	Title                  string `json:"grading_period_set[title]"`

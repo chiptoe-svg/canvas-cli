@@ -36,18 +36,6 @@ type TemporaryEnrollmentStatus struct {
 	CanProvide  bool `json:"can_provide"`
 }
 
-// ContentExport represents a Canvas content export object.
-type ContentExport struct {
-	ID            int64       `json:"id"`
-	CreatedAt     string      `json:"created_at"`
-	ExportType    string      `json:"export_type"`
-	ProgressURL   string      `json:"progress_url"`
-	WorkflowState string      `json:"workflow_state"`
-	UserID        int64       `json:"user_id"`
-	CourseID      int64       `json:"course_id"`
-	Attachment    interface{} `json:"attachment,omitempty"`
-}
-
 // ContentExportParams holds parameters for creating a content export.
 type ContentExportParams struct {
 	ExportType string `json:"export_type"`
