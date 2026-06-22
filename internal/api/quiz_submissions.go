@@ -187,3 +187,31 @@ func (s *QuizSubmissionsService) Complete(ctx context.Context, courseID, quizID,
 
 	return &response.QuizSubmissions[0], nil
 }
+
+// StartQuizSubmissionParams holds parameters for starting a quiz submission.
+type StartQuizSubmissionParams struct {
+	AccessCode  string `json:"access_code,omitempty"`
+	PreviewMode bool   `json:"preview,omitempty"`
+}
+
+// Create starts a new quiz submission (taking a quiz).
+// Canvas API: POST /api/v1/courses/:course_id/quizzes/:quiz_id/submissions
+func (s *QuizSubmissionsService) Create(ctx context.Context, courseID, quizID int64, params *StartQuizSubmissionParams) (*QuizSubmission, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submissions", courseID, quizID)
+
+	var body interface{}
+	if params != nil {
+		body = params
+	}
+
+	var response QuizSubmissionsResponse
+	if err := s.client.PostJSON(ctx, path, body, &response); err != nil {
+		return nil, err
+	}
+
+	if len(response.QuizSubmissions) == 0 {
+		return nil, fmt.Errorf("no submission returned after create")
+	}
+
+	return &response.QuizSubmissions[0], nil
+}
