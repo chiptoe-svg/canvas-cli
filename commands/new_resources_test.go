@@ -356,10 +356,10 @@ func TestAccountCalendarsListCmd(t *testing.T) {
 			},
 		},
 		{
-			Name: "list calendars for account",
-			Args: []string{"--account-id", "5"},
+			Name: "list all account calendars with search",
+			Args: []string{"--search", "Sub"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/5/account_calendars": cmdtest.NewMockResponse(`[{"id":10,"name":"Sub"}]`),
+				"/api/v1/account_calendars": cmdtest.NewMockResponse(`[{"id":10,"name":"Sub"}]`),
 			},
 			ExpectError: false,
 		},

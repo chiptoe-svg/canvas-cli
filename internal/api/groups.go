@@ -908,17 +908,6 @@ func (s *GroupsService) ListExternalTools(ctx context.Context, groupID int64) ([
 	return tools, nil
 }
 
-// ContentExport represents a content export object.
-type ContentExport struct {
-	ID            int64       `json:"id"`
-	CreatedAt     string      `json:"created_at,omitempty"`
-	ExportType    string      `json:"export_type"`
-	Attachment    interface{} `json:"attachment,omitempty"`
-	ProgressURL   string      `json:"progress_url,omitempty"`
-	UserID        int64       `json:"user_id,omitempty"`
-	WorkflowState string      `json:"workflow_state,omitempty"`
-}
-
 // ListContentExports lists content exports for a group.
 // GET /api/v1/groups/:group_id/content_exports
 func (s *GroupsService) ListContentExports(ctx context.Context, groupID int64) ([]ContentExport, error) {
@@ -982,15 +971,6 @@ func (s *GroupsService) ListContentLicenses(ctx context.Context, groupID int64) 
 	return licenses, nil
 }
 
-// MediaAttachment represents a media object attached to a group.
-type MediaAttachment struct {
-	ID          int64  `json:"id"`
-	DisplayName string `json:"display_name,omitempty"`
-	ContentType string `json:"content_type,omitempty"`
-	URL         string `json:"url,omitempty"`
-	MediaID     string `json:"media_id,omitempty"`
-}
-
 // ListMediaAttachments returns media attachments for a group.
 // GET /api/v1/groups/:group_id/media_attachments
 func (s *GroupsService) ListMediaAttachments(ctx context.Context, groupID int64) ([]MediaAttachment, error) {
@@ -1002,15 +982,6 @@ func (s *GroupsService) ListMediaAttachments(ctx context.Context, groupID int64)
 	}
 
 	return items, nil
-}
-
-// MediaObject represents a media object in Canvas.
-type MediaObject struct {
-	MediaID        string `json:"media_id"`
-	MediaType      string `json:"media_type,omitempty"`
-	Title          string `json:"title,omitempty"`
-	CanAddCaptions bool   `json:"can_add_captions,omitempty"`
-	UserEntered    bool   `json:"user_entered_title,omitempty"`
 }
 
 // ListMediaObjects returns media objects for a group.
