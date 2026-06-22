@@ -160,14 +160,14 @@ func runSync() error {
 		Endpoints:     endpoints,
 	}
 
-	if err := os.MkdirAll(filepath.Dir(manifestPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(manifestPath), 0o750); err != nil {
 		return err
 	}
 	out, err := json.MarshalIndent(man, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(manifestPath, append(out, '\n'), 0o644); err != nil { //nolint:gosec // public docs
+	if err := os.WriteFile(manifestPath, append(out, '\n'), 0o644); err != nil { // #nosec G306 -- committed spec manifest, world-readable by design
 		return err
 	}
 	fmt.Printf("speccheck: %d documented endpoints -> %s\n", len(endpoints), manifestPath)
@@ -280,7 +280,7 @@ func runCoverage() error {
 		sb.WriteString("\n")
 	}
 
-	if err := os.WriteFile(coverageOut, []byte(sb.String()), 0o644); err != nil { //nolint:gosec // temp report
+	if err := os.WriteFile(coverageOut, []byte(sb.String()), 0o644); err != nil { // #nosec G306 -- coverage report, world-readable by design
 		return err
 	}
 	fmt.Printf("\nFull report written to %s\n", coverageOut)

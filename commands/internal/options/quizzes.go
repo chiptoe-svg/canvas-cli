@@ -513,12 +513,16 @@ func (o *QuizzesExtensionsCreateOptions) Validate() error {
 // QuizzesIPFiltersListOptions contains options for listing quiz IP filters
 type QuizzesIPFiltersListOptions struct {
 	CourseID int64
+	QuizID   int64
 }
 
 // Validate validates the options
 func (o *QuizzesIPFiltersListOptions) Validate() error {
 	if o.CourseID <= 0 {
 		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
 	}
 	return nil
 }

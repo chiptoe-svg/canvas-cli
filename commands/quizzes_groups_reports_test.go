@@ -85,8 +85,8 @@ func TestQuizzesGroupsGetCmd(t *testing.T) {
 			Name: "get quiz group - API error",
 			Args: []string{"3", "--course-id", "1", "--quiz-id", "10"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                        courseMock,
-				"/api/v1/courses/1/quizzes/10/groups/3":   cmdtest.NewErrorResponse(404, "not found"),
+				"/api/v1/courses/1":                     courseMock,
+				"/api/v1/courses/1/quizzes/10/groups/3": cmdtest.NewErrorResponse(404, "not found"),
 			},
 			ExpectError: true,
 		},
@@ -169,8 +169,8 @@ func TestQuizzesGroupsUpdateCmd(t *testing.T) {
 			Name: "update quiz group - API error",
 			Args: []string{"3", "--course-id", "1", "--quiz-id", "10", "--name", "New Name"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                      courseMock,
-				"/api/v1/courses/1/quizzes/10/groups/3":  cmdtest.NewErrorResponse(404, "not found"),
+				"/api/v1/courses/1":                     courseMock,
+				"/api/v1/courses/1/quizzes/10/groups/3": cmdtest.NewErrorResponse(404, "not found"),
 			},
 			ExpectError: true,
 		},
@@ -269,7 +269,7 @@ func TestQuizzesReportsGetCmd(t *testing.T) {
 			Name: "get quiz report successfully",
 			Args: []string{"5", "--course-id", "1", "--quiz-id", "10"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                       courseMock,
+				"/api/v1/courses/1": courseMock,
 				"/api/v1/courses/1/quizzes/10/reports/5": cmdtest.NewMockResponse(`{
 					"id": 5, "quiz_id": 10, "report_type": "item_analysis"
 				}`),
@@ -401,8 +401,8 @@ func TestQuizzesStatisticsListCmd(t *testing.T) {
 			Name: "list quiz statistics - API error",
 			Args: []string{"--course-id", "1", "--quiz-id", "10"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                        courseMock,
-				"/api/v1/courses/1/quizzes/10/statistics":  cmdtest.NewErrorResponse(500, "server error"),
+				"/api/v1/courses/1":                       courseMock,
+				"/api/v1/courses/1/quizzes/10/statistics": cmdtest.NewErrorResponse(500, "server error"),
 			},
 			ExpectError: true,
 		},
@@ -440,8 +440,8 @@ func TestQuizzesExtensionsCreateCmd(t *testing.T) {
 			Name: "create quiz extension - API error",
 			Args: []string{"--course-id", "1", "--quiz-id", "10", "--user-id", "42"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                        courseMock,
-				"/api/v1/courses/1/quizzes/10/extensions":  cmdtest.NewErrorResponse(422, "invalid user"),
+				"/api/v1/courses/1":                       courseMock,
+				"/api/v1/courses/1/quizzes/10/extensions": cmdtest.NewErrorResponse(422, "invalid user"),
 			},
 			ExpectError: true,
 		},
@@ -461,10 +461,10 @@ func TestQuizzesIPFiltersListCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "list quiz IP filters successfully",
-			Args: []string{"--course-id", "1"},
+			Args: []string{"--course-id", "1", "--quiz-id", "2"},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/courses/1": courseMock,
-				"/api/v1/courses/1/quizzes/ip_filters": cmdtest.NewMockResponse(`{
+				"/api/v1/courses/1/quizzes/2/ip_filters": cmdtest.NewMockResponse(`{
 					"quiz_ip_filters": [{"name": "Campus", "filter": "10.0.0.0/8"}]
 				}`),
 			},
@@ -477,15 +477,15 @@ func TestQuizzesIPFiltersListCmd(t *testing.T) {
 		},
 		{
 			Name:        "list quiz IP filters - missing course ID",
-			Args:        []string{},
+			Args:        []string{"--quiz-id", "2"},
 			ExpectError: true,
 		},
 		{
 			Name: "list quiz IP filters - API error",
-			Args: []string{"--course-id", "1"},
+			Args: []string{"--course-id", "1", "--quiz-id", "2"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                    courseMock,
-				"/api/v1/courses/1/quizzes/ip_filters": cmdtest.NewErrorResponse(500, "server error"),
+				"/api/v1/courses/1":                      courseMock,
+				"/api/v1/courses/1/quizzes/2/ip_filters": cmdtest.NewErrorResponse(500, "server error"),
 			},
 			ExpectError: true,
 		},
@@ -523,7 +523,7 @@ func TestQuizzesAssignmentOverridesListCmd(t *testing.T) {
 			Name: "list quiz assignment overrides - API error",
 			Args: []string{"--course-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                              courseMock,
+				"/api/v1/courses/1": courseMock,
 				"/api/v1/courses/1/quizzes/assignment_overrides": cmdtest.NewErrorResponse(500, "error"),
 			},
 			ExpectError: true,
@@ -560,7 +560,7 @@ func TestQuizzesAssignmentOverridesSetCmd(t *testing.T) {
 			Name: "set quiz assignment overrides - API error",
 			Args: []string{"--course-id", "1", "--quiz-id", "10"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1":                              courseMock,
+				"/api/v1/courses/1": courseMock,
 				"/api/v1/courses/1/quizzes/assignment_overrides": cmdtest.NewErrorResponse(422, "invalid"),
 			},
 			ExpectError: true,

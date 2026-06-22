@@ -17,7 +17,7 @@ func TestQuizIPFiltersService_List(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Errorf("expected GET, got %s", r.Method)
 		}
-		if r.URL.Path != "/api/v1/courses/1/quizzes/ip_filters" {
+		if r.URL.Path != "/api/v1/courses/1/quizzes/2/ip_filters" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -34,7 +34,7 @@ func TestQuizIPFiltersService_List(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	svc := NewQuizIPFiltersService(client)
 
-	filters, err := svc.List(context.Background(), 1)
+	filters, err := svc.List(context.Background(), 1, 2)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

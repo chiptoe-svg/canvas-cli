@@ -61,7 +61,17 @@ func TestSpecContract_CLIPathsAreDocumented(t *testing.T) {
 	// Build a set of normalized documented paths.
 	docPaths := map[string]bool{}
 	for _, ep := range man.Endpoints {
-		docPaths[specNormalizePath(ep.Path)] = true
+		norm := specNormalizePath(ep.Path)
+		docPaths[norm] = true
+		// The CLI builds many paths through a single context-segment template,
+		// e.g. fmt.Sprintf("/api/v1/%s/folders", ctx) where ctx is
+		// "courses/123" | "groups/123" | "users/123". That normalizes to
+		// /api/v1/:x/folders — one segment where the documented path has two
+		// (courses/:course_id). Register a context-collapsed alias so these
+		// legitimate multi-context paths match.
+		for _, alias := range collapseContext(norm) {
+			docPaths[alias] = true
+		}
 	}
 
 	// Harvest CLI paths from internal/api non-test source files.
@@ -86,6 +96,30 @@ func TestSpecContract_CLIPathsAreDocumented(t *testing.T) {
 	for _, f := range failures {
 		t.Errorf("CLI path has no documented Canvas endpoint: %s\n"+
 			"  Triage: (a) fix the CLI path, (b) fix the normalizer, or (c) add to knownUndocumented with justification", f)
+	}
+}
+
+// ctxPairRe matches a leading Canvas context pair like /courses/:x at the start
+// of a normalized path (context word + id).
+var ctxPairRe = regexp.MustCompile(`^/api/v1/(courses|groups|users|accounts|sections)/:x(/|$)`)
+
+// collapseContext returns context-templated aliases of a documented path so the
+// contract matcher recognizes the two ways the CLI builds multi-context paths
+// (discussions, pages, files, folders... live under courses OR groups OR users):
+//
+//   - combined verb:   fmt.Sprintf("/api/v1/%s/folders", "courses/123")
+//     → /api/v1/:x/folders        (context pair collapses to one :x)
+//   - split verbs:     fmt.Sprintf("/api/v1/%s/%d/discussion_topics", "courses", 123)
+//     → /api/v1/:x/:x/discussion_topics  (context word becomes :x, id stays :x)
+//
+// Returns nil if the path has no leading context pair.
+func collapseContext(norm string) []string {
+	if !ctxPairRe.MatchString(norm) {
+		return nil
+	}
+	return []string{
+		ctxPairRe.ReplaceAllString(norm, "/api/v1/:x$2"),    // combined: courses/:x → :x
+		ctxPairRe.ReplaceAllString(norm, "/api/v1/:x/:x$2"), // split:    courses/:x → :x/:x
 	}
 }
 

@@ -1800,7 +1800,7 @@ func newQuizzesIPFiltersListCmd() *cobra.Command {
 		Long: `List IP address filters available for quizzes in a course.
 
 Examples:
-  canvas quizzes ip-filters list --course-id 123`,
+  canvas quizzes ip-filters list --course-id 123 --quiz-id 456`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -1816,7 +1816,8 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	mustMarkRequired(cmd, "course-id")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
 
 	return cmd
 }
@@ -1826,11 +1827,12 @@ func runQuizzesIPFiltersList(ctx context.Context, client *api.Client, opts *opti
 
 	logger.LogCommandStart(ctx, "quizzes.ip-filters.list", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
 	})
 
 	service := api.NewQuizIPFiltersService(client)
 
-	filters, err := service.List(ctx, opts.CourseID)
+	filters, err := service.List(ctx, opts.CourseID, opts.QuizID)
 	if err != nil {
 		logger.LogCommandError(ctx, "quizzes.ip-filters.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
