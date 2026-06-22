@@ -3,26 +3,26 @@ package commands
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
 )
 
+// gradingStandardsCmd is the parent command for grading standard operations.
 var gradingStandardsCmd = &cobra.Command{
-	Use:   "grading-standards",
-	Short: "Manage Canvas grading standards",
-	Long: `Manage Canvas grading standards for accounts.
-
-Grading standards define the letter grade scheme used for courses.
+	Use:     "grading-standards",
+	Aliases: []string{"gs"},
+	Short:   "Manage course grading standards",
+	Long: `Manage Canvas course grading standards (grading schemes).
 
 Examples:
-  canvas grading-standards list 1
-  canvas grading-standards get 1 5
-  canvas grading-standards create 1 --title "Standard Grading"
-  canvas grading-standards delete 1 5`,
+  canvas grading-standards list --course-id 1
+  canvas grading-standards get 5 --course-id 1
+  canvas grading-standards create --course-id 1 --title "Letter Grades"
+  canvas grading-standards delete 5 --course-id 1`,
 }
 
 func init() {
@@ -34,120 +34,72 @@ func init() {
 }
 
 func newGradingStandardsListCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "list <account-id>",
-		Short: "List grading standards for an account",
-		Args:  ExactArgsWithUsage(1, "account-id"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			accountID, err := strconv.ParseInt(args[0], 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid account ID: %s", args[0])
-			}
-			client, err := getAPIClient()
-			if err != nil {
-				return err
-			}
-			return runGradingStandardsList(cmd.Context(), client, accountID)
-		},
-	}
-}
-
-func newGradingStandardsGetCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "get <account-id> <standard-id>",
-		Short: "Get a specific grading standard",
-		Args:  ExactArgsWithUsage(2, "account-id", "standard-id"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			accountID, err := strconv.ParseInt(args[0], 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid account ID: %s", args[0])
-			}
-			standardID, err := strconv.ParseInt(args[1], 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid standard ID: %s", args[1])
-			}
-			client, err := getAPIClient()
-			if err != nil {
-				return err
-			}
-			return runGradingStandardsGet(cmd.Context(), client, accountID, standardID)
-		},
-	}
-}
-
-func newGradingStandardsCreateCmd() *cobra.Command {
-	var title string
-
+	opts := &options.GradingStandardsListOptions{}
 	cmd := &cobra.Command{
-		Use:   "create <account-id>",
-		Short: "Create a grading standard for an account",
-		Args:  ExactArgsWithUsage(1, "account-id"),
+		Use:   "list",
+		Short: "List grading standards for a course",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			accountID, err := strconv.ParseInt(args[0], 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid account ID: %s", args[0])
+			if err := opts.Validate(); err != nil {
+				return err
 			}
 			client, err := getAPIClient()
 			if err != nil {
 				return err
 			}
-			params := &api.GradingStandardParams{Title: title}
-			return runGradingStandardsCreate(cmd.Context(), client, accountID, params)
+			return runGradingStandardsList(cmd.Context(), client, opts)
 		},
 	}
-
-	cmd.Flags().StringVar(&title, "title", "", "Title of the grading standard (required)")
-	mustMarkRequired(cmd, "title")
-
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	return cmd
 }
 
-func newGradingStandardsDeleteCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "delete <account-id> <standard-id>",
-		Short: "Delete a grading standard",
-		Args:  ExactArgsWithUsage(2, "account-id", "standard-id"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			accountID, err := strconv.ParseInt(args[0], 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid account ID: %s", args[0])
-			}
-			standardID, err := strconv.ParseInt(args[1], 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid standard ID: %s", args[1])
-			}
-			client, err := getAPIClient()
-			if err != nil {
-				return err
-			}
-			return runGradingStandardsDelete(cmd.Context(), client, accountID, standardID)
-		},
-	}
-}
-
-func runGradingStandardsList(ctx context.Context, client *api.Client, accountID int64) error {
+func runGradingStandardsList(ctx context.Context, client *api.Client, opts *options.GradingStandardsListOptions) error {
 	logger := logging.NewCommandLogger(verbose)
-	logger.LogCommandStart(ctx, "grading-standards.list", map[string]interface{}{"account_id": accountID})
+	logger.LogCommandStart(ctx, "grading-standards.list", map[string]interface{}{"course_id": opts.CourseID})
 
 	svc := api.NewGradingStandardsService(client)
-	standards, err := svc.List(ctx, accountID)
+	standards, err := svc.ListForCourse(ctx, opts.CourseID)
 	if err != nil {
-		logger.LogCommandError(ctx, "grading-standards.list", err, nil)
 		return err
 	}
 
 	logger.LogCommandComplete(ctx, "grading-standards.list", len(standards))
-	return formatEmptyOrOutput(standards, fmt.Sprintf("No grading standards found for account %d", accountID))
+	return formatEmptyOrOutput(standards, "No grading standards found")
 }
 
-func runGradingStandardsGet(ctx context.Context, client *api.Client, accountID, standardID int64) error {
+func newGradingStandardsGetCmd() *cobra.Command {
+	opts := &options.GradingStandardsGetOptions{}
+	cmd := &cobra.Command{
+		Use:   "get <standard-id>",
+		Short: "Get a grading standard",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if _, err := fmt.Sscanf(args[0], "%d", &opts.StandardID); err != nil {
+				return fmt.Errorf("invalid standard ID: %s", args[0])
+			}
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+			return runGradingStandardsGet(cmd.Context(), client, opts)
+		},
+	}
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
+	return cmd
+}
+
+func runGradingStandardsGet(ctx context.Context, client *api.Client, opts *options.GradingStandardsGetOptions) error {
 	logger := logging.NewCommandLogger(verbose)
-	logger.LogCommandStart(ctx, "grading-standards.get", map[string]interface{}{"account_id": accountID, "standard_id": standardID})
+	logger.LogCommandStart(ctx, "grading-standards.get", map[string]interface{}{"course_id": opts.CourseID, "standard_id": opts.StandardID})
 
 	svc := api.NewGradingStandardsService(client)
-	standard, err := svc.Get(ctx, accountID, standardID)
+	standard, err := svc.GetForCourse(ctx, opts.CourseID, opts.StandardID)
 	if err != nil {
-		logger.LogCommandError(ctx, "grading-standards.get", err, nil)
 		return err
 	}
 
@@ -155,32 +107,77 @@ func runGradingStandardsGet(ctx context.Context, client *api.Client, accountID, 
 	return formatOutput(standard, nil)
 }
 
-func runGradingStandardsCreate(ctx context.Context, client *api.Client, accountID int64, params *api.GradingStandardParams) error {
+func newGradingStandardsCreateCmd() *cobra.Command {
+	opts := &options.GradingStandardsCreateOptions{}
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a grading standard for a course",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+			return runGradingStandardsCreate(cmd.Context(), client, opts)
+		},
+	}
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().StringVar(&opts.Title, "title", "", "Grading standard title (required)")
+	mustMarkRequired(cmd, "course-id", "title")
+	return cmd
+}
+
+func runGradingStandardsCreate(ctx context.Context, client *api.Client, opts *options.GradingStandardsCreateOptions) error {
 	logger := logging.NewCommandLogger(verbose)
-	logger.LogCommandStart(ctx, "grading-standards.create", map[string]interface{}{"account_id": accountID, "title": params.Title})
+	logger.LogCommandStart(ctx, "grading-standards.create", map[string]interface{}{"course_id": opts.CourseID})
 
 	svc := api.NewGradingStandardsService(client)
-	standard, err := svc.Create(ctx, accountID, params)
+	standard, err := svc.CreateForCourse(ctx, opts.CourseID, api.GradingStandardParams{Title: opts.Title})
 	if err != nil {
-		logger.LogCommandError(ctx, "grading-standards.create", err, nil)
 		return err
 	}
 
 	logger.LogCommandComplete(ctx, "grading-standards.create", 1)
-	return formatSuccessOutput(standard, fmt.Sprintf("Grading standard created (ID: %d)", standard.ID))
+	return formatSuccessOutput(standard, fmt.Sprintf("Grading standard %d created", standard.ID))
 }
 
-func runGradingStandardsDelete(ctx context.Context, client *api.Client, accountID, standardID int64) error {
+func newGradingStandardsDeleteCmd() *cobra.Command {
+	opts := &options.GradingStandardsDeleteOptions{}
+	cmd := &cobra.Command{
+		Use:   "delete <standard-id>",
+		Short: "Delete a grading standard",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if _, err := fmt.Sscanf(args[0], "%d", &opts.StandardID); err != nil {
+				return fmt.Errorf("invalid standard ID: %s", args[0])
+			}
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+			return runGradingStandardsDelete(cmd.Context(), client, opts)
+		},
+	}
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
+	return cmd
+}
+
+func runGradingStandardsDelete(ctx context.Context, client *api.Client, opts *options.GradingStandardsDeleteOptions) error {
 	logger := logging.NewCommandLogger(verbose)
-	logger.LogCommandStart(ctx, "grading-standards.delete", map[string]interface{}{"account_id": accountID, "standard_id": standardID})
+	logger.LogCommandStart(ctx, "grading-standards.delete", map[string]interface{}{"course_id": opts.CourseID, "standard_id": opts.StandardID})
 
 	svc := api.NewGradingStandardsService(client)
-	if err := svc.Delete(ctx, accountID, standardID); err != nil {
-		logger.LogCommandError(ctx, "grading-standards.delete", err, nil)
+	if err := svc.DeleteForCourse(ctx, opts.CourseID, opts.StandardID); err != nil {
 		return err
 	}
 
 	logger.LogCommandComplete(ctx, "grading-standards.delete", 1)
-	printInfo("Grading standard %d deleted\n", standardID)
+	printInfo("Grading standard %d deleted\n", opts.StandardID)
 	return nil
 }

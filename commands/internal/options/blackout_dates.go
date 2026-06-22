@@ -1,75 +1,95 @@
 package options
 
-// BlackoutDatesListOptions contains options for listing blackout dates
+import "fmt"
+
+// BlackoutDatesListOptions holds options for listing blackout dates.
 type BlackoutDatesListOptions struct {
-	AccountID int64
+	CourseID int64
 }
 
-// Validate validates the options
+// Validate validates the options.
 func (o *BlackoutDatesListOptions) Validate() error {
-	return ValidateRequired("account-id", o.AccountID)
-}
-
-// BlackoutDatesGetOptions contains options for getting a blackout date
-type BlackoutDatesGetOptions struct {
-	AccountID int64
-	ID        int64
-}
-
-// Validate validates the options
-func (o *BlackoutDatesGetOptions) Validate() error {
-	if err := ValidateRequired("account-id", o.AccountID); err != nil {
-		return err
+	if o.CourseID <= 0 {
+		return fmt.Errorf("--course-id is required")
 	}
-	return ValidateRequired("id", o.ID)
+	return nil
 }
 
-// BlackoutDatesCreateOptions contains options for creating a blackout date
+// BlackoutDatesGetOptions holds options for getting a blackout date.
+type BlackoutDatesGetOptions struct {
+	CourseID int64
+	ID       int64
+}
+
+// Validate validates the options.
+func (o *BlackoutDatesGetOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("--course-id is required")
+	}
+	if o.ID <= 0 {
+		return fmt.Errorf("blackout-date-id is required")
+	}
+	return nil
+}
+
+// BlackoutDatesCreateOptions holds options for creating a blackout date.
 type BlackoutDatesCreateOptions struct {
-	AccountID  int64
+	CourseID   int64
 	StartDate  string
 	EndDate    string
 	EventTitle string
 }
 
-// Validate validates the options
+// Validate validates the options.
 func (o *BlackoutDatesCreateOptions) Validate() error {
-	if err := ValidateRequired("account-id", o.AccountID); err != nil {
-		return err
+	if o.CourseID <= 0 {
+		return fmt.Errorf("--course-id is required")
 	}
-	if err := ValidateRequired("start-date", o.StartDate); err != nil {
-		return err
+	if o.StartDate == "" {
+		return fmt.Errorf("--start-date is required")
 	}
-	return ValidateRequired("end-date", o.EndDate)
+	if o.EndDate == "" {
+		return fmt.Errorf("--end-date is required")
+	}
+	if o.EventTitle == "" {
+		return fmt.Errorf("--title is required")
+	}
+	return nil
 }
 
-// BlackoutDatesUpdateOptions contains options for updating a blackout date
+// BlackoutDatesUpdateOptions holds options for updating a blackout date.
 type BlackoutDatesUpdateOptions struct {
-	AccountID  int64
+	CourseID   int64
 	ID         int64
 	StartDate  string
 	EndDate    string
 	EventTitle string
 }
 
-// Validate validates the options
+// Validate validates the options.
 func (o *BlackoutDatesUpdateOptions) Validate() error {
-	if err := ValidateRequired("account-id", o.AccountID); err != nil {
-		return err
+	if o.CourseID <= 0 {
+		return fmt.Errorf("--course-id is required")
 	}
-	return ValidateRequired("id", o.ID)
+	if o.ID <= 0 {
+		return fmt.Errorf("blackout-date-id is required")
+	}
+	return nil
 }
 
-// BlackoutDatesDeleteOptions contains options for deleting a blackout date
+// BlackoutDatesDeleteOptions holds options for deleting a blackout date.
 type BlackoutDatesDeleteOptions struct {
-	AccountID int64
-	ID        int64
+	CourseID int64
+	ID       int64
 }
 
-// Validate validates the options
+// Validate validates the options.
 func (o *BlackoutDatesDeleteOptions) Validate() error {
-	if err := ValidateRequired("account-id", o.AccountID); err != nil {
-		return err
+	if o.CourseID <= 0 {
+		return fmt.Errorf("--course-id is required")
 	}
-	return ValidateRequired("id", o.ID)
+	if o.ID <= 0 {
+		return fmt.Errorf("blackout-date-id is required")
+	}
+	return nil
 }

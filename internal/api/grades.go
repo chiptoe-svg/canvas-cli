@@ -170,6 +170,40 @@ func (s *GradesService) GetFeed(ctx context.Context, courseID int64, opts *ListG
 	return entries, nil
 }
 
+// GradebookHistorySubmission is a submission record returned by the
+// per-date/grader/assignment gradebook history endpoint.
+type GradebookHistorySubmission struct {
+	SubmissionID int64   `json:"submission_id"`
+	UserID       int64   `json:"user_id"`
+	UserName     string  `json:"user_name"`
+	GradedAt     string  `json:"graded_at"`
+	Grade        string  `json:"grade,omitempty"`
+	Score        float64 `json:"score,omitempty"`
+	AssignmentID int64   `json:"assignment_id"`
+}
+
+// GetGradebookHistoryDay returns graders active on a specific date.
+// GET /api/v1/courses/:course_id/gradebook_history/:date
+func (s *GradesService) GetGradebookHistoryDay(ctx context.Context, courseID int64, date string) ([]GradebookHistoryGrader, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/gradebook_history/%s", courseID, date)
+	var out []GradebookHistoryGrader
+	if err := s.client.GetAllPages(ctx, path, &out); err != nil {
+		return nil, fmt.Errorf("getting gradebook history for course %d on %s: %w", courseID, date, err)
+	}
+	return out, nil
+}
+
+// GetGradebookHistorySubmissions lists submissions graded on a date by a grader for an assignment.
+// GET /api/v1/courses/:course_id/gradebook_history/:date/graders/:grader_id/assignments/:assignment_id/submissions
+func (s *GradesService) GetGradebookHistorySubmissions(ctx context.Context, courseID int64, date string, graderID, assignmentID int64) ([]GradebookHistorySubmission, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/gradebook_history/%s/graders/%d/assignments/%d/submissions", courseID, date, graderID, assignmentID)
+	var out []GradebookHistorySubmission
+	if err := s.client.GetAllPages(ctx, path, &out); err != nil {
+		return nil, fmt.Errorf("getting gradebook history submissions for course %d: %w", courseID, err)
+	}
+	return out, nil
+}
+
 // ListCustomColumnsOptions holds options for listing custom columns
 type ListCustomColumnsOptions struct {
 	IncludeHidden bool
