@@ -19,6 +19,7 @@ func NewCourseFeaturesService(client *Client) *CourseFeaturesService {
 type Feature struct {
 	Feature     string      `json:"feature"`
 	DisplayName string      `json:"display_name,omitempty"`
+	AppliesTo   string      `json:"applies_to,omitempty"`
 	FeatureFlag FeatureFlag `json:"feature_flag,omitempty"`
 }
 
