@@ -12,12 +12,24 @@ sync by `make docs-gen` and the documentation workflow.
 
 ### Added
 
+- **Agent safety guard** (`canvas agent guard --host claude-code|codex|opencode`):
+  generates AI-agent safety config — permission rules plus a `PreToolUse` hook —
+  that hard-blocks irreversible Canvas operations (delete, conclude, crosslist,
+  cancel, close, merge, split, reset, …) and requires approval for ordinary
+  writes, derived from the live command tree. Classification is fail-safe: only
+  an explicit read allowlist stays allowed, so unrecognized/future verbs are
+  gated rather than slipping through. Rules are emitted as exact command paths
+  and exact MCP tool names; the hook matches the subcommand at the command
+  position (no false positives from verb words in arguments) and covers the
+  `canvas api` raw escape hatch (incl. PATCH). `--write` installs the config
+  under the project root without overwriting existing files. See the
+  [Agent Safety guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/).
 - **API spec-compliance harness**: CLI endpoint paths are now validated in CI
   against Canvas's official API spec (Swagger 1.2), committed under
   `testdata/spec/`. A network-free contract test fails the build on any path
   Canvas doesn't document. `make spec-sync` refreshes the manifest from a live
   Canvas host; `make spec-coverage` reports the gap. See
-  [API Coverage](docs/development/api-coverage.md).
+  [API Coverage](https://jjuanrivvera.github.io/canvas-cli/development/api-coverage/).
 - **Major API coverage expansion**: 31% → 67% of Canvas's documented endpoints
   (52 → 98 command groups). New command groups include `polls`,
   `appointment-groups`, `folders`, `favorites`, `bookmarks`, `course-nicknames`,
