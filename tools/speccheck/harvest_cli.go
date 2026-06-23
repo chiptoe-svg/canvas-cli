@@ -38,6 +38,9 @@ func harvestCLIPaths(dir string) ([]string, error) {
 			return parseErr
 		}
 
+		// NOTE: paths built by string concatenation where the /api/v1/ prefix is
+		// in a variable (not a literal) are not captured. Enhance this function if
+		// such patterns are added to the service layer.
 		ast.Inspect(f, func(n ast.Node) bool {
 			switch v := n.(type) {
 			case *ast.BasicLit:
@@ -53,6 +56,16 @@ func harvestCLIPaths(dir string) ([]string, error) {
 				if isFmtSprintf(v) && len(v.Args) > 0 {
 					if lit, ok := v.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
 						s := unquote(lit.Value)
+						if isAPIPath(s) {
+							seen[s] = true
+						}
+					}
+				}
+			case *ast.BinaryExpr:
+				// String concatenation: "/api/v1/..." + someVar
+				if v.Op == token.ADD {
+					if lhs, ok := v.X.(*ast.BasicLit); ok && lhs.Kind == token.STRING {
+						s := unquote(lhs.Value)
 						if isAPIPath(s) {
 							seen[s] = true
 						}

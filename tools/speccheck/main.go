@@ -416,22 +416,29 @@ func runCoverage() error {
 	}
 
 	type resourceGap struct {
-		resource    string
-		implemented int
-		total       int
-		missing     []string
+		resource     string
+		implemented  int
+		total        int
+		missing      []string
+		coveredPaths map[string]bool // tracks which normalized paths are already counted
 	}
 	byResource := map[string]*resourceGap{}
+	// NOTE: coverage is path-granular, not method-granular, because harvestCLIPaths
+	// does not capture HTTP verbs. A path counts as implemented if the CLI issues
+	// any request to that path, regardless of method.
 	for _, ep := range man.Endpoints {
 		seg := firstSegment(ep.Path)
 		if _, ok := byResource[seg]; !ok {
-			byResource[seg] = &resourceGap{resource: seg}
+			byResource[seg] = &resourceGap{resource: seg, coveredPaths: map[string]bool{}}
 		}
 		rg := byResource[seg]
 		rg.total++
 		norm := normalizePath(ep.Path)
 		if cliNorm[norm] {
-			rg.implemented++
+			if !rg.coveredPaths[norm] {
+				rg.coveredPaths[norm] = true
+				rg.implemented++
+			}
 		} else {
 			rg.missing = append(rg.missing, fmt.Sprintf("%s %s", ep.Method, ep.Path))
 		}
