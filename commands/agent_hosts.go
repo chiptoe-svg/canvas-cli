@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -231,20 +230,4 @@ func canvasOpenCodeConfigPath() string {
 // It is exported as a helper for tests.
 func canvasGuardHosts() []string {
 	return []string{"claude-code", "codex", "opencode"}
-}
-
-// formatCanvasGuardRules returns a human-readable summary of what will be
-// blocked or asked for a given plan. Used in tests and debug output.
-func formatCanvasGuardRules(g canvasGuardPlan) string {
-	var sb strings.Builder
-	blocked := g.blocked()
-	asked := g.asked()
-	fmt.Fprintf(&sb, "blocked: %d commands; asked: %d commands\n", len(blocked), len(asked))
-	for _, c := range blocked {
-		fmt.Fprintf(&sb, "  BLOCK %s\n", c.cli)
-	}
-	for _, c := range asked {
-		fmt.Fprintf(&sb, "  ASK   %s\n", c.cli)
-	}
-	return sb.String()
 }

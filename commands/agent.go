@@ -172,7 +172,7 @@ Agent Safety guide: https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-s
 	cmd.Flags().BoolVar(&allWrites, "all-writes", false, "Also block create/update/grade (default: those require approval)")
 	cmd.Flags().BoolVar(&write, "write", false, "Write the config/hook files instead of printing them")
 	_ = cmd.RegisterFlagCompletionFunc("host", func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		vals := []string{"claude-code", "codex", "opencode"}
+		vals := canvasGuardHosts()
 		out := make([]string, 0, len(vals))
 		for _, v := range vals {
 			if strings.HasPrefix(v, toComplete) {
