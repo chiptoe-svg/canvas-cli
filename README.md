@@ -32,7 +32,7 @@
 - **Smart Rate Limiting** - Adaptive throttling based on API quotas
 - **Multiple Outputs** - Table, JSON, YAML, and CSV formats
 - **Interactive Mode** - REPL shell with command history and completion
-- **80% API Coverage** - 875 of Canvas's 1086 documented endpoints implemented in the service layer, exposed through 98 command groups
+- **80% API Coverage** - 876 of Canvas's 1086 documented endpoints implemented in the service layer, exposed through 98 command groups
 - **Spec-Verified** - Every endpoint path validated against Canvas's official API spec in CI ([details](#api-spec-compliance))
 - **MCP Server** - Use as an AI agent tool via Model Context Protocol
 - **AI Agent Skill** - Bundled skill for Claude Code, Cursor, and other agents (`canvas skills install`)

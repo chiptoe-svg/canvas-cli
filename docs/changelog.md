@@ -12,7 +12,7 @@ sync by `make docs-gen` and the documentation workflow.
 
 ### Added
 
-- **API coverage raised to 80%** (875 of 1086 documented endpoint patterns,
+- **API coverage raised to 80%** (876 of 1086 documented endpoint patterns,
   method-aware): added ~100 service-layer endpoints across assignments,
   quizzes, modules, outcomes, outcome-imports, courses, sections,
   content-migrations, files, folders, pages, discussions, blueprint, accounts,
@@ -30,7 +30,7 @@ sync by `make docs-gen` and the documentation workflow.
   `testdata/spec/`. A network-free contract test fails the build on any path
   Canvas doesn't document. `make spec-sync` refreshes the manifest from a live
   Canvas host; `make spec-coverage` reports the gap. See
-  [API Coverage](docs/development/api-coverage.md).
+  [API Coverage](https://jjuanrivvera.github.io/canvas-cli/development/api-coverage/).
 - **Major API coverage expansion**: 31% → 67% of Canvas's documented endpoints
   (52 → 98 command groups). New command groups include `polls`,
   `appointment-groups`, `folders`, `favorites`, `bookmarks`, `course-nicknames`,
