@@ -32,64 +32,17 @@ var canvasIrreversibleVerbs = map[string]bool{
 	"split":       true, // reverse of merge, but lossy
 }
 
-// canvasWriteVerbs are Canvas operations that mutate data but can be recovered
-// from (creates can be deleted, updates can be reverted, etc.). These surface
-// as approval-required rather than hard-blocked.
-var canvasWriteVerbs = map[string]bool{
-	"create":              true,
-	"update":              true,
-	"publish":             true,
-	"grade":               true,
-	"bulk-grade":          true,
-	"upload":              true,
-	"add":                 true,
-	"set":                 true,
-	"move":                true,
-	"duplicate":           true,
-	"reply":               true,
-	"post":                true,
-	"send":                true,
-	"enroll":              true,
-	"accept":              true,
-	"reject":              true,
-	"reactivate":          true,
-	"star":                true,
-	"unstar":              true,
-	"archive":             true,
-	"unarchive":           true,
-	"subscribe":           true,
-	"unsubscribe":         true,
-	"relock":              true,
-	"revert":              true,
-	"associate":           true,
-	"sync":                true,
-	"restore":             true,
-	"regenerate-secret":   true,
-	"switch-experience":   true,
-	"switch-role":         true,
-	"import":              true,
-	"batch-update":        true,
-	"mark-read":           true,
-	"mark-all-read":       true,
-	"complete":            true,
-	"dismiss":             true,
-	"done":                true,
-	"conclude-enrollment": true,
-	"reserve":             true,
-	"crosslist-section":   true,
-	"emit":                true,
-	"link":                true,
-	"enable":              true,
-	"disable":             true,
-}
-
 // canvasReadVerbs is an explicit allowlist of read-only operations. Anything not
 // in this set (and not irreversible) is treated as a write requiring approval —
-// a fail-SAFE default, so a verb the guard hasn't seen (a future command, or a
-// mutating verb like "merge"/"cancel"/"bind"/"copy" that isn't obviously a
-// "create") is gated rather than silently allowed. Matched on the full leaf
-// command name only (no token splitting), so a compound like "delete-entry"
-// can never match a read token.
+// a fail-safe default so a verb the guard hasn't seen (a future command, or a
+// mutating verb like "assign" or "bind" that isn't obviously a "create") is
+// gated rather than silently allowed. Matched on the full leaf command name
+// only (no token splitting), so a compound like "delete-entry" can never match
+// a read token.
+//
+// This allowlist is hand-maintained. Misses are safe (extra approval prompts),
+// not dangerous — the fail-safe default prevents silent read misclassification
+// from becoming a missed write.
 var canvasReadVerbs = map[string]bool{
 	"get": true, "list": true, "show": true, "me": true, "search": true,
 	"view": true, "feed": true, "front": true, "profile": true, "quota": true,
@@ -101,7 +54,11 @@ var canvasReadVerbs = map[string]bool{
 	"recent-students": true, "missing-submissions": true, "page-views": true,
 	"upcoming-events": true, "unread-count": true, "todo": true, "tracks": true,
 	"runs": true, "next": true, "licenses": true, "errors": true,
-	"department": true, "effective-due-dates": true, "late-policy": true,
+	// Analytics — these are all read paths under "canvas analytics <resource>"
+	"activity": true, "user": true, "assignments": true, "department": true,
+	// Users sub-resources that are reads
+	"courses": true, "groups": true,
+	"effective-due-dates": true, "late-policy": true,
 	"completed-statistics": true, "term-activity": true, "term-grades": true,
 	"term-statistics": true, "list-closed": true, "list-enabled": true,
 	"list-opened": true, "list-received": true, "list-sent": true,
@@ -110,6 +67,8 @@ var canvasReadVerbs = map[string]bool{
 	"content": true, "settings": true, "sso-settings": true, "logins": true,
 	"overrides": true, "pages": true, "media": true, "collaborations": true,
 	"conferences": true, "assignment-override": true,
+	// Appointment group sub-reads
+	"appointment-groups": true,
 }
 
 // canvasLocalGroups are top-level command groups that never call the Canvas
@@ -132,6 +91,16 @@ var canvasLocalGroups = map[string]bool{
 	"webhook":    true,
 	"agent":      true,
 	"help":       true,
+}
+
+// canvasBulkDestructivePaths lists full CLI paths (without root) that are
+// ALWAYS hard-blocked regardless of their verb, because they can destroy large
+// amounts of data in a single call. These supplement the verb-level blocks.
+// "sis-imports create" batches a full institutional data import that can
+// conclude/delete many enrollments/courses in one shot and cannot be rolled
+// back safely.
+var canvasBulkDestructivePaths = map[string]bool{
+	"sis-imports create": true,
 }
 
 // canvasGuardCmd represents one classified Canvas operation.
@@ -172,9 +141,9 @@ so a new or non-obvious mutating command is gated rather than slipping through.
 Pass --all-writes to block writes too.
 
 IMPORTANT: the "canvas api" escape hatch can issue any HTTP verb. The guard
-blocks "canvas api DELETE/PUT/POST" patterns on the Bash surface but cannot
-enumerate arbitrary path arguments. For a hard guarantee, run the agent MCP-only
-(no Bash tool) or inside a read-only sandbox.
+blocks "canvas api DELETE/PUT/POST/PATCH" patterns on the Bash surface but
+cannot enumerate arbitrary path arguments. For a hard guarantee, run the agent
+MCP-only (no Bash tool) or inside a read-only sandbox.
 
 Output is printed for review by default; pass --write to install it. See the
 Agent Safety guide: https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/`,
@@ -246,32 +215,12 @@ func (g canvasGuardPlan) asked() []canvasGuardCmd {
 	return g.writes
 }
 
-// blockedVerbs returns the distinct verb strings from the hard-block set.
-func (g canvasGuardPlan) blockedVerbs() []string {
-	return distinctCanvasVerbs(g.blocked())
-}
-
 // isCanvasIrreversibleVerb reports whether a command name contains an
 // irreversible verb, handling compound names like "bulk-grade" by splitting on
 // "-" (matching alegra's isIrreversibleVerb approach).
 func isCanvasIrreversibleVerb(name string) bool {
 	for _, tok := range strings.Split(name, "-") {
 		if canvasIrreversibleVerbs[tok] {
-			return true
-		}
-	}
-	return false
-}
-
-// isCanvasWriteVerb reports whether a command name is a write operation.
-func isCanvasWriteVerb(name string) bool {
-	// Full name first (handles "bulk-grade", "mark-read", etc.)
-	if canvasWriteVerbs[name] {
-		return true
-	}
-	// Compound check: any token that is a write verb
-	for _, tok := range strings.Split(name, "-") {
-		if canvasWriteVerbs[tok] {
 			return true
 		}
 	}
@@ -330,10 +279,19 @@ func classifyCanvasCommands(root *cobra.Command) (read, writes, irreversible []c
 				continue
 			}
 
+			cliPath := strings.TrimPrefix(sub.CommandPath(), root.Name()+" ")
 			gc := canvasGuardCmd{
-				cli:  strings.TrimPrefix(sub.CommandPath(), root.Name()+" "),
+				cli:  cliPath,
 				tool: strings.ReplaceAll(sub.CommandPath(), " ", "_"),
 				verb: sub.Name(),
+			}
+
+			// Bulk-destructive full-path override: always hard-block regardless
+			// of verb classification (e.g. "sis-imports create" batches a
+			// full institutional import that can't be safely rolled back).
+			if canvasBulkDestructivePaths[cliPath] {
+				irreversible = append(irreversible, gc)
+				continue
 			}
 
 			// Fail-safe ordering: hard-block irreversible verbs, allow only
@@ -373,11 +331,6 @@ func distinctCanvasVerbs(cs []canvasGuardCmd) []string {
 	return out
 }
 
-// canvasVerbGroup renders verbs as a regex alternation, e.g. "(delete|remove|void)".
-func canvasVerbGroup(verbs []string) string {
-	return "(" + strings.Join(verbs, "|") + ")"
-}
-
 // canvasWriteOrPrint either writes content to path (creating parent dirs) when
 // write is set and the file does not already exist, or prints it to the
 // command's output with a header. It never overwrites an existing file.
@@ -399,4 +352,29 @@ func canvasWriteOrPrint(cmd *cobra.Command, write bool, path, content string, pe
 	}
 	fmt.Fprintf(out, "wrote %s\n", path)
 	return nil
+}
+
+// findProjectRoot walks up from the current working directory looking for a
+// .git directory, which marks the project root. Falls back to CWD with a
+// warning printed to cmd's output if no .git is found.
+func findProjectRoot(cmd *cobra.Command) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	dir := cwd
+	for {
+		if fi, err := os.Stat(filepath.Join(dir, ".git")); err == nil && fi.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached filesystem root without finding .git.
+			break
+		}
+		dir = parent
+	}
+	fmt.Fprintf(cmd.OutOrStdout(),
+		"# warning: no .git directory found; using current directory as project root\n")
+	return cwd
 }

@@ -21,9 +21,9 @@ so a new or non-obvious mutating command is gated rather than slipping through.
 Pass --all-writes to block writes too.
 
 IMPORTANT: the "canvas api" escape hatch can issue any HTTP verb. The guard
-blocks "canvas api DELETE/PUT/POST" patterns on the Bash surface but cannot
-enumerate arbitrary path arguments. For a hard guarantee, run the agent MCP-only
-(no Bash tool) or inside a read-only sandbox.
+blocks "canvas api DELETE/PUT/POST/PATCH" patterns on the Bash surface but
+cannot enumerate arbitrary path arguments. For a hard guarantee, run the agent
+MCP-only (no Bash tool) or inside a read-only sandbox.
 
 Output is printed for review by default; pass --write to install it. See the
 Agent Safety guide: https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/

@@ -2,6 +2,8 @@ package commands
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -27,12 +29,12 @@ func TestIsCanvasIrreversibleVerb(t *testing.T) {
 		{"unlink", true},
 		{"clear", true},
 		{"void", true},
+		{"cancel", true},
+		{"close", true},
+		{"merge", true},
+		{"split", true},
 		// Compound names: any token in "-"-split that matches the set.
 		{"bulk-delete", true},
-		{"conclude-enrollment", false}, // "conclude" is in the set, "enrollment" is not
-		// "conclude" itself IS irreversible, but "conclude-enrollment" splits
-		// to ["conclude","enrollment"]; "conclude" IS in the set.
-		// Re-check: conclude IS in canvasIrreversibleVerbs => true.
 		// Non-irreversible verbs.
 		{"create", false},
 		{"update", false},
@@ -41,106 +43,65 @@ func TestIsCanvasIrreversibleVerb(t *testing.T) {
 		{"publish", false},
 		{"grade", false},
 	}
-	// Re-evaluate conclude-enrollment: "conclude" is in canvasIrreversibleVerbs
-	// so splitting "conclude-enrollment" on "-" yields ["conclude","enrollment"]
-	// and "conclude" is true.
 	for _, tc := range cases {
 		t.Run(tc.verb, func(t *testing.T) {
-			// Fix the conclude-enrollment expectation.
-			want := tc.want
-			if tc.verb == "conclude-enrollment" {
-				want = true // "conclude" token is irreversible
-			}
 			got := isCanvasIrreversibleVerb(tc.verb)
-			if got != want {
-				t.Errorf("isCanvasIrreversibleVerb(%q) = %v, want %v", tc.verb, got, want)
+			if got != tc.want {
+				t.Errorf("isCanvasIrreversibleVerb(%q) = %v, want %v", tc.verb, got, tc.want)
 			}
 		})
 	}
 }
 
-func TestIsCanvasWriteVerb(t *testing.T) {
-	cases := []struct {
-		verb string
-		want bool
-	}{
-		{"create", true},
-		{"update", true},
-		{"publish", true},
-		{"grade", true},
-		{"bulk-grade", true},
-		{"upload", true},
-		{"add", true},
-		{"set", true},
-		{"move", true},
-		{"duplicate", true},
-		{"reply", true},
-		{"post", true},
-		{"send", true},
-		{"enroll", true},
-		{"accept", true},
-		{"reject", true},
-		{"reactivate", true},
-		{"star", true},
-		{"unstar", true},
-		{"archive", true},
-		{"unarchive", true},
-		{"subscribe", true},
-		{"unsubscribe", true},
-		{"relock", true},
-		{"revert", true},
-		{"associate", true},
-		{"sync", true},
-		{"restore", true},
-		{"mark-read", true},
-		{"mark-all-read", true},
-		{"complete", true},
-		{"dismiss", true},
-		{"done", true},
-		// Read verbs — must not be classified as writes.
-		{"list", false},
-		{"get", false},
-		{"show", false},
-		{"me", false},
-		{"status", false},
-		{"search", false},
-		{"quota", false},
-		{"front", false},
-		{"revisions", false},
-		{"entries", false},
-		{"members", false},
-		{"history", false},
-		{"feed", false},
-		{"results", false},
-		{"alignments", false},
-		{"migrators", false},
-		{"issues", false},
-		{"changes", false},
-		{"events", false},
-		{"unread-count", false},
-		// Irreversible verbs should not also be classified as writes.
-		{"delete", false},
-		{"remove", false},
-		{"conclude", false},
-		{"crosslist", false},
+// TestCanvasWriteVerbsViaClassification replaces TestIsCanvasWriteVerb.
+// canvasWriteVerbs and isCanvasWriteVerb have been removed — writes come from
+// the classifier's fail-safe default (anything not a read or irreversible).
+// This test verifies that the expected write verbs land in the writes bucket
+// and that reads and irreversibles do NOT.
+func TestCanvasWriteVerbsViaClassification(t *testing.T) {
+	root := &cobra.Command{Use: "canvas"}
+	grp := &cobra.Command{Use: "testgroup"}
+
+	// Add one command per verb we want to exercise.
+	writeVerbs := []string{
+		"create", "update", "publish", "grade", "bulk-grade", "upload",
+		"add", "set", "move", "duplicate", "reply", "post", "send", "enroll",
+		"accept", "reject", "reactivate", "star", "unstar", "archive",
+		"unarchive", "subscribe", "unsubscribe", "relock", "revert",
+		"associate", "sync", "restore", "mark-read", "mark-all-read",
+		"complete", "dismiss", "done",
 	}
-	for _, tc := range cases {
-		t.Run(tc.verb, func(t *testing.T) {
-			// Irreversible verbs should not be returned as writes.
-			if isCanvasIrreversibleVerb(tc.verb) {
-				// They do not appear in canvasWriteVerbs, so isCanvasWriteVerb
-				// may still be false. Just verify the function is consistent.
-				got := isCanvasWriteVerb(tc.verb)
-				if tc.want && !got {
-					t.Errorf("isCanvasWriteVerb(%q) = false, want true", tc.verb)
-				}
-				return
-			}
-			got := isCanvasWriteVerb(tc.verb)
-			if got != tc.want {
-				t.Errorf("isCanvasWriteVerb(%q) = %v, want %v", tc.verb, got, tc.want)
-			}
-		})
+	readVerbs := []string{"list", "get", "show", "me", "search", "quota", "front", "revisions"}
+	irreversibleVerbsSlice := []string{"delete", "remove", "conclude", "crosslist"}
+
+	for _, v := range writeVerbs {
+		vv := v
+		grp.AddCommand(&cobra.Command{Use: vv, RunE: func(_ *cobra.Command, _ []string) error { return nil }})
+	}
+	for _, v := range readVerbs {
+		vv := v
+		grp.AddCommand(&cobra.Command{Use: vv, RunE: func(_ *cobra.Command, _ []string) error { return nil }})
+	}
+	for _, v := range irreversibleVerbsSlice {
+		vv := v
+		grp.AddCommand(&cobra.Command{Use: vv, RunE: func(_ *cobra.Command, _ []string) error { return nil }})
+	}
+	root.AddCommand(grp)
+
+	read, writes, irreversible := classifyCanvasCommands(root)
+
+	for _, v := range writeVerbs {
+		assertContainsPath(t, "write", writes, "testgroup "+v)
+		assertNotContainsPath(t, "read (misclassified)", read, "testgroup "+v)
+		assertNotContainsPath(t, "irreversible (misclassified)", irreversible, "testgroup "+v)
+	}
+	for _, v := range readVerbs {
+		assertContainsPath(t, "read", read, "testgroup "+v)
+		assertNotContainsPath(t, "write (misclassified)", writes, "testgroup "+v)
+	}
+	for _, v := range irreversibleVerbsSlice {
+		assertContainsPath(t, "irreversible", irreversible, "testgroup "+v)
+		assertNotContainsPath(t, "write (misclassified)", writes, "testgroup "+v)
 	}
 }
 
@@ -239,7 +200,8 @@ func TestClassifyCanvasCommands_FailSafeDefault(t *testing.T) {
 	grp := &cobra.Command{Use: "widgets"}
 	// A verb that exists in no set today (stands in for a future command).
 	for _, v := range []string{"frobnicate", "merge", "cancel", "split", "close", "get"} {
-		grp.AddCommand(&cobra.Command{Use: v, RunE: func(_ *cobra.Command, _ []string) error { return nil }})
+		vv := v
+		grp.AddCommand(&cobra.Command{Use: vv, RunE: func(_ *cobra.Command, _ []string) error { return nil }})
 	}
 	root.AddCommand(grp)
 
@@ -274,6 +236,32 @@ func TestClassifyCanvasCommands_LocalGroupsExcluded(t *testing.T) {
 		t.Errorf("expected all local groups to be excluded, but got %d total classified commands",
 			len(read)+len(writes)+len(irreversible))
 	}
+}
+
+// TestClassifyCanvasCommands_BulkDestructivePaths verifies that paths in
+// canvasBulkDestructivePaths are hard-blocked even when their verb is a write.
+func TestClassifyCanvasCommands_BulkDestructivePaths(t *testing.T) {
+	root := &cobra.Command{Use: "canvas"}
+	sisCmd := &cobra.Command{Use: "sis-imports"}
+	sisCmd.AddCommand(&cobra.Command{
+		Use:  "create", // verb is a write, but path is bulk-destructive
+		RunE: func(_ *cobra.Command, _ []string) error { return nil },
+	})
+	sisCmd.AddCommand(&cobra.Command{
+		Use:  "list",
+		RunE: func(_ *cobra.Command, _ []string) error { return nil },
+	})
+	root.AddCommand(sisCmd)
+
+	_, writes, irreversible := classifyCanvasCommands(root)
+
+	// "sis-imports create" must be hard-blocked, NOT in writes.
+	assertContainsPath(t, "irreversible", irreversible, "sis-imports create")
+	assertNotContainsPath(t, "write (must not)", writes, "sis-imports create")
+
+	// "sis-imports list" is an ordinary read — not affected by the override.
+	read, _, _ := classifyCanvasCommands(root)
+	assertContainsPath(t, "read", read, "sis-imports list")
 }
 
 // --- guardPlan ---
@@ -344,18 +332,18 @@ func TestEmitCanvasClaudeCode_PrintsWithoutWrite(t *testing.T) {
 	if !strings.Contains(out, ".claude/hooks/canvas-guard.sh") {
 		t.Error("expected hook script path in output")
 	}
-	// Must contain a deny rule for a known irreversible verb.
-	if !strings.Contains(out, "delete") {
-		t.Error("expected 'delete' in deny rules")
+	// Must contain an exact deny rule for a known irreversible command.
+	if !strings.Contains(out, "Bash(canvas courses delete:*)") {
+		t.Error("expected exact deny rule 'Bash(canvas courses delete:*)' in output")
 	}
-	// Must contain an ask rule for a known write verb.
-	if !strings.Contains(out, "create") {
-		t.Error("expected 'create' in ask rules")
+	// Must contain an exact ask rule for a known write command.
+	if !strings.Contains(out, "Bash(canvas courses create:*)") {
+		t.Error("expected exact ask rule 'Bash(canvas courses create:*)' in output")
 	}
 	// Must NOT have created any files (print mode only).
 }
 
-func TestEmitCanvasClaudeCode_DenyRulesIncludeAllIrreversible(t *testing.T) {
+func TestEmitCanvasClaudeCode_DenyRulesExactPerCommand(t *testing.T) {
 	root := buildTestTree()
 	_, writes, irreversible := classifyCanvasCommands(root)
 	g := canvasGuardPlan{irreversible: irreversible, writes: writes, allWrites: false}
@@ -370,14 +358,25 @@ func TestEmitCanvasClaudeCode_DenyRulesIncludeAllIrreversible(t *testing.T) {
 	out := buf.String()
 
 	for _, gc := range irreversible {
-		rule := "Bash(canvas * " + gc.verb + ":*)"
-		if !strings.Contains(out, rule) {
-			t.Errorf("expected deny rule %q in output", rule)
+		// Each blocked command must have an exact Bash rule.
+		bashRule := "Bash(canvas " + gc.cli + ":*)"
+		if !strings.Contains(out, bashRule) {
+			t.Errorf("expected exact deny Bash rule %q in output", bashRule)
 		}
+		// Each blocked command must have an exact MCP tool name.
+		mcpRule := "mcp__canvas__" + gc.tool
+		if !strings.Contains(out, mcpRule) {
+			t.Errorf("expected exact deny MCP rule %q in output", mcpRule)
+		}
+	}
+
+	// Ensure NO regex-style MCP rules are present (the old pattern was mcp__.*canvas.*_verb).
+	if strings.Contains(out, "mcp__.*canvas.*_") {
+		t.Error("output must not contain regex-style MCP rule (mcp__.*canvas.*_)")
 	}
 }
 
-func TestEmitCanvasClaudeCode_AskRulesIncludeAllWrites(t *testing.T) {
+func TestEmitCanvasClaudeCode_AskRulesExactPerCommand(t *testing.T) {
 	root := buildTestTree()
 	_, writes, irreversible := classifyCanvasCommands(root)
 	g := canvasGuardPlan{irreversible: irreversible, writes: writes, allWrites: false}
@@ -392,9 +391,13 @@ func TestEmitCanvasClaudeCode_AskRulesIncludeAllWrites(t *testing.T) {
 	out := buf.String()
 
 	for _, gc := range writes {
-		rule := "Bash(canvas * " + gc.verb + ":*)"
-		if !strings.Contains(out, rule) {
-			t.Errorf("expected ask rule %q in output", rule)
+		bashRule := "Bash(canvas " + gc.cli + ":*)"
+		if !strings.Contains(out, bashRule) {
+			t.Errorf("expected exact ask Bash rule %q in output", bashRule)
+		}
+		mcpRule := "mcp__canvas__" + gc.tool
+		if !strings.Contains(out, mcpRule) {
+			t.Errorf("expected exact ask MCP rule %q in output", mcpRule)
 		}
 	}
 }
@@ -415,7 +418,7 @@ func TestEmitCanvasClaudeCode_AllWritesMode(t *testing.T) {
 
 	// All writes should now appear in deny, not ask.
 	for _, gc := range writes {
-		denyRule := "Bash(canvas * " + gc.verb + ":*)"
+		denyRule := "Bash(canvas " + gc.cli + ":*)"
 		if !strings.Contains(out, denyRule) {
 			t.Errorf("--all-writes: expected %q in deny section", denyRule)
 		}
@@ -423,6 +426,29 @@ func TestEmitCanvasClaudeCode_AllWritesMode(t *testing.T) {
 	// The ask section should be an empty JSON array when --all-writes is active.
 	if !strings.Contains(out, `"ask": []`) {
 		t.Error("--all-writes: expected empty ask array in JSON output")
+	}
+}
+
+// TestEmitCanvasClaudeCode_PATCHInDenyRules verifies PATCH is in the api deny rules.
+func TestEmitCanvasClaudeCode_PATCHInDenyRules(t *testing.T) {
+	root := buildTestTree()
+	_, writes, irreversible := classifyCanvasCommands(root)
+	g := canvasGuardPlan{irreversible: irreversible, writes: writes, allWrites: false}
+
+	cmd := &cobra.Command{Use: "canvas"}
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+
+	if err := emitCanvasClaudeCode(cmd, g, false); err != nil {
+		t.Fatalf("emitCanvasClaudeCode: %v", err)
+	}
+	out := buf.String()
+
+	for _, method := range []string{"DELETE", "PUT", "POST", "PATCH"} {
+		rule := "Bash(canvas api " + method + ":*)"
+		if !strings.Contains(out, rule) {
+			t.Errorf("expected deny rule %q for raw-api method in output", rule)
+		}
 	}
 }
 
@@ -449,6 +475,10 @@ func TestEmitCanvasCodex_PrintsWithoutWrite(t *testing.T) {
 	if !strings.Contains(out, "untrusted") {
 		t.Error("expected untrusted approval policy in codex output")
 	}
+	// The output must honestly document that Codex only approval-gates.
+	if !strings.Contains(out, "approval") {
+		t.Error("expected approval-gate documentation in codex output")
+	}
 }
 
 func TestEmitCanvasOpenCode_PrintsWithoutWrite(t *testing.T) {
@@ -471,8 +501,91 @@ func TestEmitCanvasOpenCode_PrintsWithoutWrite(t *testing.T) {
 	if !strings.Contains(out, "deny") {
 		t.Error("expected 'deny' in opencode output")
 	}
-	if !strings.Contains(out, "delete") {
-		t.Error("expected 'delete' in opencode deny rules")
+	// Must use exact per-command rules, not trailing-glob verb rules.
+	if !strings.Contains(out, "canvas courses delete") {
+		t.Error("expected exact 'canvas courses delete' in opencode deny rules")
+	}
+	// Must NOT use glob verb patterns like "canvas * delete*".
+	if strings.Contains(out, "canvas * delete") {
+		t.Error("opencode output must not use glob verb patterns like 'canvas * delete'")
+	}
+}
+
+// --- Write-path tests ---
+
+// TestEmitCanvasClaudeCode_WriteCreatesFiles verifies that --write installs
+// the hook and settings.json under the project root, respects never-overwrite,
+// and resolves the root correctly given a .git marker.
+func TestEmitCanvasClaudeCode_WriteCreatesFiles(t *testing.T) {
+	// Set up a temp directory as a fake project root with a .git dir so
+	// findProjectRoot walks up to it correctly.
+	tmpDir := t.TempDir()
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0o750); err != nil {
+		t.Fatalf("mkdir .git: %v", err)
+	}
+
+	// Change CWD into a sub-directory of tmpDir to verify root-walking.
+	subDir := filepath.Join(tmpDir, "subdir")
+	if err := os.Mkdir(subDir, 0o750); err != nil {
+		t.Fatalf("mkdir subdir: %v", err)
+	}
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(subDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer func() { _ = os.Chdir(origDir) }()
+
+	root := buildTestTree()
+	_, writes, irreversible := classifyCanvasCommands(root)
+	g := canvasGuardPlan{irreversible: irreversible, writes: writes, allWrites: false}
+
+	cmd := &cobra.Command{Use: "canvas"}
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+
+	if err := emitCanvasClaudeCode(cmd, g, true); err != nil {
+		t.Fatalf("emitCanvasClaudeCode(write=true): %v", err)
+	}
+
+	// Both files must be written under the project root (not the subdir).
+	hookFile := filepath.Join(tmpDir, ".claude", "hooks", "canvas-guard.sh")
+	settingsFile := filepath.Join(tmpDir, ".claude", "settings.json")
+
+	if _, err := os.Stat(hookFile); os.IsNotExist(err) {
+		t.Errorf("hook script was not created at %s", hookFile)
+	}
+	if _, err := os.Stat(settingsFile); os.IsNotExist(err) {
+		t.Errorf("settings.json was not created at %s", settingsFile)
+	}
+
+	// Second call must NOT overwrite existing files.
+	firstContent, _ := os.ReadFile(settingsFile)
+	var buf2 bytes.Buffer
+	cmd2 := &cobra.Command{Use: "canvas"}
+	cmd2.SetOut(&buf2)
+	if err := emitCanvasClaudeCode(cmd2, g, true); err != nil {
+		t.Fatalf("second emitCanvasClaudeCode(write=true): %v", err)
+	}
+	secondContent, _ := os.ReadFile(settingsFile)
+	if string(firstContent) != string(secondContent) {
+		t.Error("second write call must not overwrite existing settings.json")
+	}
+	// Second call output should mention "already exists".
+	if !strings.Contains(buf2.String(), "already exists") {
+		t.Error("second write call should print 'already exists' for existing files")
+	}
+
+	// Hook script must be executable.
+	fi, err := os.Stat(hookFile)
+	if err != nil {
+		t.Fatalf("stat hook file: %v", err)
+	}
+	if fi.Mode()&0o111 == 0 {
+		t.Errorf("hook script must be executable, got mode %v", fi.Mode())
 	}
 }
 
@@ -514,12 +627,21 @@ func TestNewAgentGuardCmd_UnknownHost(t *testing.T) {
 
 // --- Hook script content ---
 
-func TestCanvasHookScript_ContainsBlockedVerbs(t *testing.T) {
-	verbs := []string{"delete", "remove", "void"}
-	script := canvasHookScript(verbs)
+func TestCanvasHookScript_ContainsBlockedPaths(t *testing.T) {
+	cmds := []canvasGuardCmd{
+		{cli: "courses delete", tool: "canvas_courses_delete", verb: "delete"},
+		{cli: "sections crosslist", tool: "canvas_sections_crosslist", verb: "crosslist"},
+	}
+	script := canvasHookScript(cmds)
 
-	if !strings.Contains(script, "(delete|remove|void)") {
-		t.Error("hook script should contain verb group regex")
+	if !strings.Contains(script, "courses delete") {
+		t.Error("hook script should contain cli path 'courses delete'")
+	}
+	if !strings.Contains(script, "sections crosslist") {
+		t.Error("hook script should contain cli path 'sections crosslist'")
+	}
+	if !strings.Contains(script, "mcp__canvas__canvas_courses_delete") {
+		t.Error("hook script should contain exact MCP tool name")
 	}
 	if !strings.Contains(script, "canvas agent guard") {
 		t.Error("hook script should reference canvas agent guard")
@@ -527,12 +649,37 @@ func TestCanvasHookScript_ContainsBlockedVerbs(t *testing.T) {
 	if !strings.Contains(script, "canvas api") {
 		t.Error("hook script should mention canvas api escape hatch")
 	}
-	if !strings.Contains(script, "DELETE|PUT|POST") {
-		t.Error("hook script should handle raw HTTP methods")
+	if !strings.Contains(script, "DELETE|PUT|POST|PATCH") {
+		t.Error("hook script should handle raw HTTP methods including PATCH")
 	}
 	// Verify the script is valid bash (starts with shebang).
 	if !strings.HasPrefix(script, "#!/usr/bin/env bash") {
 		t.Error("hook script should start with bash shebang")
+	}
+	// Must NOT use bare verb regex matching anywhere in the jq branch.
+	if strings.Contains(script, `grep -qiE "\bcanvas\b.*\b`) {
+		t.Error("hook script must not use bare-verb anywhere-on-line grep")
+	}
+}
+
+func TestCanvasHookScript_NoRegexVerbStyle(t *testing.T) {
+	// Verify that the hook uses path-anchored matching, not bare-verb grep.
+	cmds := []canvasGuardCmd{
+		{cli: "courses delete", tool: "canvas_courses_delete", verb: "delete"},
+	}
+	script := canvasHookScript(cmds)
+
+	// The old verb-group pattern should be absent.
+	if strings.Contains(script, "verbs=") {
+		t.Error("hook script must not contain bare 'verbs=' variable")
+	}
+	// Exact MCP tool list should be present.
+	if !strings.Contains(script, "blocked_tools=") {
+		t.Error("hook script must contain blocked_tools array")
+	}
+	// Exact cli path list should be present.
+	if !strings.Contains(script, "blocked_cmds=") {
+		t.Error("hook script must contain blocked_cmds array")
 	}
 }
 
@@ -550,6 +697,16 @@ func TestClassifyCanvasCommands_RealTree_SanityCheck(t *testing.T) {
 	assertContainsPath(t, "read", read, "courses list")
 	assertContainsPath(t, "write", writes, "courses create")
 	assertContainsPath(t, "irreversible", irreversible, "courses delete")
+
+	// Verify that cancel/close/merge/split are hard-blocked.
+	for _, path := range []string{"users merge", "sections merge"} {
+		// These may or may not exist; if they do, they must be in irreversible.
+		for _, gc := range append(read, writes...) {
+			if gc.cli == path {
+				t.Errorf("command %q must be in irreversible, found in read/writes", path)
+			}
+		}
+	}
 
 	// Check counts are in a sane range (these will grow as the CLI grows).
 	if len(irreversible) < 5 {
