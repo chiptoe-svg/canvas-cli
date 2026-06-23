@@ -102,8 +102,8 @@ func runCoursePacingCreate(ctx context.Context, client *api.Client, opts *option
 
 	svc := api.NewCoursePacingService(client)
 	pace, err := svc.Create(ctx, opts.CourseID, api.CoursePaceParams{
-		ExcludeWeekends: opts.ExcludeWeekends,
-		HardEndDates:    opts.HardEndDates,
+		ExcludeWeekends: boolPtr(opts.ExcludeWeekends),
+		HardEndDates:    boolPtr(opts.HardEndDates),
 		EndDate:         opts.EndDate,
 	})
 	if err != nil {
@@ -148,8 +148,8 @@ func runCoursePacingUpdate(ctx context.Context, client *api.Client, opts *option
 
 	svc := api.NewCoursePacingService(client)
 	pace, err := svc.Update(ctx, opts.CourseID, opts.PaceID, api.CoursePaceParams{
-		ExcludeWeekends: opts.ExcludeWeekends,
-		HardEndDates:    opts.HardEndDates,
+		ExcludeWeekends: boolPtr(opts.ExcludeWeekends),
+		HardEndDates:    boolPtr(opts.HardEndDates),
 		EndDate:         opts.EndDate,
 	})
 	if err != nil {

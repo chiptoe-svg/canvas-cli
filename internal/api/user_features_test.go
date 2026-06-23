@@ -43,9 +43,7 @@ func TestUserFeaturesService_List(t *testing.T) {
 }
 
 func TestUserFeaturesService_ListEnabled(t *testing.T) {
-	want := []Feature{
-		{Feature: "student_planner", AppliesTo: "User", FeatureFlag: FeatureFlag{Feature: "student_planner", State: "on"}},
-	}
+	want := []string{"student_planner", "new_gradebook"}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {
 			handleVersionDetection(w)
@@ -71,8 +69,8 @@ func TestUserFeaturesService_ListEnabled(t *testing.T) {
 	if len(got) != len(want) {
 		t.Fatalf("got %d features, want %d", len(got), len(want))
 	}
-	if got[0].Feature != want[0].Feature {
-		t.Errorf("got Feature %q, want %q", got[0].Feature, want[0].Feature)
+	if got[0] != want[0] {
+		t.Errorf("got feature name %q, want %q", got[0], want[0])
 	}
 }
 

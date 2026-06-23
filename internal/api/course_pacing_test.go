@@ -48,7 +48,8 @@ func TestCoursePacingService_Create(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 	svc := NewCoursePacingService(client)
-	got, err := svc.Create(context.Background(), 10, CoursePaceParams{ExcludeWeekends: true})
+	t1 := true
+	got, err := svc.Create(context.Background(), 10, CoursePaceParams{ExcludeWeekends: &t1})
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -72,7 +73,8 @@ func TestCoursePacingService_Update(t *testing.T) {
 
 	client := newTestClient(t, server.URL)
 	svc := NewCoursePacingService(client)
-	got, err := svc.Update(context.Background(), 10, 2, CoursePaceParams{HardEndDates: true})
+	t2 := true
+	got, err := svc.Update(context.Background(), 10, 2, CoursePaceParams{HardEndDates: &t2})
 	if err != nil {
 		t.Fatalf("Update: %v", err)
 	}

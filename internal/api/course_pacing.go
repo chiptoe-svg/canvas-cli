@@ -31,17 +31,19 @@ type CoursePace struct {
 
 // CoursePaceItem represents a module item within a course pace.
 type CoursePaceItem struct {
-	ID           int64 `json:"id"`
-	CoursePaceID int64 `json:"course_pace_id"`
-	ModuleItemID int64 `json:"module_item_id"`
-	DurationDays int   `json:"duration"`
-	Root         bool  `json:"root_account_id,omitempty"`
+	ID            int64 `json:"id"`
+	CoursePaceID  int64 `json:"course_pace_id"`
+	ModuleItemID  int64 `json:"module_item_id"`
+	DurationDays  int   `json:"duration"`
+	RootAccountID int64 `json:"root_account_id,omitempty"`
 }
 
 // CoursePaceParams holds mutable fields for creating/updating a course pace.
+// ExcludeWeekends and HardEndDates use *bool so that an explicit false
+// is not silently dropped by json's omitempty zero-value rule.
 type CoursePaceParams struct {
-	ExcludeWeekends bool   `json:"exclude_weekends,omitempty"`
-	HardEndDates    bool   `json:"hard_end_dates,omitempty"`
+	ExcludeWeekends *bool  `json:"exclude_weekends,omitempty"`
+	HardEndDates    *bool  `json:"hard_end_dates,omitempty"`
 	EndDate         string `json:"end_date,omitempty"`
 }
 

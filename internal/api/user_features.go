@@ -25,11 +25,12 @@ func (s *UserFeaturesService) List(ctx context.Context, userID int64) ([]Feature
 	return result, nil
 }
 
-// ListEnabled retrieves all enabled features for a user
-func (s *UserFeaturesService) ListEnabled(ctx context.Context, userID int64) ([]Feature, error) {
+// ListEnabled retrieves all enabled feature names for a user.
+// Canvas returns a bare JSON array of feature-name strings (not Feature objects).
+func (s *UserFeaturesService) ListEnabled(ctx context.Context, userID int64) ([]string, error) {
 	path := fmt.Sprintf("/api/v1/users/%d/features/enabled", userID)
-	var result []Feature
-	if err := s.client.GetAllPages(ctx, path, &result); err != nil {
+	var result []string
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
 		return nil, fmt.Errorf("listing enabled features for user %d: %w", userID, err)
 	}
 	return result, nil
