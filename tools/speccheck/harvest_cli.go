@@ -107,7 +107,7 @@ var clientVerb = map[string]string{
 // recognizable client verb (cannot attribute a method).
 func harvestCLIEndpoints(dir string) ([]Endpoint, error) {
 	fset := token.NewFileSet()
-	seen := map[string]Endpoint{}
+	var files []*ast.File
 
 	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -120,56 +120,89 @@ func harvestCLIEndpoints(dir string) ([]Endpoint, error) {
 		if parseErr != nil {
 			return parseErr
 		}
+		files = append(files, f)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Pass 1: collect path-helper functions — those that RETURN an /api path
+	// template (e.g. discussionContextPath -> "/api/v1/%s/%d/discussion_topics").
+	// Service methods then build sub-resource paths as fmt.Sprintf("%s/.../x", helper(...))
+	// or `base := helper(...); base + "/x"`, which a literal-only scan misses.
+	helpers := map[string][]string{}
+	for _, f := range files {
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Body == nil || !returnsString(fn) {
+				continue
+			}
+			var rets []string
+			ast.Inspect(fn.Body, func(n ast.Node) bool {
+				if ret, ok := n.(*ast.ReturnStmt); ok {
+					for _, r := range ret.Results {
+						rets = append(rets, apiStringsInExpr(r, nil)...)
+					}
+				}
+				return true
+			})
+			if len(rets) > 0 {
+				helpers[fn.Name.Name] = dedupe(rets)
+			}
+		}
+	}
+
+	// Pass 2: harvest (verb, path) per function, resolving helper substitution and
+	// local variables assigned from helpers/path expressions.
+	seen := map[string]Endpoint{}
+	for _, f := range files {
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Body == nil {
 				continue
 			}
+			locals := map[string][]string{} // var name -> possible /api path templates
 			var paths []string
 			verbSet := map[string]bool{}
 			ast.Inspect(fn.Body, func(n ast.Node) bool {
 				switch v := n.(type) {
-				case *ast.BasicLit:
-					if v.Kind == token.STRING {
-						if s := unquote(v.Value); isAPIPath(s) {
-							paths = append(paths, s)
-						}
-					}
-				case *ast.BinaryExpr:
-					if v.Op == token.ADD {
-						if lhs, ok := v.X.(*ast.BasicLit); ok && lhs.Kind == token.STRING {
-							if s := unquote(lhs.Value); isAPIPath(s) {
-								paths = append(paths, s)
+				case *ast.AssignStmt:
+					// Track `name := <path-expr>` so later "%s" substitutions resolve.
+					if len(v.Lhs) >= 1 && len(v.Rhs) >= 1 {
+						if id, ok := v.Lhs[0].(*ast.Ident); ok {
+							if got := apiStringsInExpr(v.Rhs[0], helpers); len(got) > 0 {
+								locals[id.Name] = dedupe(append(locals[id.Name], got...))
 							}
 						}
 					}
 				case *ast.CallExpr:
-					if isFmtSprintf(v) && len(v.Args) > 0 {
-						if lit, ok := v.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
-							if s := unquote(lit.Value); isAPIPath(s) {
-								paths = append(paths, s)
-							}
-						}
-					}
 					if verb := callClientVerb(v); verb != "" {
 						verbSet[verb] = true
 					}
 				}
 				return true
 			})
+			// Collect candidate paths from every expression, now that locals are known.
+			ast.Inspect(fn.Body, func(n ast.Node) bool {
+				if e, ok := n.(ast.Expr); ok {
+					paths = append(paths, apiStringsInExpr(e, helpers, locals)...)
+				}
+				return true
+			})
+			paths = dedupe(paths)
 			if len(paths) == 0 || len(verbSet) == 0 {
 				continue
 			}
 			for _, p := range paths {
+				if !isAPIPath(p) {
+					continue
+				}
 				for verb := range verbSet {
 					seen[verb+" "+p] = Endpoint{Method: verb, Path: p}
 				}
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 	eps := make([]Endpoint, 0, len(seen))
 	for _, e := range seen {
@@ -182,6 +215,99 @@ func harvestCLIEndpoints(dir string) ([]Endpoint, error) {
 		return eps[i].Method < eps[j].Method
 	})
 	return eps, nil
+}
+
+// returnsString reports whether fn declares at least one string result.
+func returnsString(fn *ast.FuncDecl) bool {
+	if fn.Type.Results == nil {
+		return false
+	}
+	for _, fld := range fn.Type.Results.List {
+		if id, ok := fld.Type.(*ast.Ident); ok && id.Name == "string" {
+			return true
+		}
+	}
+	return false
+}
+
+// dedupe returns ss with duplicates removed (insertion order preserved).
+func dedupe(ss []string) []string {
+	seen := map[string]bool{}
+	out := ss[:0:0]
+	for _, s := range ss {
+		if !seen[s] {
+			seen[s] = true
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// apiStringsInExpr resolves an expression to the set of /api path templates it
+// can represent, substituting known path helpers and (optionally) local
+// variables assigned from path expressions. It handles:
+//
+//	"/api/v1/..."                                  string literal
+//	fmt.Sprintf("/api/v1/...%d", ...)              literal format string
+//	fmt.Sprintf("%s/.../x", helper(...) | var)     %s-prefixed, base resolved
+//	helper(...)                                    path-helper call
+//	<api-expr> + "literal"                         concatenation
+func apiStringsInExpr(e ast.Expr, helpers map[string][]string, localsOpt ...map[string][]string) []string {
+	var locals map[string][]string
+	if len(localsOpt) > 0 {
+		locals = localsOpt[0]
+	}
+	switch v := e.(type) {
+	case *ast.BasicLit:
+		if v.Kind == token.STRING {
+			if s := unquote(v.Value); isAPIPath(s) {
+				return []string{s}
+			}
+		}
+	case *ast.Ident:
+		if locals != nil {
+			return locals[v.Name]
+		}
+	case *ast.CallExpr:
+		if isFmtSprintf(v) && len(v.Args) > 0 {
+			lit, ok := v.Args[0].(*ast.BasicLit)
+			if !ok || lit.Kind != token.STRING {
+				return nil
+			}
+			format := unquote(lit.Value)
+			if isAPIPath(format) {
+				return []string{format}
+			}
+			if strings.HasPrefix(format, "%s") && len(v.Args) >= 2 {
+				var out []string
+				for _, base := range apiStringsInExpr(v.Args[1], helpers, locals) {
+					out = append(out, base+format[len("%s"):])
+				}
+				return out
+			}
+			return nil
+		}
+		if id, ok := v.Fun.(*ast.Ident); ok {
+			return helpers[id.Name]
+		}
+	case *ast.BinaryExpr:
+		if v.Op == token.ADD {
+			bases := apiStringsInExpr(v.X, helpers, locals)
+			if len(bases) == 0 {
+				return nil
+			}
+			suffix := ""
+			if lit, ok := v.Y.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+				suffix = unquote(lit.Value)
+			}
+			out := make([]string, 0, len(bases))
+			for _, b := range bases {
+				out = append(out, b+suffix)
+			}
+			return out
+		}
+	}
+	return nil
 }
 
 // callClientVerb returns the HTTP verb if call is an s.client.<Method> (or
