@@ -114,6 +114,7 @@ nav:
     - Configuration: user-guide/configuration.md
     - MCP Integration: user-guide/mcp.md
     - Agent Skill: user-guide/agent-skill.md
+    - Agent Safety: user-guide/agent-safety.md
     - Output Formats: user-guide/output-formats.md
     - Shell Completion: user-guide/shell-completion.md
     - Command Aliases: user-guide/aliases.md

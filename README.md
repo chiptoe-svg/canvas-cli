@@ -211,6 +211,25 @@ described above — the two can coexist.
 
 See the [Agent Skill guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-skill/) for details.
 
+## Agent Safety
+
+When an AI agent drives `canvas`, it can issue destructive commands (`courses delete`, `sections crosslist`, `enrollments conclude`). Use the built-in guard to generate permission rules and a PreToolUse hook that hard-block irreversible operations and require approval for writes:
+
+```bash
+# Review what will be generated
+canvas agent guard --host claude-code
+
+# Install config and hook script into the current project
+canvas agent guard --host claude-code --write
+
+# Strictest: also block create/update/grade
+canvas agent guard --host claude-code --all-writes --write
+```
+
+Supported hosts: `claude-code`, `codex`, `opencode`. Regenerate after upgrading `canvas` so new commands are covered.
+
+See the [Agent Safety guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/) for the hard-block vs ask model, obfuscation caveats, and MCP-only recommendations.
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
