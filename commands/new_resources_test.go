@@ -346,7 +346,7 @@ func TestAccountCalendarsListCmd(t *testing.T) {
 			Name: "list account calendars",
 			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/account_calendars": cmdtest.NewMockResponse(`[{"id":1,"name":"Root","visible":true}]`),
+				"/api/v1/account_calendars": cmdtest.NewMockResponse(`{"account_calendars":[{"id":1,"name":"Root","visible":true}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -359,7 +359,7 @@ func TestAccountCalendarsListCmd(t *testing.T) {
 			Name: "list all account calendars with search",
 			Args: []string{"--search", "Sub"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/account_calendars": cmdtest.NewMockResponse(`[{"id":10,"name":"Sub"}]`),
+				"/api/v1/account_calendars": cmdtest.NewMockResponse(`{"account_calendars":[{"id":10,"name":"Sub"}]}`),
 			},
 			ExpectError: false,
 		},
@@ -506,7 +506,7 @@ func TestAuditListCmd(t *testing.T) {
 			Name: "grade-change global",
 			Args: []string{"--type", "grade-change"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/audit/grade_change": cmdtest.NewMockResponse(`[{"id":"gc1","event_type":"grade_change"}]`),
+				"/api/v1/audit/grade_change": cmdtest.NewMockResponse(`{"events":[{"id":"gc1","event_type":"grade_change"}]}`),
 			},
 			ExpectError: false,
 		},
@@ -514,7 +514,7 @@ func TestAuditListCmd(t *testing.T) {
 			Name: "grade-change for course",
 			Args: []string{"--type", "grade-change", "--course-id", "20"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/audit/grade_change/courses/20": cmdtest.NewMockResponse(`[{"id":"gc2"}]`),
+				"/api/v1/audit/grade_change/courses/20": cmdtest.NewMockResponse(`{"events":[{"id":"gc2"}]}`),
 			},
 			ExpectError: false,
 		},
@@ -522,7 +522,7 @@ func TestAuditListCmd(t *testing.T) {
 			Name: "authentication for account",
 			Args: []string{"--type", "authentication", "--account-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/audit/authentication/accounts/1": cmdtest.NewMockResponse(`[{"id":"e1","event_type":"login"}]`),
+				"/api/v1/audit/authentication/accounts/1": cmdtest.NewMockResponse(`{"events":[{"id":"e1","event_type":"login"}]}`),
 			},
 			ExpectError: false,
 		},
@@ -540,7 +540,7 @@ func TestAuditListCmd(t *testing.T) {
 			Name: "empty results",
 			Args: []string{"--type", "grade-change"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/audit/grade_change": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/audit/grade_change": cmdtest.NewMockResponse(`{"events":[]}`),
 			},
 			ExpectOutput: "No audit events found",
 		},

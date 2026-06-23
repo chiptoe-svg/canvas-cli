@@ -16,9 +16,9 @@ func TestAuditListCmd_AuthByUser(t *testing.T) {
 		Name: "authentication events by user-id",
 		Args: []string{"--type", "authentication", "--user-id", "42"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/authentication/users/42": cmdtest.NewMockResponse(`[
+			"/api/v1/audit/authentication/users/42": cmdtest.NewMockResponse(`{"events":[
 				{"id":"evt1","event_type":"login","user_id":42}
-			]`),
+			]}`),
 		},
 		ExpectError: false,
 		ValidateOutput: func(t *testing.T, output string) {
@@ -35,7 +35,7 @@ func TestAuditListCmd_AuthByLogin(t *testing.T) {
 		Name: "authentication events by login-id - empty",
 		Args: []string{"--type", "authentication", "--login-id", "10"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/authentication/logins/10": cmdtest.NewMockResponse(`[]`),
+			"/api/v1/audit/authentication/logins/10": cmdtest.NewMockResponse(`{"events":[]}`),
 		},
 		ExpectError:  false,
 		ExpectOutput: "No audit events found",
@@ -48,7 +48,7 @@ func TestAuditListCmd_CourseByCourse(t *testing.T) {
 		Name: "course audit events by course-id",
 		Args: []string{"--type", "course", "--course-id", "123"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/course/courses/123": cmdtest.NewMockResponse(`[{"id":"c1","event_type":"updated"}]`),
+			"/api/v1/audit/course/courses/123": cmdtest.NewMockResponse(`{"events":[{"id":"c1","event_type":"updated"}]}`),
 		},
 		ExpectError: false,
 	}
@@ -60,7 +60,7 @@ func TestAuditListCmd_CourseByAccount(t *testing.T) {
 		Name: "course audit events by account-id",
 		Args: []string{"--type", "course", "--account-id", "1"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/course/accounts/1": cmdtest.NewMockResponse(`[{"id":"c2","event_type":"created"}]`),
+			"/api/v1/audit/course/accounts/1": cmdtest.NewMockResponse(`{"events":[{"id":"c2","event_type":"created"}]}`),
 		},
 		ExpectError: false,
 	}
@@ -81,7 +81,7 @@ func TestAuditListCmd_GradeChangeByAssignment(t *testing.T) {
 		Name: "grade-change events by assignment-id",
 		Args: []string{"--type", "grade-change", "--assignment-id", "456"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/grade_change/assignments/456": cmdtest.NewMockResponse(`[]`),
+			"/api/v1/audit/grade_change/assignments/456": cmdtest.NewMockResponse(`{"events":[]}`),
 		},
 		ExpectError:  false,
 		ExpectOutput: "No audit events found",
@@ -94,7 +94,7 @@ func TestAuditListCmd_GradeChangeByGrader(t *testing.T) {
 		Name: "grade-change events by grader-id",
 		Args: []string{"--type", "grade-change", "--grader-id", "7"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/grade_change/graders/7": cmdtest.NewMockResponse(`[]`),
+			"/api/v1/audit/grade_change/graders/7": cmdtest.NewMockResponse(`{"events":[]}`),
 		},
 		ExpectError:  false,
 		ExpectOutput: "No audit events found",
@@ -107,7 +107,7 @@ func TestAuditListCmd_GradeChangeByStudent(t *testing.T) {
 		Name: "grade-change events by student-id",
 		Args: []string{"--type", "grade-change", "--student-id", "8"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/audit/grade_change/students/8": cmdtest.NewMockResponse(`[]`),
+			"/api/v1/audit/grade_change/students/8": cmdtest.NewMockResponse(`{"events":[]}`),
 		},
 		ExpectError:  false,
 		ExpectOutput: "No audit events found",

@@ -1427,7 +1427,7 @@ func TestCovUserFeatures_ListEnabled_Happy(t *testing.T) {
 		Name: "user-features list-enabled - happy path",
 		Args: []string{"--user-id", "123"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/users/123/features/enabled": cmdtest.NewMockResponse(`[{"feature":"new_gradebook","applies_to":"User","feature_flag":{"feature":"new_gradebook","state":"on"}}]`),
+			"/api/v1/users/123/features/enabled": cmdtest.NewMockResponse(`["new_gradebook","student_planner"]`),
 		},
 		ExpectError: false,
 	}

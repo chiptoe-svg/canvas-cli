@@ -14,7 +14,7 @@ func TestCovWave1_PollsList(t *testing.T) {
 		Name: "polls list",
 		Args: []string{},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/polls": cmdtest.NewMockResponse(`[{"id":1,"question":"Q?"}]`),
+			"/api/v1/polls": cmdtest.NewMockResponse(`{"polls":[{"id":1,"question":"Q?"}]}`),
 		},
 	})
 }
@@ -24,7 +24,7 @@ func TestCovWave1_PollsGet(t *testing.T) {
 		Name: "polls get",
 		Args: []string{"1"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/polls/1": cmdtest.NewMockResponse(`[{"id":1,"question":"Q?"}]`),
+			"/api/v1/polls/1": cmdtest.NewMockResponse(`{"polls":[{"id":1,"question":"Q?"}]}`),
 		},
 	})
 }
@@ -45,7 +45,7 @@ func TestCovWave1_PollChoicesList(t *testing.T) {
 		Name: "poll choices list",
 		Args: []string{"--poll-id", "1"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/polls/1/poll_choices": cmdtest.NewMockResponse(`[{"id":3,"text":"A"}]`),
+			"/api/v1/polls/1/poll_choices": cmdtest.NewMockResponse(`{"poll_choices":[{"id":3,"text":"A"}]}`),
 		},
 	})
 }
