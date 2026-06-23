@@ -46,3 +46,27 @@ func normalizePath(path string) string {
 
 	return path
 }
+
+// ctxPairRe matches a leading Canvas context pair (e.g. /courses/:x) on a
+// normalized path.
+var ctxPairRe = regexp.MustCompile(`^/api/v1/(courses|groups|users|accounts|sections)/:x(/|$)`)
+
+// collapseContextPath returns context-templated aliases of a normalized
+// documented path, matching the two ways the service layer builds multi-context
+// paths (discussions, pages, files, folders... live under course OR group OR
+// user):
+//
+//	combined verb  fmt.Sprintf("/api/v1/%s/folders", "courses/123")  -> /api/v1/:x/folders
+//	split verbs    fmt.Sprintf("/api/v1/%s/%d/discussion_topics", ...) -> /api/v1/:x/:x/discussion_topics
+//
+// Returns nil when the path has no leading context pair. Mirrors the
+// collapseContext helper in the contract test.
+func collapseContextPath(norm string) []string {
+	if !ctxPairRe.MatchString(norm) {
+		return nil
+	}
+	return []string{
+		ctxPairRe.ReplaceAllString(norm, "/api/v1/:x$2"),
+		ctxPairRe.ReplaceAllString(norm, "/api/v1/:x/:x$2"),
+	}
+}
