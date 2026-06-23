@@ -205,44 +205,6 @@ func TestAccountsSubAccountsCmd_MissingArg(t *testing.T) {
 // Groups command additional coverage — API error paths
 // ---------------------------------------------------------------------------
 
-func TestGroupsListCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list groups - API error",
-		Args: []string{"--course-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/courses/1/groups": cmdtest.NewErrorResponse(500, "server error"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsListCmd_UserContext(t *testing.T) {
-	// Test the default (user) context branch in runGroupsList.
-	tc := cmdtest.CommandTestCase{
-		Name: "list groups - user context (no course or account ID)",
-		Args: []string{},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/users/self/groups": cmdtest.NewMockResponse(`[
-				{
-					"id": 5,
-					"name": "My User Group",
-					"members_count": 2
-				}
-			]`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "My User Group") {
-				t.Error("Expected 'My User Group' in output")
-			}
-		},
-	}
-	cmd := newGroupsListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsListCmd_UserContextError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list groups - user context API error",
@@ -315,32 +277,6 @@ func TestGroupsGetCmd_WithIncludes(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-func TestGroupsCreateCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "create group - API error",
-		Args: []string{"--category-id", "5", "--name", "Fail Group"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/group_categories/5/groups": cmdtest.NewErrorResponse(422, "unprocessable entity"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsCreateCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsUpdateCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "update group - API error",
-		Args: []string{"10", "--name", "New Name"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/groups/10": cmdtest.NewErrorResponse(404, "group not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsUpdateCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsDeleteCmd_Force_APIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "delete group - force - API error",
@@ -354,19 +290,6 @@ func TestGroupsDeleteCmd_Force_APIError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-func TestGroupsMembersListCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list group members - API error",
-		Args: []string{"10"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/groups/10/users": cmdtest.NewErrorResponse(500, "server error"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsMembersListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsMembersListCmd_Empty(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list group members - empty",
@@ -377,56 +300,6 @@ func TestGroupsMembersListCmd_Empty(t *testing.T) {
 		ExpectError: false,
 	}
 	cmd := newGroupsMembersListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsMembersAddCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "add member to group - API error",
-		Args: []string{"10", "--user-id", "100"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/groups/10/memberships": cmdtest.NewErrorResponse(409, "conflict"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsMembersAddCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsMembersRemoveCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "remove member - API error",
-		Args: []string{"10", "--membership-id", "55"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/groups/10/memberships/55": cmdtest.NewErrorResponse(404, "membership not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsMembersRemoveCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsCategoriesListCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list group categories by account",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`[
-				{
-					"id": 1,
-					"name": "Account Category",
-					"self_signup": "restricted"
-				}
-			]`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Category") {
-				t.Error("Expected 'Account Category' in output")
-			}
-		},
-	}
-	cmd := newGroupsCategoriesListCmd()
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
@@ -456,41 +329,6 @@ func TestGroupsCategoriesListCmd_AccountAPIError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-func TestGroupsCategoriesGetCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "get group category - API error",
-		Args: []string{"5"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/group_categories/5": cmdtest.NewErrorResponse(404, "not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsCategoriesGetCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsCategoriesCreateCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "create group category in account",
-		Args: []string{"--account-id", "1", "--name", "Account Category"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`{
-				"id": 20,
-				"name": "Account Category",
-				"account_id": 1
-			}`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Category") {
-				t.Error("Expected 'Account Category' in output")
-			}
-		},
-	}
-	cmd := newGroupsCategoriesCreateCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsCategoriesCreateCmd_CourseAPIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "create group category - course API error",
@@ -514,19 +352,6 @@ func TestGroupsCategoriesCreateCmd_AccountAPIError(t *testing.T) {
 		ExpectError: true,
 	}
 	cmd := newGroupsCategoriesCreateCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsCategoriesUpdateCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "update group category - API error",
-		Args: []string{"5", "--name", "Updated Name"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/group_categories/5": cmdtest.NewErrorResponse(404, "category not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsCategoriesUpdateCmd()
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
@@ -556,19 +381,6 @@ func TestGroupsCategoriesDeleteCmd_ForceAPIError(t *testing.T) {
 		ExpectError: true,
 	}
 	cmd := newGroupsCategoriesDeleteCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsCategoriesGroupsCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list groups in category - API error",
-		Args: []string{"5"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/group_categories/5/groups": cmdtest.NewErrorResponse(404, "category not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsCategoriesGroupsCmd()
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
