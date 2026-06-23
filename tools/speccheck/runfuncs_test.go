@@ -133,19 +133,14 @@ func TestWriteModels_Integration(t *testing.T) {
 // TestLoadManifest_ErrorPaths verifies that loadManifest returns meaningful errors
 // for invalid or missing files.
 func TestLoadManifest_ErrorPaths(t *testing.T) {
-	orig, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(orig) })
-
-	// Point at a temp dir that has no manifest.
+	// Point at a temp dir that has no manifest. t.Chdir restores the working
+	// directory at cleanup in the correct order relative to t.TempDir's
+	// RemoveAll, which matters on Windows (a dir that is the process cwd cannot
+	// be deleted).
 	emptyDir := t.TempDir()
-	if err := os.Chdir(emptyDir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(emptyDir)
 
-	_, err = loadManifest()
+	_, err := loadManifest()
 	if err == nil {
 		t.Error("expected error when manifest file does not exist")
 	}

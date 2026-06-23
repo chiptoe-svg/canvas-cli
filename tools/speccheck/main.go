@@ -45,8 +45,11 @@ const (
 	modelsPath   = "testdata/spec/canvas_models.json"
 	cacheDir     = ".canvas-spec"
 	apiSrcDir    = "internal/api"
-	coverageOut  = "/tmp/canvas_coverage_gap.md"
 )
+
+// coverageOut is the path the coverage gap report is written to. It uses the OS
+// temp dir so the tool and its tests work on Windows (no hardcoded /tmp).
+var coverageOut = filepath.Join(os.TempDir(), "canvas_coverage_gap.md")
 
 // userAgent mimics a browser so Canvas hosts don't block datacenter requests.
 const userAgent = "Mozilla/5.0 (compatible; canvas-cli/speccheck; +https://github.com/jjuanrivvera/canvas-cli)"
