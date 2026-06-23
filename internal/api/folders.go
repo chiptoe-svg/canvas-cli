@@ -386,3 +386,29 @@ func (s *FoldersService) CopyFolder(ctx context.Context, destFolderID int64, par
 
 	return &folder, nil
 }
+
+// GetGroupFolder retrieves a folder by ID in a group context
+// Canvas path: GET /api/v1/groups/:group_id/folders/:id
+func (s *FoldersService) GetGroupFolder(ctx context.Context, groupID, folderID int64) (*Folder, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/folders/%d", groupID, folderID)
+
+	var folder Folder
+	if err := s.client.GetJSON(ctx, path, &folder); err != nil {
+		return nil, err
+	}
+
+	return &folder, nil
+}
+
+// ListFolderFiles retrieves files in a folder
+// Canvas path: GET /api/v1/folders/:id/files
+func (s *FoldersService) ListFolderFiles(ctx context.Context, folderID int64) ([]Attachment, error) {
+	path := fmt.Sprintf("/api/v1/folders/%d/files", folderID)
+
+	var files []Attachment
+	if err := s.client.GetAllPages(ctx, path, &files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}

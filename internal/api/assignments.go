@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // AssignmentsService handles assignment-related API calls
@@ -600,4 +601,87 @@ func (s *AssignmentsService) ListUserAssignments(ctx context.Context, userID, co
 	}
 
 	return NormalizeAssignments(assignments), nil
+}
+
+// AssignmentDateDetails holds date details for an assignment
+type AssignmentDateDetails struct {
+	DueAt     *time.Time           `json:"due_at,omitempty"`
+	UnlockAt  *time.Time           `json:"unlock_at,omitempty"`
+	LockAt    *time.Time           `json:"lock_at,omitempty"`
+	Overrides []AssignmentOverride `json:"overrides,omitempty"`
+}
+
+// GradeableStudent represents a student who can be graded for an assignment
+type GradeableStudent struct {
+	ID          int64  `json:"id"`
+	DisplayName string `json:"display_name,omitempty"`
+	HTMLURL     string `json:"html_url,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+}
+
+// SubmissionSummary holds the summary of submissions for an assignment
+type SubmissionSummary struct {
+	Graded       int `json:"graded"`
+	Ungraded     int `json:"ungraded"`
+	NotSubmitted int `json:"not_submitted"`
+}
+
+// GetDateDetails retrieves date details for an assignment
+func (s *AssignmentsService) GetDateDetails(ctx context.Context, courseID, assignmentID int64) (*AssignmentDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/date_details", courseID, assignmentID)
+	var result AssignmentDateDetails
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// UpdateDateDetails updates date details for an assignment
+func (s *AssignmentsService) UpdateDateDetails(ctx context.Context, courseID, assignmentID int64, params map[string]interface{}) (*AssignmentDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/date_details", courseID, assignmentID)
+	var result AssignmentDateDetails
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// Duplicate duplicates an assignment
+func (s *AssignmentsService) Duplicate(ctx context.Context, courseID, assignmentID int64) (*Assignment, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/duplicate", courseID, assignmentID)
+	var result Assignment
+	if err := s.client.PostJSON(ctx, path, nil, &result); err != nil {
+		return nil, err
+	}
+	return NormalizeAssignment(&result), nil
+}
+
+// ListGradeableStudents retrieves students who can be graded for an assignment
+func (s *AssignmentsService) ListGradeableStudents(ctx context.Context, courseID, assignmentID int64) ([]GradeableStudent, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/gradeable_students", courseID, assignmentID)
+	var students []GradeableStudent
+	if err := s.client.GetAllPages(ctx, path, &students); err != nil {
+		return nil, err
+	}
+	return students, nil
+}
+
+// GetSubmissionSummary retrieves the submission summary for an assignment
+func (s *AssignmentsService) GetSubmissionSummary(ctx context.Context, courseID, assignmentID int64) (*SubmissionSummary, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/submission_summary", courseID, assignmentID)
+	var result SubmissionSummary
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ListOverrides retrieves assignment overrides for all assignments in a course
+func (s *AssignmentsService) ListOverrides(ctx context.Context, courseID int64) ([]AssignmentOverride, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/overrides", courseID)
+	var overrides []AssignmentOverride
+	if err := s.client.GetAllPages(ctx, path, &overrides); err != nil {
+		return nil, err
+	}
+	return overrides, nil
 }

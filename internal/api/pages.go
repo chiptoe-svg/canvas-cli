@@ -697,3 +697,37 @@ func (s *PagesService) GroupRevertToRevision(ctx context.Context, groupID int64,
 
 	return &revision, nil
 }
+
+// PageDateDetails holds date availability details for a page
+type PageDateDetails struct {
+	DueAt     *string              `json:"due_at,omitempty"`
+	UnlockAt  *string              `json:"unlock_at,omitempty"`
+	LockAt    *string              `json:"lock_at,omitempty"`
+	Overrides []AssignmentOverride `json:"overrides,omitempty"`
+}
+
+// GetDateDetails retrieves date details for a page in a course
+// Canvas path: GET /api/v1/courses/:course_id/pages/:url_or_id/date_details
+func (s *PagesService) GetDateDetails(ctx context.Context, courseID int64, urlOrID string) (*PageDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/pages/%s/date_details", courseID, url.PathEscape(urlOrID))
+
+	var result PageDateDetails
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateDateDetails updates date details for a page in a course
+// Canvas path: PUT /api/v1/courses/:course_id/pages/:url_or_id/date_details
+func (s *PagesService) UpdateDateDetails(ctx context.Context, courseID int64, urlOrID string, params *PageDateDetails) (*PageDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/pages/%s/date_details", courseID, url.PathEscape(urlOrID))
+
+	var result PageDateDetails
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}

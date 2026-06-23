@@ -404,41 +404,48 @@ func runCoverage() error {
 		return err
 	}
 
-	cliPaths, err := harvestCLIPaths(apiSrcDir)
+	cliEndpoints, err := harvestCLIEndpoints(apiSrcDir)
 	if err != nil {
-		return fmt.Errorf("harvesting CLI paths from %s: %w", apiSrcDir, err)
+		return fmt.Errorf("harvesting CLI endpoints from %s: %w", apiSrcDir, err)
 	}
 
-	// Build normalized CLI set.
-	cliNorm := map[string]bool{}
-	for _, p := range cliPaths {
-		cliNorm[normalizePath(p)] = true
+	// Build the CLI's (method, normalized-path) set. Coverage is method-granular:
+	// a documented endpoint counts as implemented only if the CLI issues a request
+	// with the SAME HTTP verb on a matching path.
+	cliSet := map[string]bool{}
+	for _, e := range cliEndpoints {
+		cliSet[e.Method+" "+normalizePath(e.Path)] = true
+	}
+	// implemented reports whether the CLI covers a documented (method, path),
+	// allowing the multi-context aliases the service layer builds via templates.
+	implemented := func(method, norm string) bool {
+		if cliSet[method+" "+norm] {
+			return true
+		}
+		for _, alias := range collapseContextPath(norm) {
+			if cliSet[method+" "+alias] {
+				return true
+			}
+		}
+		return false
 	}
 
 	type resourceGap struct {
-		resource     string
-		implemented  int
-		total        int
-		missing      []string
-		coveredPaths map[string]bool // tracks which normalized paths are already counted
+		resource    string
+		implemented int
+		total       int
+		missing     []string
 	}
 	byResource := map[string]*resourceGap{}
-	// NOTE: coverage is path-granular, not method-granular, because harvestCLIPaths
-	// does not capture HTTP verbs. A path counts as implemented if the CLI issues
-	// any request to that path, regardless of method.
 	for _, ep := range man.Endpoints {
 		seg := firstSegment(ep.Path)
 		if _, ok := byResource[seg]; !ok {
-			byResource[seg] = &resourceGap{resource: seg, coveredPaths: map[string]bool{}}
+			byResource[seg] = &resourceGap{resource: seg}
 		}
 		rg := byResource[seg]
 		rg.total++
-		norm := normalizePath(ep.Path)
-		if cliNorm[norm] {
-			if !rg.coveredPaths[norm] {
-				rg.coveredPaths[norm] = true
-				rg.implemented++
-			}
+		if implemented(ep.Method, normalizePath(ep.Path)) {
+			rg.implemented++
 		} else {
 			rg.missing = append(rg.missing, fmt.Sprintf("%s %s", ep.Method, ep.Path))
 		}
