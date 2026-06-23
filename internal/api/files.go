@@ -172,6 +172,12 @@ func (s *FilesService) UploadToUser(ctx context.Context, userID int64, filePath 
 	return s.upload(ctx, uploadPath, filePath, params)
 }
 
+// UploadToGroup uploads a file to a Canvas group's files.
+func (s *FilesService) UploadToGroup(ctx context.Context, groupID int64, filePath string, params *UploadParams) (*Attachment, error) {
+	uploadPath := fmt.Sprintf("/api/v1/groups/%d/files", groupID)
+	return s.upload(ctx, uploadPath, filePath, params)
+}
+
 // upload is a helper that handles the Canvas three-step upload process
 // Step 1: Request upload parameters from Canvas
 // Step 2: Upload file to the provided URL using multipart/form-data with upload_params
@@ -649,11 +655,11 @@ func (s *FilesService) SetUsageRights(ctx context.Context, courseID, groupID, us
 	body := map[string]interface{}{
 		"usage_rights[use_justification]": params.UseJustification,
 	}
-	for _, id := range params.FileIDs {
-		body["file_ids[]"] = id
+	if len(params.FileIDs) > 0 {
+		body["file_ids"] = params.FileIDs
 	}
-	for _, id := range params.FolderIDs {
-		body["folder_ids[]"] = id
+	if len(params.FolderIDs) > 0 {
+		body["folder_ids"] = params.FolderIDs
 	}
 	if params.Publish {
 		body["publish"] = true

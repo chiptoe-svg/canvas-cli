@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/url"
 )
 
 // CSPSettingsService handles Content Security Policy settings API calls
@@ -48,9 +49,14 @@ func (s *CSPSettingsService) Update(ctx context.Context, accountID int64, body *
 	return &settings, nil
 }
 
-// RemoveDomains removes domains from the CSP allowlist
-func (s *CSPSettingsService) RemoveDomains(ctx context.Context, accountID int64, _ []string) (*CSPSettings, error) {
-	path := fmt.Sprintf("/api/v1/accounts/%d/csp_settings/domains", accountID)
+// RemoveDomains removes domains from the CSP allowlist.
+// Canvas expects the domains as repeated "domains[]" query parameters on the DELETE request.
+func (s *CSPSettingsService) RemoveDomains(ctx context.Context, accountID int64, domains []string) (*CSPSettings, error) {
+	q := url.Values{}
+	for _, d := range domains {
+		q.Add("domains[]", d)
+	}
+	path := fmt.Sprintf("/api/v1/accounts/%d/csp_settings/domains?%s", accountID, q.Encode())
 
 	var settings CSPSettings
 	if err := s.client.DeleteJSON(ctx, path, &settings); err != nil {

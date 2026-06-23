@@ -557,8 +557,7 @@ func runFilesUpload(ctx context.Context, client *api.Client, opts *options.Files
 	case opts.CourseID > 0:
 		uploadedFile, err = filesService.UploadToCourse(ctx, opts.CourseID, opts.FilePath, params)
 	case opts.GroupID > 0:
-		// Canvas groups use the same upload path structure as courses
-		uploadedFile, err = filesService.UploadToFolder(ctx, opts.GroupID, opts.FilePath, params)
+		uploadedFile, err = filesService.UploadToGroup(ctx, opts.GroupID, opts.FilePath, params)
 	case opts.FolderID > 0:
 		uploadedFile, err = filesService.UploadToFolder(ctx, opts.FolderID, opts.FilePath, params)
 	default:

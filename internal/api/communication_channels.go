@@ -40,9 +40,20 @@ type NotificationPreference struct {
 	Category     string `json:"category"`
 }
 
-// NotificationPreferences wraps a list of notification preferences
+// NotificationPreferences wraps a list of notification preferences (read response from Canvas).
 type NotificationPreferences struct {
 	NotificationPreferences []NotificationPreference `json:"notification_preferences"`
+}
+
+// NotificationPreferenceUpdate holds the frequency update for a single notification event.
+type NotificationPreferenceUpdate struct {
+	Frequency string `json:"frequency"`
+}
+
+// NotificationPreferencesUpdateBody is the request body for bulk notification preference updates.
+// Canvas expects {"notification_preferences": {event_name: {"frequency": "..."}, ...}}.
+type NotificationPreferencesUpdateBody struct {
+	NotificationPreferences map[string]NotificationPreferenceUpdate `json:"notification_preferences"`
 }
 
 // List retrieves all communication channels for a user
@@ -138,8 +149,9 @@ func (s *CommunicationChannelsService) GetNotificationPreferenceByType(ctx conte
 	return &result, nil
 }
 
-// UpdateNotificationPreferences updates all notification preferences for a channel
-func (s *CommunicationChannelsService) UpdateNotificationPreferences(ctx context.Context, channelID int64, prefs NotificationPreferences) (*NotificationPreferences, error) {
+// UpdateNotificationPreferences updates all notification preferences for a channel.
+// Canvas expects {"notification_preferences": {event_name: {"frequency": "..."}, ...}}.
+func (s *CommunicationChannelsService) UpdateNotificationPreferences(ctx context.Context, channelID int64, prefs NotificationPreferencesUpdateBody) (*NotificationPreferences, error) {
 	path := fmt.Sprintf("/api/v1/users/self/communication_channels/%d/notification_preferences", channelID)
 	var result NotificationPreferences
 	if err := s.client.PutJSON(ctx, path, prefs, &result); err != nil {
@@ -168,8 +180,9 @@ func (s *CommunicationChannelsService) UpdateNotificationPreferenceCategory(ctx 
 	return &result, nil
 }
 
-// UpdateNotificationPreferencesByType updates notification preferences for a channel identified by type/address
-func (s *CommunicationChannelsService) UpdateNotificationPreferencesByType(ctx context.Context, channelType, address string, prefs NotificationPreferences) (*NotificationPreferences, error) {
+// UpdateNotificationPreferencesByType updates notification preferences for a channel identified by type/address.
+// Canvas expects {"notification_preferences": {event_name: {"frequency": "..."}, ...}}.
+func (s *CommunicationChannelsService) UpdateNotificationPreferencesByType(ctx context.Context, channelType, address string, prefs NotificationPreferencesUpdateBody) (*NotificationPreferences, error) {
 	path := fmt.Sprintf("/api/v1/users/self/communication_channels/%s/%s/notification_preferences", channelType, address)
 	var result NotificationPreferences
 	if err := s.client.PutJSON(ctx, path, prefs, &result); err != nil {
