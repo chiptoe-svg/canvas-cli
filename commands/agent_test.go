@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -579,13 +580,16 @@ func TestEmitCanvasClaudeCode_WriteCreatesFiles(t *testing.T) {
 		t.Error("second write call should print 'already exists' for existing files")
 	}
 
-	// Hook script must be executable.
-	fi, err := os.Stat(hookFile)
-	if err != nil {
-		t.Fatalf("stat hook file: %v", err)
-	}
-	if fi.Mode()&0o111 == 0 {
-		t.Errorf("hook script must be executable, got mode %v", fi.Mode())
+	// Hook script must be executable. Windows has no Unix executable bit
+	// (os.Stat reports -rw-rw-rw-), so this check only applies on POSIX hosts.
+	if runtime.GOOS != "windows" {
+		fi, err := os.Stat(hookFile)
+		if err != nil {
+			t.Fatalf("stat hook file: %v", err)
+		}
+		if fi.Mode()&0o111 == 0 {
+			t.Errorf("hook script must be executable, got mode %v", fi.Mode())
+		}
 	}
 }
 
