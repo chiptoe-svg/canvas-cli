@@ -602,11 +602,12 @@ type ModuleOverrideParams struct {
 	LockAt          *string `json:"lock_at,omitempty"`
 }
 
-// ListAssignmentOverrides retrieves assignment overrides for a module
+// ListAssignmentOverrides retrieves assignment overrides for a module.
+// Uses GetAllPages because Canvas paginates this endpoint.
 func (s *ModulesService) ListAssignmentOverrides(ctx context.Context, courseID, moduleID int64) ([]AssignmentOverride, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/modules/%d/assignment_overrides", courseID, moduleID)
 	var overrides []AssignmentOverride
-	if err := s.client.GetJSON(ctx, path, &overrides); err != nil {
+	if err := s.client.GetAllPages(ctx, path, &overrides); err != nil {
 		return nil, err
 	}
 	return overrides, nil

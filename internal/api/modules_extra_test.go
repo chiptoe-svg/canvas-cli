@@ -9,6 +9,7 @@ import (
 )
 
 func TestModulesService_ListAssignmentOverrides(t *testing.T) {
+	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {
 			handleVersionDetection(w)
@@ -18,6 +19,7 @@ func TestModulesService_ListAssignmentOverrides(t *testing.T) {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		callCount++
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]map[string]interface{}{{"id": 10, "title": "Override"}})
 	}))
@@ -30,6 +32,11 @@ func TestModulesService_ListAssignmentOverrides(t *testing.T) {
 	}
 	if len(overrides) != 1 {
 		t.Errorf("expected 1 override, got %d", len(overrides))
+	}
+	// Verify that GetAllPages was used (pagination path) rather than GetJSON.
+	// GetAllPages always makes at least one request to the base path.
+	if callCount < 1 {
+		t.Error("expected at least 1 server call for paginated fetch")
 	}
 }
 

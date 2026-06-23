@@ -334,10 +334,10 @@ type CreateOutcomeParams struct {
 	CalculationInt    int
 }
 
-// CreateOutcomeAccount creates a new outcome in an account group
-func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, groupID int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
-	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/outcomes", accountID, groupID)
-
+// buildCreateOutcomeBody constructs the POST body for outcome creation, mapping all
+// CreateOutcomeParams fields to their Canvas JSON keys. Shared by all three
+// CreateOutcome* methods so field coverage is consistent.
+func buildCreateOutcomeBody(params *CreateOutcomeParams) map[string]interface{} {
 	body := map[string]interface{}{
 		"title": params.Title,
 	}
@@ -369,6 +369,15 @@ func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, g
 	if params.CalculationInt > 0 {
 		body["calculation_int"] = params.CalculationInt
 	}
+
+	return body
+}
+
+// CreateOutcomeAccount creates a new outcome in an account group
+func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, groupID int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/outcomes", accountID, groupID)
+
+	body := buildCreateOutcomeBody(params)
 
 	var link OutcomeLink
 	if err := s.client.PostJSON(ctx, path, body, &link); err != nil {
@@ -382,37 +391,7 @@ func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, g
 func (s *OutcomesService) CreateOutcomeCourse(ctx context.Context, courseID, groupID int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d/outcomes", courseID, groupID)
 
-	body := map[string]interface{}{
-		"title": params.Title,
-	}
-
-	if params.DisplayName != "" {
-		body["display_name"] = params.DisplayName
-	}
-
-	if params.Description != "" {
-		body["description"] = params.Description
-	}
-
-	if params.VendorGUID != "" {
-		body["vendor_guid"] = params.VendorGUID
-	}
-
-	if params.MasteryPoints > 0 {
-		body["mastery_points"] = params.MasteryPoints
-	}
-
-	if len(params.Ratings) > 0 {
-		body["ratings"] = params.Ratings
-	}
-
-	if params.CalculationMethod != "" {
-		body["calculation_method"] = params.CalculationMethod
-	}
-
-	if params.CalculationInt > 0 {
-		body["calculation_int"] = params.CalculationInt
-	}
+	body := buildCreateOutcomeBody(params)
 
 	var link OutcomeLink
 	if err := s.client.PostJSON(ctx, path, body, &link); err != nil {
@@ -555,7 +534,8 @@ func (s *OutcomesService) GetAlignments(ctx context.Context, courseID int64, stu
 
 // OutcomeRollupScore represents a rollup score
 type OutcomeRollupScore struct {
-	Score int                     `json:"score"`
+	// Score is float64 because Canvas mastery scores can be fractional (e.g. 2.5).
+	Score float64                 `json:"score"`
 	Count int                     `json:"count"`
 	Links OutcomeRollupScoreLinks `json:"links"`
 }
@@ -586,13 +566,13 @@ type OutcomeRollupsResponse struct {
 
 // OutcomeRollupsOptions holds query params for rollups
 type OutcomeRollupsOptions struct {
-	Aggregate      string
-	AggregateStact string
-	UserIDs        []int64
-	OutcomeIDs     []int64
-	Include        []string
-	Page           int
-	PerPage        int
+	Aggregate     string
+	AggregateStat string // Canvas param: aggregate_stat
+	UserIDs       []int64
+	OutcomeIDs    []int64
+	Include       []string
+	Page          int
+	PerPage       int
 }
 
 // ProficiencyRating represents a single proficiency rating level
@@ -633,6 +613,9 @@ func (s *OutcomesService) GetRollupsCourse(ctx context.Context, courseID int64, 
 		query := url.Values{}
 		if opts.Aggregate != "" {
 			query.Add("aggregate", opts.Aggregate)
+		}
+		if opts.AggregateStat != "" {
+			query.Add("aggregate_stat", opts.AggregateStat)
 		}
 		for _, uid := range opts.UserIDs {
 			query.Add("user_ids[]", strconv.FormatInt(uid, 10))
@@ -760,10 +743,7 @@ func (s *OutcomesService) ListGlobalGroupOutcomes(ctx context.Context, id int64)
 // CreateGlobalGroupOutcome creates an outcome in a global outcome group
 func (s *OutcomesService) CreateGlobalGroupOutcome(ctx context.Context, id int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
 	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/outcomes", id)
-	body := map[string]interface{}{"title": params.Title}
-	if params.Description != "" {
-		body["description"] = params.Description
-	}
+	body := buildCreateOutcomeBody(params)
 	var link OutcomeLink
 	if err := s.client.PostJSON(ctx, path, body, &link); err != nil {
 		return nil, err

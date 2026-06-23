@@ -484,22 +484,29 @@ type QuizMessageParams struct {
 	RecipientGroup string `json:"recipients"`
 }
 
-// ValidateAccessCode validates an access code for a quiz
+// ValidateAccessCode validates an access code for a quiz.
+// Canvas returns a bare JSON boolean (true/false), not an object.
 func (s *QuizzesService) ValidateAccessCode(ctx context.Context, courseID, quizID int64, accessCode string) (bool, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/validate_access_code", courseID, quizID)
 	body := map[string]interface{}{"access_code": accessCode}
-	var result map[string]interface{}
-	if err := s.client.PostJSON(ctx, path, body, &result); err != nil {
+	var valid bool
+	if err := s.client.PostJSON(ctx, path, body, &valid); err != nil {
 		return false, err
 	}
-	valid, _ := result["valid"].(bool)
 	return valid, nil
 }
 
-// MessageSubmissionUsers sends a message to quiz submission users
+// MessageSubmissionUsers sends a message to quiz submission users.
+// Canvas expects the body/recipients nested under a "conversations" key.
 func (s *QuizzesService) MessageSubmissionUsers(ctx context.Context, courseID, quizID int64, params *QuizMessageParams) error {
 	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submission_users/message", courseID, quizID)
-	return s.client.PostJSON(ctx, path, params, nil)
+	body := map[string]interface{}{
+		"conversations": map[string]interface{}{
+			"body":       params.Body,
+			"recipients": params.RecipientGroup,
+		},
+	}
+	return s.client.PostJSON(ctx, path, body, nil)
 }
 
 // GetCurrentUserSubmission retrieves the current user's submission for a quiz

@@ -242,10 +242,12 @@ func (s *AccountsService) ListUsers(ctx context.Context, accountID int64, opts *
 
 // UpdateAccountParams holds parameters for updating an account
 type UpdateAccountParams struct {
-	Name                  string `json:"name,omitempty"`
-	SISAccountID          string `json:"sis_account_id,omitempty"`
-	DefaultTimeZone       string `json:"default_time_zone,omitempty"`
-	DefaultStorageQuotaMb int    `json:"default_storage_quota_mb,omitempty"`
+	Name            string `json:"name,omitempty"`
+	SISAccountID    string `json:"sis_account_id,omitempty"`
+	DefaultTimeZone string `json:"default_time_zone,omitempty"`
+	// DefaultStorageQuotaMb uses *int so callers can explicitly send 0 (unlimited).
+	// An int with omitempty would silently drop a zero value and never clear the quota.
+	DefaultStorageQuotaMb *int `json:"default_storage_quota_mb,omitempty"`
 }
 
 // Update updates an account
@@ -267,9 +269,10 @@ func (s *AccountsService) Update(ctx context.Context, accountID int64, params *U
 
 // CreateSubAccountParams holds parameters for creating a sub-account
 type CreateSubAccountParams struct {
-	Name                  string `json:"name"`
-	SISAccountID          string `json:"sis_account_id,omitempty"`
-	DefaultStorageQuotaMb int    `json:"default_storage_quota_mb,omitempty"`
+	Name         string `json:"name"`
+	SISAccountID string `json:"sis_account_id,omitempty"`
+	// DefaultStorageQuotaMb uses *int so callers can explicitly send 0 (unlimited).
+	DefaultStorageQuotaMb *int   `json:"default_storage_quota_mb,omitempty"`
 	DefaultTimeZone       string `json:"default_time_zone,omitempty"`
 }
 

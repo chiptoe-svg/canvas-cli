@@ -391,26 +391,9 @@ func (s *SectionsService) ListSubmissionsForStudents(ctx context.Context, sectio
 func (s *SectionsService) GradeSubmission(ctx context.Context, sectionID, assignmentID, userID int64, params *GradeSubmissionParams) (*Submission, error) {
 	path := fmt.Sprintf("/api/v1/sections/%d/assignments/%d/submissions/%d", sectionID, assignmentID, userID)
 
-	body := map[string]interface{}{
-		"submission": make(map[string]interface{}),
-	}
-	sub := body["submission"].(map[string]interface{})
-	if params.PostedGrade != "" {
-		sub["posted_grade"] = params.PostedGrade
-	}
-	if params.Excuse {
-		sub["excuse"] = true
-	}
-	if params.LatePolicyStatus != "" {
-		sub["late_policy_status"] = params.LatePolicyStatus
-	}
-	if params.Comment != nil {
-		comment := map[string]interface{}{}
-		if params.Comment.TextComment != "" {
-			comment["text_comment"] = params.Comment.TextComment
-		}
-		body["comment"] = comment
-	}
+	// Build the same body as SubmissionsService.Grade to ensure full field coverage
+	// (SecondsLateOverride, RubricAssessment, all comment fields).
+	body := buildGradeSubmissionBody(params)
 
 	var submission Submission
 	if err := s.client.PutJSON(ctx, path, body, &submission); err != nil {

@@ -8,6 +8,138 @@ import (
 	"testing"
 )
 
+// TestCreateGlobalGroupOutcome_FullParams asserts that CreateGlobalGroupOutcome
+// sends ALL CreateOutcomeParams fields, not just title+description (regression
+// guard for the bug where only two fields were forwarded).
+func TestCreateGlobalGroupOutcome_FullParams(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path != "/api/v1/global/outcome_groups/3/outcomes" || r.Method != http.MethodPost {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		// Assert all CreateOutcomeParams fields are present.
+		if body["title"] != "My Outcome" {
+			t.Errorf("expected title=My Outcome, got %v", body["title"])
+		}
+		if body["display_name"] != "MO" {
+			t.Errorf("expected display_name=MO, got %v", body["display_name"])
+		}
+		if body["description"] != "A test outcome" {
+			t.Errorf("expected description set, got %v", body["description"])
+		}
+		if body["vendor_guid"] != "guid-123" {
+			t.Errorf("expected vendor_guid=guid-123, got %v", body["vendor_guid"])
+		}
+		if body["mastery_points"] == nil {
+			t.Error("expected mastery_points set")
+		}
+		if body["calculation_method"] != "decaying_average" {
+			t.Errorf("expected calculation_method=decaying_average, got %v", body["calculation_method"])
+		}
+		if body["calculation_int"] == nil {
+			t.Error("expected calculation_int set")
+		}
+		ratings, ok := body["ratings"].([]interface{})
+		if !ok || len(ratings) != 1 {
+			t.Errorf("expected 1 rating, got %v", body["ratings"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(OutcomeLink{})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server.URL)
+	svc := NewOutcomesService(client)
+	calcInt := 65
+	_, err := svc.CreateGlobalGroupOutcome(context.Background(), 3, &CreateOutcomeParams{
+		Title:             "My Outcome",
+		DisplayName:       "MO",
+		Description:       "A test outcome",
+		VendorGUID:        "guid-123",
+		MasteryPoints:     3.0,
+		CalculationMethod: "decaying_average",
+		CalculationInt:    calcInt,
+		Ratings:           []OutcomeRating{{Description: "Mastery", Points: 3}},
+	})
+	if err != nil {
+		t.Fatalf("CreateGlobalGroupOutcome: %v", err)
+	}
+}
+
+// TestGetRollupsCourse_AggregateStat asserts that the AggregateStat field is
+// sent as the aggregate_stat query param (was previously a typo AggregateStact
+// and never wired to the query builder).
+func TestGetRollupsCourse_AggregateStat(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path != "/api/v1/courses/1/outcome_rollups" {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		if got := r.URL.Query().Get("aggregate_stat"); got != "mean" {
+			t.Errorf("expected aggregate_stat=mean, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(OutcomeRollupsResponse{})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server.URL)
+	svc := NewOutcomesService(client)
+	_, err := svc.GetRollupsCourse(context.Background(), 1, &OutcomeRollupsOptions{
+		Aggregate:     "course",
+		AggregateStat: "mean",
+	})
+	if err != nil {
+		t.Fatalf("GetRollupsCourse with AggregateStat: %v", err)
+	}
+}
+
+// TestOutcomeRollupScore_FractionalScore asserts that OutcomeRollupScore.Score
+// is float64 and correctly decodes fractional values (was int, dropping fractions).
+func TestOutcomeRollupScore_FractionalScore(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"rollups": []map[string]interface{}{
+				{
+					"name":  "Student",
+					"links": map[string]interface{}{},
+					"scores": []map[string]interface{}{
+						{"score": 2.5, "count": 3, "links": map[string]interface{}{"outcome": 1}},
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server.URL)
+	svc := NewOutcomesService(client)
+	resp, err := svc.GetRollupsCourse(context.Background(), 1, nil)
+	if err != nil {
+		t.Fatalf("GetRollupsCourse: %v", err)
+	}
+	if len(resp.Rollups) == 0 || len(resp.Rollups[0].Scores) == 0 {
+		t.Fatal("expected rollup with scores")
+	}
+	if resp.Rollups[0].Scores[0].Score != 2.5 {
+		t.Errorf("expected fractional score 2.5, got %v", resp.Rollups[0].Scores[0].Score)
+	}
+}
+
 func TestOutcomesService_GetRollupsCourse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {

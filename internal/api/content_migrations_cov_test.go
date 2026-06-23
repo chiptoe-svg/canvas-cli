@@ -320,19 +320,27 @@ func TestContentMigrationsService_GetSelectiveDataForGroup(t *testing.T) {
 		if r.URL.Path != "/api/v1/groups/7/content_migrations/50/selective_data" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
+		// Assert type query param is forwarded when provided.
+		if got := r.URL.Query().Get("type"); got != "assignments" {
+			t.Errorf("expected type=assignments, got %q", got)
+		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]interface{}{map[string]interface{}{"type": "assignments"}})
+		json.NewEncoder(w).Encode([]ContentListItem{{Type: "assignment", Property: "copy[all_assignments]", Title: "HW1"}})
 	}))
 	defer server.Close()
 
 	client := newTestClient(t, server.URL)
 	svc := NewContentMigrationsService(client)
-	data, err := svc.GetSelectiveDataForGroup(context.Background(), 7, 50)
+	data, err := svc.GetSelectiveDataForGroup(context.Background(), 7, 50, "assignments")
 	if err != nil {
 		t.Fatalf("GetSelectiveDataForGroup: %v", err)
 	}
 	if len(data) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(data))
+	}
+	// Assert typed return: Title field should be decoded correctly.
+	if data[0].Title != "HW1" {
+		t.Errorf("expected Title HW1, got %q", data[0].Title)
 	}
 }
 

@@ -733,11 +733,16 @@ func (s *FilesService) ListLicenses(ctx context.Context, courseID, groupID, user
 	return licenses, nil
 }
 
-// FileDateDetails represents date availability details for a file
+// FileDateDetails represents date availability details for a file.
+//
+// Date fields intentionally omit `omitempty`: a nil pointer marshals as JSON
+// null, which tells Canvas to explicitly clear the date. Using omitempty would
+// silently drop nil fields and make it impossible to unset a date via PUT.
+// The Canvas date_details API follows "send null to clear" semantics.
 type FileDateDetails struct {
-	DueAt     *string              `json:"due_at,omitempty"`
-	UnlockAt  *string              `json:"unlock_at,omitempty"`
-	LockAt    *string              `json:"lock_at,omitempty"`
+	DueAt     *string              `json:"due_at"`
+	UnlockAt  *string              `json:"unlock_at"`
+	LockAt    *string              `json:"lock_at"`
 	Overrides []AssignmentOverride `json:"overrides,omitempty"`
 }
 

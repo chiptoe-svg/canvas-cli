@@ -18,8 +18,9 @@ func TestQuizzesService_ValidateAccessCode(t *testing.T) {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		// Canvas returns a bare JSON boolean, not an object.
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"valid": true})
+		w.Write([]byte(`true`))
 	}))
 	defer server.Close()
 	client := newTestClient(t, server.URL)
@@ -33,6 +34,31 @@ func TestQuizzesService_ValidateAccessCode(t *testing.T) {
 	}
 }
 
+func TestQuizzesService_ValidateAccessCode_False(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path != "/api/v1/courses/1/quizzes/2/validate_access_code" {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`false`))
+	}))
+	defer server.Close()
+	client := newTestClient(t, server.URL)
+	svc := NewQuizzesService(client)
+	valid, err := svc.ValidateAccessCode(context.Background(), 1, 2, "wrong")
+	if err != nil {
+		t.Fatalf("ValidateAccessCode false case failed: %v", err)
+	}
+	if valid {
+		t.Error("expected valid=false for wrong code")
+	}
+}
+
 func TestQuizzesService_MessageSubmissionUsers(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {
@@ -42,6 +68,22 @@ func TestQuizzesService_MessageSubmissionUsers(t *testing.T) {
 		if r.URL.Path != "/api/v1/courses/1/quizzes/2/submission_users/message" || r.Method != http.MethodPost {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
+		}
+		// Assert Canvas nesting: params must be under "conversations" key.
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		conv, ok := body["conversations"].(map[string]interface{})
+		if !ok {
+			t.Errorf("expected conversations object in body, got %T: %v", body["conversations"], body)
+		} else {
+			if conv["body"] != "hello" {
+				t.Errorf("expected conversations.body=hello, got %v", conv["body"])
+			}
+			if conv["recipients"] != "submitted" {
+				t.Errorf("expected conversations.recipients=submitted, got %v", conv["recipients"])
+			}
 		}
 		w.WriteHeader(http.StatusCreated)
 	}))

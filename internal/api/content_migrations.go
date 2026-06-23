@@ -507,12 +507,19 @@ func (s *ContentMigrationsService) UpdateForGroup(ctx context.Context, groupID, 
 	return &migration, nil
 }
 
-// GetSelectiveDataForGroup retrieves selective data for a group content migration
-func (s *ContentMigrationsService) GetSelectiveDataForGroup(ctx context.Context, groupID, migrationID int64) ([]interface{}, error) {
+// GetSelectiveDataForGroup retrieves selective data for a group content migration.
+// Accepts an optional contentType filter (Canvas param: "type"), uses GetAllPages
+// because the endpoint is paginated, and returns typed []ContentListItem to match
+// the course-scoped ListContentList.
+func (s *ContentMigrationsService) GetSelectiveDataForGroup(ctx context.Context, groupID, migrationID int64, contentType string) ([]ContentListItem, error) {
 	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d/selective_data", groupID, migrationID)
 
-	var result []interface{}
-	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+	if contentType != "" {
+		path += "?type=" + url.QueryEscape(contentType)
+	}
+
+	var result []ContentListItem
+	if err := s.client.GetAllPages(ctx, path, &result); err != nil {
 		return nil, err
 	}
 

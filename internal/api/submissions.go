@@ -232,10 +232,10 @@ type RubricAssessmentParams struct {
 	Comments string
 }
 
-// Grade grades a submission
-func (s *SubmissionsService) Grade(ctx context.Context, courseID, assignmentID, userID int64, params *GradeSubmissionParams) (*Submission, error) {
-	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/submissions/%d", courseID, assignmentID, userID)
-
+// buildGradeSubmissionBody constructs the PUT body for grading a submission.
+// Shared by SubmissionsService.Grade and SectionsService.GradeSubmission to
+// ensure both callers send the full set of fields.
+func buildGradeSubmissionBody(params *GradeSubmissionParams) map[string]interface{} {
 	body := map[string]interface{}{
 		"submission": make(map[string]interface{}),
 	}
@@ -295,6 +295,15 @@ func (s *SubmissionsService) Grade(ctx context.Context, courseID, assignmentID, 
 		}
 		body["rubric_assessment"] = assessment
 	}
+
+	return body
+}
+
+// Grade grades a submission
+func (s *SubmissionsService) Grade(ctx context.Context, courseID, assignmentID, userID int64, params *GradeSubmissionParams) (*Submission, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignments/%d/submissions/%d", courseID, assignmentID, userID)
+
+	body := buildGradeSubmissionBody(params)
 
 	var result Submission
 	if err := s.client.PutJSON(ctx, path, body, &result); err != nil {

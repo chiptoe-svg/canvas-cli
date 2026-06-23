@@ -233,3 +233,81 @@ func TestAccountsService_GetAdminSelf(t *testing.T) {
 		t.Errorf("expected role=AccountAdmin, got %v", result["role"])
 	}
 }
+
+// TestAccountsService_Update_WithStorageQuota asserts that DefaultStorageQuotaMb
+// is sent correctly when set (including value 0), and omitted when nil.
+// The fix changed the field from int (omitempty silently drops 0) to *int.
+func TestAccountsService_Update_WithStorageQuota(t *testing.T) {
+	var receivedQuota interface{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		acct, _ := body["account"].(map[string]interface{})
+		receivedQuota = acct["default_storage_quota_mb"]
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(Account{ID: 1})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server.URL)
+	svc := NewAccountsService(client)
+
+	// With a non-zero quota: field must be present.
+	quota := 500
+	_, err := svc.Update(context.Background(), 1, &UpdateAccountParams{DefaultStorageQuotaMb: &quota})
+	if err != nil {
+		t.Fatalf("Update with quota: %v", err)
+	}
+	if receivedQuota == nil {
+		t.Error("expected default_storage_quota_mb in body when set to non-zero")
+	}
+
+	// With nil quota: field must be absent (omitempty on *int drops nil).
+	_, err = svc.Update(context.Background(), 1, &UpdateAccountParams{Name: "X"})
+	if err != nil {
+		t.Fatalf("Update without quota: %v", err)
+	}
+	if receivedQuota != nil {
+		t.Errorf("expected default_storage_quota_mb absent when nil, got %v", receivedQuota)
+	}
+}
+
+// TestAccountsService_CreateSubAccount_WithStorageQuota mirrors the Update test
+// for CreateSubAccountParams.DefaultStorageQuotaMb.
+func TestAccountsService_CreateSubAccount_WithStorageQuota(t *testing.T) {
+	var receivedQuota interface{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		acct, _ := body["account"].(map[string]interface{})
+		receivedQuota = acct["default_storage_quota_mb"]
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(Account{ID: 2})
+	}))
+	defer server.Close()
+	client := newTestClient(t, server.URL)
+	svc := NewAccountsService(client)
+
+	quota := 1000
+	_, err := svc.CreateSubAccount(context.Background(), 1, &CreateSubAccountParams{
+		Name:                  "Child",
+		DefaultStorageQuotaMb: &quota,
+	})
+	if err != nil {
+		t.Fatalf("CreateSubAccount with quota: %v", err)
+	}
+	if receivedQuota == nil {
+		t.Error("expected default_storage_quota_mb in body when set")
+	}
+}

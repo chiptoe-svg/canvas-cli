@@ -385,3 +385,48 @@ func TestContentMigrationsService_ListContentList_NoType(t *testing.T) {
 		t.Fatalf("ListContentList with no type: %v", err)
 	}
 }
+
+// TestContentMigrationsService_GetSelectiveDataForGroup_TypedReturn asserts
+// that GetSelectiveDataForGroup now accepts a contentType param, uses GetAllPages,
+// and returns typed []ContentListItem (not []interface{}).
+func TestContentMigrationsService_GetSelectiveDataForGroup_TypedReturn(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path != "/api/v1/groups/8/content_migrations/10/selective_data" {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		if got := r.URL.Query().Get("type"); got != "quizzes" {
+			t.Errorf("expected type=quizzes query param, got %q", got)
+		}
+		items := []ContentListItem{
+			{Type: "quiz", Property: "copy[all_quizzes]", Title: "Quiz 1"},
+			{Type: "quiz", Property: "copy[quiz_2]", Title: "Quiz 2"},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(items)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "t"})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	svc := NewContentMigrationsService(client)
+	items, err := svc.GetSelectiveDataForGroup(context.Background(), 8, 10, "quizzes")
+	if err != nil {
+		t.Fatalf("GetSelectiveDataForGroup: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(items))
+	}
+	if items[0].Title != "Quiz 1" {
+		t.Errorf("expected Title 'Quiz 1', got %q", items[0].Title)
+	}
+	if items[0].Type != "quiz" {
+		t.Errorf("expected Type 'quiz', got %q", items[0].Type)
+	}
+}
