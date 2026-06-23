@@ -143,7 +143,7 @@ func TestQuizSubmissionQuestionsService_Flag(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(QuizSubmissionQuestion{ID: 1})
+		json.NewEncoder(w).Encode(QuizSubmissionQuestionsResponse{QuizSubmissionQuestions: []QuizSubmissionQuestion{{ID: 1}}})
 	}))
 	defer server.Close()
 
@@ -173,7 +173,7 @@ func TestQuizSubmissionQuestionsService_Unflag(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(QuizSubmissionQuestion{ID: 1})
+		json.NewEncoder(w).Encode(QuizSubmissionQuestionsResponse{QuizSubmissionQuestions: []QuizSubmissionQuestion{{ID: 1}}})
 	}))
 	defer server.Close()
 

@@ -34,6 +34,13 @@ type AccountCalendarParams struct {
 	AutoSubscribe *bool `json:"auto_subscribe,omitempty"`
 }
 
+// accountCalendarsResponse wraps the Canvas API envelope for account calendar list endpoints.
+// Canvas returns {"account_calendars":[...],"total_results":N} rather than a bare array.
+type accountCalendarsResponse struct {
+	AccountCalendars []AccountCalendar `json:"account_calendars"`
+	TotalResults     int               `json:"total_results"`
+}
+
 // ListAll retrieves all account calendars visible to the current user
 func (s *AccountCalendarsService) ListAll(ctx context.Context, searchTerm string) ([]AccountCalendar, error) {
 	path := "/api/v1/account_calendars"
@@ -44,12 +51,12 @@ func (s *AccountCalendarsService) ListAll(ctx context.Context, searchTerm string
 		path += "?" + query.Encode()
 	}
 
-	var calendars []AccountCalendar
-	if err := s.client.GetAllPages(ctx, path, &calendars); err != nil {
+	var resp accountCalendarsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, fmt.Errorf("listing account calendars: %w", err)
 	}
 
-	return calendars, nil
+	return resp.AccountCalendars, nil
 }
 
 // Get retrieves a single account calendar by account ID
@@ -86,12 +93,12 @@ func (s *AccountCalendarsService) ListForAccount(ctx context.Context, accountID 
 		path += "?" + query.Encode()
 	}
 
-	var calendars []AccountCalendar
-	if err := s.client.GetAllPages(ctx, path, &calendars); err != nil {
+	var resp accountCalendarsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, fmt.Errorf("listing calendars for account %d: %w", accountID, err)
 	}
 
-	return calendars, nil
+	return resp.AccountCalendars, nil
 }
 
 // UpdateForAccount updates account calendars for a specific account

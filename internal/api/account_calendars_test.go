@@ -18,9 +18,11 @@ func TestAccountCalendarsService_ListAll(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]AccountCalendar{
-			{ID: 1, Name: "Main Calendar", Visible: true},
-			{ID: 2, Name: "Sub Calendar", Visible: false},
+		json.NewEncoder(w).Encode(accountCalendarsResponse{
+			AccountCalendars: []AccountCalendar{
+				{ID: 1, Name: "Main Calendar", Visible: true},
+				{ID: 2, Name: "Sub Calendar", Visible: false},
+			},
 		})
 	}))
 	defer server.Close()
@@ -47,8 +49,10 @@ func TestAccountCalendarsService_ListAll_WithSearch(t *testing.T) {
 			t.Errorf("expected search_term=main, got %q", r.URL.Query().Get("search_term"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]AccountCalendar{
-			{ID: 1, Name: "Main Calendar", Visible: true},
+		json.NewEncoder(w).Encode(accountCalendarsResponse{
+			AccountCalendars: []AccountCalendar{
+				{ID: 1, Name: "Main Calendar", Visible: true},
+			},
 		})
 	}))
 	defer server.Close()
@@ -142,9 +146,11 @@ func TestAccountCalendarsService_ListForAccount(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]AccountCalendar{
-			{ID: 1, Name: "Cal A"},
-			{ID: 2, Name: "Cal B"},
+		json.NewEncoder(w).Encode(accountCalendarsResponse{
+			AccountCalendars: []AccountCalendar{
+				{ID: 1, Name: "Cal A"},
+				{ID: 2, Name: "Cal B"},
+			},
 		})
 	}))
 	defer server.Close()

@@ -16,16 +16,21 @@ func NewAccountSISService(client *Client) *AccountSISService {
 	return &AccountSISService{client: client}
 }
 
+// sisImportErrorsResponse wraps the Canvas API envelope for SIS import errors.
+type sisImportErrorsResponse struct {
+	SISImportErrors []interface{} `json:"sis_import_errors"`
+}
+
 // GetSISImportErrors returns all SIS import errors for an account (not scoped to a specific import)
 func (s *AccountSISService) GetSISImportErrors(ctx context.Context, accountID int64) ([]interface{}, error) {
 	path := fmt.Sprintf("/api/v1/accounts/%d/sis_import_errors", accountID)
 
-	var errors []interface{}
-	if err := s.client.GetAllPages(ctx, path, &errors); err != nil {
+	var resp sisImportErrorsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, fmt.Errorf("failed to get SIS import errors: %w", err)
 	}
 
-	return errors, nil
+	return resp.SISImportErrors, nil
 }
 
 // AbortAllPendingSISImports aborts all pending SIS imports for an account
@@ -40,14 +45,19 @@ func (s *AccountSISService) AbortAllPendingSISImports(ctx context.Context, accou
 	return result, nil
 }
 
+// sisImportsResponse wraps the Canvas API envelope for SIS imports.
+type sisImportsResponse struct {
+	SISImports []interface{} `json:"sis_imports"`
+}
+
 // GetImportingSISImports returns SIS imports that are currently being imported for an account
 func (s *AccountSISService) GetImportingSISImports(ctx context.Context, accountID int64) ([]interface{}, error) {
 	path := fmt.Sprintf("/api/v1/accounts/%d/sis_imports/importing", accountID)
 
-	var imports []interface{}
-	if err := s.client.GetAllPages(ctx, path, &imports); err != nil {
+	var resp sisImportsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, fmt.Errorf("failed to get importing SIS imports: %w", err)
 	}
 
-	return imports, nil
+	return resp.SISImports, nil
 }

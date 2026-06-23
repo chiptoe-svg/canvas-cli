@@ -13,10 +13,10 @@ func TestPollListCmd(t *testing.T) {
 			Name: "list polls successfully",
 			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls": cmdtest.NewMockResponse(`[
+				"/api/v1/polls": cmdtest.NewMockResponse(`{"polls":[
 					{"id":1,"question":"What is 2+2?","user_id":10},
 					{"id":2,"question":"Favourite colour?","user_id":10}
-				]`),
+				]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -29,7 +29,7 @@ func TestPollListCmd(t *testing.T) {
 			Name: "list polls - empty",
 			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/polls": cmdtest.NewMockResponse(`{"polls":[]}`),
 			},
 			ExpectError:  false,
 			ExpectOutput: "No polls found",
@@ -50,7 +50,7 @@ func TestPollGetCmd(t *testing.T) {
 			Name: "get poll successfully",
 			Args: []string{"1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1": cmdtest.NewMockResponse(`[{"id":1,"question":"What is 2+2?","user_id":10}]`),
+				"/api/v1/polls/1": cmdtest.NewMockResponse(`{"polls":[{"id":1,"question":"What is 2+2?","user_id":10}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -80,7 +80,7 @@ func TestPollCreateCmd(t *testing.T) {
 			Name: "create poll successfully",
 			Args: []string{"--question", "Which language?"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls": cmdtest.NewMockResponse(`[{"id":5,"question":"Which language?","user_id":10}]`),
+				"/api/v1/polls": cmdtest.NewMockResponse(`{"polls":[{"id":5,"question":"Which language?","user_id":10}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -110,7 +110,7 @@ func TestPollUpdateCmd(t *testing.T) {
 			Name: "update poll successfully",
 			Args: []string{"1", "--question", "Updated question"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1": cmdtest.NewMockResponse(`[{"id":1,"question":"Updated question","user_id":10}]`),
+				"/api/v1/polls/1": cmdtest.NewMockResponse(`{"polls":[{"id":1,"question":"Updated question","user_id":10}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -165,7 +165,7 @@ func TestPollChoiceListCmd(t *testing.T) {
 			Name: "list poll choices successfully",
 			Args: []string{"--poll-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_choices": cmdtest.NewMockResponse(`[{"id":10,"poll_id":1,"text":"Option A","is_correct":true}]`),
+				"/api/v1/polls/1/poll_choices": cmdtest.NewMockResponse(`{"poll_choices":[{"id":10,"poll_id":1,"text":"Option A","is_correct":true}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -195,7 +195,7 @@ func TestPollChoiceGetCmd(t *testing.T) {
 			Name: "get poll choice successfully",
 			Args: []string{"10", "--poll-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_choices/10": cmdtest.NewMockResponse(`[{"id":10,"poll_id":1,"text":"Option A","is_correct":true}]`),
+				"/api/v1/polls/1/poll_choices/10": cmdtest.NewMockResponse(`{"poll_choices":[{"id":10,"poll_id":1,"text":"Option A","is_correct":true}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -225,7 +225,7 @@ func TestPollChoiceCreateCmd(t *testing.T) {
 			Name: "create poll choice successfully",
 			Args: []string{"--poll-id", "1", "--text", "Paris"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_choices": cmdtest.NewMockResponse(`[{"id":20,"poll_id":1,"text":"Paris","is_correct":true}]`),
+				"/api/v1/polls/1/poll_choices": cmdtest.NewMockResponse(`{"poll_choices":[{"id":20,"poll_id":1,"text":"Paris","is_correct":true}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -280,7 +280,7 @@ func TestPollSessionListCmd(t *testing.T) {
 			Name: "list poll sessions successfully",
 			Args: []string{"--poll-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_sessions": cmdtest.NewMockResponse(`[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]`),
+				"/api/v1/polls/1/poll_sessions": cmdtest.NewMockResponse(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -310,7 +310,7 @@ func TestPollSessionCreateCmd(t *testing.T) {
 			Name: "create poll session successfully",
 			Args: []string{"--poll-id", "1", "--course-id", "999"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_sessions": cmdtest.NewMockResponse(`[{"id":101,"poll_id":1,"course_id":999,"is_published":false}]`),
+				"/api/v1/polls/1/poll_sessions": cmdtest.NewMockResponse(`{"poll_sessions":[{"id":101,"poll_id":1,"course_id":999,"is_published":false}]}`),
 			},
 			ExpectError: false,
 			ValidateOutput: func(t *testing.T, output string) {
@@ -340,7 +340,7 @@ func TestPollSessionOpenCmd(t *testing.T) {
 			Name: "open poll session successfully",
 			Args: []string{"100", "--poll-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_sessions/100/open": cmdtest.NewMockResponse(`[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]`),
+				"/api/v1/polls/1/poll_sessions/100/open": cmdtest.NewMockResponse(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]}`),
 			},
 			ExpectError: false,
 		},
@@ -365,7 +365,7 @@ func TestPollSessionCloseCmd(t *testing.T) {
 			Name: "close poll session successfully",
 			Args: []string{"100", "--poll-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_sessions/100/close": cmdtest.NewMockResponse(`[{"id":100,"poll_id":1,"course_id":999,"is_published":false}]`),
+				"/api/v1/polls/1/poll_sessions/100/close": cmdtest.NewMockResponse(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":false}]}`),
 			},
 			ExpectError: false,
 		},
@@ -385,7 +385,7 @@ func TestPollSessionListOpenedCmd(t *testing.T) {
 			Name: "list opened poll sessions successfully",
 			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/poll_sessions/opened": cmdtest.NewMockResponse(`[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]`),
+				"/api/v1/poll_sessions/opened": cmdtest.NewMockResponse(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]}`),
 			},
 			ExpectError: false,
 		},
@@ -393,7 +393,7 @@ func TestPollSessionListOpenedCmd(t *testing.T) {
 			Name: "list opened poll sessions - empty",
 			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/poll_sessions/opened": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/poll_sessions/opened": cmdtest.NewMockResponse(`{"poll_sessions":[]}`),
 			},
 			ExpectError:  false,
 			ExpectOutput: "No open poll sessions found",
@@ -414,7 +414,7 @@ func TestPollSessionListClosedCmd(t *testing.T) {
 			Name: "list closed poll sessions successfully",
 			Args: []string{},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/poll_sessions/closed": cmdtest.NewMockResponse(`[{"id":50,"poll_id":2,"course_id":888,"is_published":false}]`),
+				"/api/v1/poll_sessions/closed": cmdtest.NewMockResponse(`{"poll_sessions":[{"id":50,"poll_id":2,"course_id":888,"is_published":false}]}`),
 			},
 			ExpectError: false,
 		},
@@ -434,7 +434,7 @@ func TestPollSubmissionGetCmd(t *testing.T) {
 			Name: "get poll submission successfully",
 			Args: []string{"200", "--poll-id", "1", "--session-id", "100"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_sessions/100/poll_submissions/200": cmdtest.NewMockResponse(`[{"id":200,"poll_choice_id":10,"user_id":42}]`),
+				"/api/v1/polls/1/poll_sessions/100/poll_submissions/200": cmdtest.NewMockResponse(`{"poll_submissions":[{"id":200,"poll_choice_id":10,"user_id":42}]}`),
 			},
 			ExpectError: false,
 		},
@@ -459,7 +459,7 @@ func TestPollSubmissionCreateCmd(t *testing.T) {
 			Name: "create poll submission successfully",
 			Args: []string{"--poll-id", "1", "--session-id", "100", "--choice-id", "10"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_sessions/100/poll_submissions": cmdtest.NewMockResponse(`[{"id":201,"poll_choice_id":10,"user_id":42}]`),
+				"/api/v1/polls/1/poll_sessions/100/poll_submissions": cmdtest.NewMockResponse(`{"poll_submissions":[{"id":201,"poll_choice_id":10,"user_id":42}]}`),
 			},
 			ExpectError: false,
 		},

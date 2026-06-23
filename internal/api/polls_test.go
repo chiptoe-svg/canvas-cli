@@ -22,7 +22,7 @@ func TestPollsService_ListPolls(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":1,"question":"What is 2+2?","user_id":10},{"id":2,"question":"Favourite colour?","user_id":10}]`))
+		w.Write([]byte(`{"polls":[{"id":1,"question":"What is 2+2?","user_id":10},{"id":2,"question":"Favourite colour?","user_id":10}]}`))
 	}))
 	defer server.Close()
 
@@ -52,7 +52,7 @@ func TestPollsService_GetPoll(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":1,"question":"What is 2+2?","description":"Math check","user_id":10}]`))
+		w.Write([]byte(`{"polls":[{"id":1,"question":"What is 2+2?","description":"Math check","user_id":10}]}`))
 	}))
 	defer server.Close()
 
@@ -100,7 +100,7 @@ func TestPollsService_CreatePoll(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":5,"question":"What is Go?","description":"A Go question","user_id":10}]`))
+		w.Write([]byte(`{"polls":[{"id":5,"question":"What is Go?","description":"A Go question","user_id":10}]}`))
 	}))
 	defer server.Close()
 
@@ -133,7 +133,7 @@ func TestPollsService_UpdatePoll(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":1,"question":"Updated question","user_id":10}]`))
+		w.Write([]byte(`{"polls":[{"id":1,"question":"Updated question","user_id":10}]}`))
 	}))
 	defer server.Close()
 
@@ -186,7 +186,7 @@ func TestPollsService_ListPollChoices(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":10,"poll_id":1,"text":"Option A","is_correct":true,"position":1}]`))
+		w.Write([]byte(`{"poll_choices":[{"id":10,"poll_id":1,"text":"Option A","is_correct":true,"position":1}]}`))
 	}))
 	defer server.Close()
 
@@ -216,7 +216,7 @@ func TestPollsService_GetPollChoice(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":10,"poll_id":1,"text":"Option A","is_correct":true,"position":1}]`))
+		w.Write([]byte(`{"poll_choices":[{"id":10,"poll_id":1,"text":"Option A","is_correct":true,"position":1}]}`))
 	}))
 	defer server.Close()
 
@@ -246,7 +246,7 @@ func TestPollsService_CreatePollChoice(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":20,"poll_id":1,"text":"Paris","is_correct":true,"position":1}]`))
+		w.Write([]byte(`{"poll_choices":[{"id":20,"poll_id":1,"text":"Paris","is_correct":true,"position":1}]}`))
 	}))
 	defer server.Close()
 
@@ -282,7 +282,7 @@ func TestPollsService_UpdatePollChoice(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":10,"poll_id":1,"text":"Updated Option","is_correct":false,"position":2}]`))
+		w.Write([]byte(`{"poll_choices":[{"id":10,"poll_id":1,"text":"Updated Option","is_correct":false,"position":2}]}`))
 	}))
 	defer server.Close()
 
@@ -338,7 +338,7 @@ func TestPollsService_ListPollSessions(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]}`))
 	}))
 	defer server.Close()
 
@@ -368,7 +368,7 @@ func TestPollsService_GetPollSession(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":100,"poll_id":1,"course_id":999,"is_published":false,"has_public_results":true}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":false,"has_public_results":true}]}`))
 	}))
 	defer server.Close()
 
@@ -398,7 +398,7 @@ func TestPollsService_CreatePollSession(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":101,"poll_id":1,"course_id":999,"is_published":false}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":101,"poll_id":1,"course_id":999,"is_published":false}]}`))
 	}))
 	defer server.Close()
 
@@ -431,7 +431,7 @@ func TestPollsService_UpdatePollSession(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":100,"poll_id":1,"course_id":999,"is_published":false,"has_public_results":false}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":false,"has_public_results":false}]}`))
 	}))
 	defer server.Close()
 
@@ -485,7 +485,7 @@ func TestPollsService_OpenPollSession(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]}`))
 	}))
 	defer server.Close()
 
@@ -512,7 +512,7 @@ func TestPollsService_ClosePollSession(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":100,"poll_id":1,"course_id":999,"is_published":false}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":false}]}`))
 	}))
 	defer server.Close()
 
@@ -539,7 +539,7 @@ func TestPollsService_ListOpenedPollSessions(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":100,"poll_id":1,"course_id":999,"is_published":true}]}`))
 	}))
 	defer server.Close()
 
@@ -566,7 +566,7 @@ func TestPollsService_ListClosedPollSessions(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":50,"poll_id":2,"course_id":888,"is_published":false}]`))
+		w.Write([]byte(`{"poll_sessions":[{"id":50,"poll_id":2,"course_id":888,"is_published":false}]}`))
 	}))
 	defer server.Close()
 
@@ -593,7 +593,7 @@ func TestPollsService_GetPollSubmission(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":200,"poll_choice_id":10,"user_id":42}]`))
+		w.Write([]byte(`{"poll_submissions":[{"id":200,"poll_choice_id":10,"user_id":42}]}`))
 	}))
 	defer server.Close()
 
@@ -623,7 +623,7 @@ func TestPollsService_CreatePollSubmission(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[{"id":201,"poll_choice_id":10,"user_id":42}]`))
+		w.Write([]byte(`{"poll_submissions":[{"id":201,"poll_choice_id":10,"user_id":42}]}`))
 	}))
 	defer server.Close()
 

@@ -96,12 +96,16 @@ func (s *QuizSubmissionQuestionsService) Flag(ctx context.Context, submissionID,
 		"validation_token": validationToken,
 	}
 
-	var question QuizSubmissionQuestion
-	if err := s.client.PutJSON(ctx, path, body, &question); err != nil {
+	var resp QuizSubmissionQuestionsResponse
+	if err := s.client.PutJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	return &question, nil
+	if len(resp.QuizSubmissionQuestions) == 0 {
+		return nil, fmt.Errorf("unexpected empty response from flag operation")
+	}
+
+	return &resp.QuizSubmissionQuestions[0], nil
 }
 
 // UnflagQuizSubmissionQuestion removes a flag from a question in a quiz submission.
@@ -114,10 +118,14 @@ func (s *QuizSubmissionQuestionsService) Unflag(ctx context.Context, submissionI
 		"validation_token": validationToken,
 	}
 
-	var question QuizSubmissionQuestion
-	if err := s.client.PutJSON(ctx, path, body, &question); err != nil {
+	var resp QuizSubmissionQuestionsResponse
+	if err := s.client.PutJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	return &question, nil
+	if len(resp.QuizSubmissionQuestions) == 0 {
+		return nil, fmt.Errorf("unexpected empty response from unflag operation")
+	}
+
+	return &resp.QuizSubmissionQuestions[0], nil
 }

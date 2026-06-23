@@ -49,6 +49,26 @@ type PollSubmission struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// pollsResponse wraps the Canvas API envelope for polls endpoints.
+type pollsResponse struct {
+	Polls []Poll `json:"polls"`
+}
+
+// pollChoicesResponse wraps the Canvas API envelope for poll_choices endpoints.
+type pollChoicesResponse struct {
+	PollChoices []PollChoice `json:"poll_choices"`
+}
+
+// pollSessionsResponse wraps the Canvas API envelope for poll_sessions endpoints.
+type pollSessionsResponse struct {
+	PollSessions []PollSession `json:"poll_sessions"`
+}
+
+// pollSubmissionsResponse wraps the Canvas API envelope for poll_submissions endpoints.
+type pollSubmissionsResponse struct {
+	PollSubmissions []PollSubmission `json:"poll_submissions"`
+}
+
 // PollsService handles poll-related API calls
 type PollsService struct {
 	client *Client
@@ -65,29 +85,28 @@ func NewPollsService(client *Client) *PollsService {
 func (s *PollsService) ListPolls(ctx context.Context) ([]Poll, error) {
 	path := "/api/v1/polls"
 
-	var polls []Poll
-	if err := s.client.GetAllPages(ctx, path, &polls); err != nil {
+	var resp pollsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	return polls, nil
+	return resp.Polls, nil
 }
 
 // GetPoll retrieves a single poll by ID
 func (s *PollsService) GetPoll(ctx context.Context, pollID int64) (*Poll, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d", pollID)
 
-	// Canvas wraps the object in a single-element array
-	var polls []Poll
-	if err := s.client.GetJSON(ctx, path, &polls); err != nil {
+	var resp pollsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(polls) == 0 {
+	if len(resp.Polls) == 0 {
 		return nil, fmt.Errorf("poll %d not found", pollID)
 	}
 
-	return &polls[0], nil
+	return &resp.Polls[0], nil
 }
 
 // CreatePollParams holds parameters for creating a poll
@@ -112,16 +131,16 @@ func (s *PollsService) CreatePoll(ctx context.Context, params *CreatePollParams)
 		"polls": []interface{}{pollData},
 	}
 
-	var polls []Poll
-	if err := s.client.PostJSON(ctx, path, body, &polls); err != nil {
+	var resp pollsResponse
+	if err := s.client.PostJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(polls) == 0 {
+	if len(resp.Polls) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll creation")
 	}
 
-	return &polls[0], nil
+	return &resp.Polls[0], nil
 }
 
 // UpdatePollParams holds parameters for updating a poll
@@ -148,16 +167,16 @@ func (s *PollsService) UpdatePoll(ctx context.Context, pollID int64, params *Upd
 		"polls": []interface{}{pollData},
 	}
 
-	var polls []Poll
-	if err := s.client.PutJSON(ctx, path, body, &polls); err != nil {
+	var resp pollsResponse
+	if err := s.client.PutJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(polls) == 0 {
+	if len(resp.Polls) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll update")
 	}
 
-	return &polls[0], nil
+	return &resp.Polls[0], nil
 }
 
 // DeletePoll removes a poll and all associated data
@@ -173,28 +192,28 @@ func (s *PollsService) DeletePoll(ctx context.Context, pollID int64) error {
 func (s *PollsService) ListPollChoices(ctx context.Context, pollID int64) ([]PollChoice, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_choices", pollID)
 
-	var choices []PollChoice
-	if err := s.client.GetAllPages(ctx, path, &choices); err != nil {
+	var resp pollChoicesResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	return choices, nil
+	return resp.PollChoices, nil
 }
 
 // GetPollChoice retrieves a single poll choice
 func (s *PollsService) GetPollChoice(ctx context.Context, pollID, choiceID int64) (*PollChoice, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_choices/%d", pollID, choiceID)
 
-	var choices []PollChoice
-	if err := s.client.GetJSON(ctx, path, &choices); err != nil {
+	var resp pollChoicesResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(choices) == 0 {
+	if len(resp.PollChoices) == 0 {
 		return nil, fmt.Errorf("poll choice %d not found", choiceID)
 	}
 
-	return &choices[0], nil
+	return &resp.PollChoices[0], nil
 }
 
 // CreatePollChoiceParams holds parameters for creating a poll choice
@@ -224,16 +243,16 @@ func (s *PollsService) CreatePollChoice(ctx context.Context, pollID int64, param
 		"poll_choices": []interface{}{choiceData},
 	}
 
-	var choices []PollChoice
-	if err := s.client.PostJSON(ctx, path, body, &choices); err != nil {
+	var resp pollChoicesResponse
+	if err := s.client.PostJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(choices) == 0 {
+	if len(resp.PollChoices) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll choice creation")
 	}
 
-	return &choices[0], nil
+	return &resp.PollChoices[0], nil
 }
 
 // UpdatePollChoiceParams holds parameters for updating a poll choice
@@ -265,16 +284,16 @@ func (s *PollsService) UpdatePollChoice(ctx context.Context, pollID, choiceID in
 		"poll_choices": []interface{}{choiceData},
 	}
 
-	var choices []PollChoice
-	if err := s.client.PutJSON(ctx, path, body, &choices); err != nil {
+	var resp pollChoicesResponse
+	if err := s.client.PutJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(choices) == 0 {
+	if len(resp.PollChoices) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll choice update")
 	}
 
-	return &choices[0], nil
+	return &resp.PollChoices[0], nil
 }
 
 // DeletePollChoice removes a poll choice
@@ -290,28 +309,28 @@ func (s *PollsService) DeletePollChoice(ctx context.Context, pollID, choiceID in
 func (s *PollsService) ListPollSessions(ctx context.Context, pollID int64) ([]PollSession, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_sessions", pollID)
 
-	var sessions []PollSession
-	if err := s.client.GetAllPages(ctx, path, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	return sessions, nil
+	return resp.PollSessions, nil
 }
 
 // GetPollSession retrieves a single poll session
 func (s *PollsService) GetPollSession(ctx context.Context, pollID, sessionID int64) (*PollSession, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_sessions/%d", pollID, sessionID)
 
-	var sessions []PollSession
-	if err := s.client.GetJSON(ctx, path, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(sessions) == 0 {
+	if len(resp.PollSessions) == 0 {
 		return nil, fmt.Errorf("poll session %d not found", sessionID)
 	}
 
-	return &sessions[0], nil
+	return &resp.PollSessions[0], nil
 }
 
 // CreatePollSessionParams holds parameters for creating a poll session
@@ -341,16 +360,16 @@ func (s *PollsService) CreatePollSession(ctx context.Context, pollID int64, para
 		"poll_sessions": []interface{}{sessionData},
 	}
 
-	var sessions []PollSession
-	if err := s.client.PostJSON(ctx, path, body, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.PostJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(sessions) == 0 {
+	if len(resp.PollSessions) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll session creation")
 	}
 
-	return &sessions[0], nil
+	return &resp.PollSessions[0], nil
 }
 
 // UpdatePollSessionParams holds parameters for updating a poll session
@@ -382,16 +401,16 @@ func (s *PollsService) UpdatePollSession(ctx context.Context, pollID, sessionID 
 		"poll_sessions": []interface{}{sessionData},
 	}
 
-	var sessions []PollSession
-	if err := s.client.PutJSON(ctx, path, body, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.PutJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(sessions) == 0 {
+	if len(resp.PollSessions) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll session update")
 	}
 
-	return &sessions[0], nil
+	return &resp.PollSessions[0], nil
 }
 
 // DeletePollSession removes a poll session
@@ -405,56 +424,56 @@ func (s *PollsService) DeletePollSession(ctx context.Context, pollID, sessionID 
 func (s *PollsService) OpenPollSession(ctx context.Context, pollID, sessionID int64) (*PollSession, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_sessions/%d/open", pollID, sessionID)
 
-	var sessions []PollSession
-	if err := s.client.GetJSON(ctx, path, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(sessions) == 0 {
+	if len(resp.PollSessions) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll session open")
 	}
 
-	return &sessions[0], nil
+	return &resp.PollSessions[0], nil
 }
 
 // ClosePollSession closes a poll session to stop accepting submissions
 func (s *PollsService) ClosePollSession(ctx context.Context, pollID, sessionID int64) (*PollSession, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_sessions/%d/close", pollID, sessionID)
 
-	var sessions []PollSession
-	if err := s.client.GetJSON(ctx, path, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(sessions) == 0 {
+	if len(resp.PollSessions) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll session close")
 	}
 
-	return &sessions[0], nil
+	return &resp.PollSessions[0], nil
 }
 
 // ListOpenedPollSessions returns all currently open poll sessions across all polls
 func (s *PollsService) ListOpenedPollSessions(ctx context.Context) ([]PollSession, error) {
 	path := "/api/v1/poll_sessions/opened"
 
-	var sessions []PollSession
-	if err := s.client.GetAllPages(ctx, path, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	return sessions, nil
+	return resp.PollSessions, nil
 }
 
 // ListClosedPollSessions returns all closed poll sessions across all polls
 func (s *PollsService) ListClosedPollSessions(ctx context.Context) ([]PollSession, error) {
 	path := "/api/v1/poll_sessions/closed"
 
-	var sessions []PollSession
-	if err := s.client.GetAllPages(ctx, path, &sessions); err != nil {
+	var resp pollSessionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	return sessions, nil
+	return resp.PollSessions, nil
 }
 
 // ---- Poll Submission ----
@@ -463,16 +482,16 @@ func (s *PollsService) ListClosedPollSessions(ctx context.Context) ([]PollSessio
 func (s *PollsService) GetPollSubmission(ctx context.Context, pollID, sessionID, submissionID int64) (*PollSubmission, error) {
 	path := fmt.Sprintf("/api/v1/polls/%d/poll_sessions/%d/poll_submissions/%d", pollID, sessionID, submissionID)
 
-	var subs []PollSubmission
-	if err := s.client.GetJSON(ctx, path, &subs); err != nil {
+	var resp pollSubmissionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(subs) == 0 {
+	if len(resp.PollSubmissions) == 0 {
 		return nil, fmt.Errorf("poll submission %d not found", submissionID)
 	}
 
-	return &subs[0], nil
+	return &resp.PollSubmissions[0], nil
 }
 
 // CreatePollSubmissionParams holds parameters for creating a poll submission (student vote)
@@ -492,16 +511,16 @@ func (s *PollsService) CreatePollSubmission(ctx context.Context, pollID, session
 		},
 	}
 
-	var subs []PollSubmission
-	if err := s.client.PostJSON(ctx, path, body, &subs); err != nil {
+	var resp pollSubmissionsResponse
+	if err := s.client.PostJSON(ctx, path, body, &resp); err != nil {
 		return nil, err
 	}
 
-	if len(subs) == 0 {
+	if len(resp.PollSubmissions) == 0 {
 		return nil, fmt.Errorf("unexpected empty response from poll submission creation")
 	}
 
-	return &subs[0], nil
+	return &resp.PollSubmissions[0], nil
 }
 
 // ListPollSubmissionsOptions holds query options for listing poll submissions
@@ -538,10 +557,10 @@ func (s *PollsService) ListPollSubmissions(ctx context.Context, pollID, sessionI
 		path += "?" + q.Encode()
 	}
 
-	var subs []PollSubmission
-	if err := s.client.GetAllPages(ctx, path, &subs); err != nil {
+	var resp pollSubmissionsResponse
+	if err := s.client.GetJSON(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	return subs, nil
+	return resp.PollSubmissions, nil
 }

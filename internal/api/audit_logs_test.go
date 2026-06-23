@@ -17,8 +17,8 @@ func TestAuditLogsService_ListAuthenticationForAccount(t *testing.T) {
 		if r.URL.Path != "/api/v1/audit/authentication/accounts/1" || r.Method != http.MethodGet {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		events := []AuditLogEvent{{ID: "evt1", EventType: "login"}}
-		if err := json.NewEncoder(w).Encode(events); err != nil {
+		resp := auditLogResponse{Events: []AuditLogEvent{{ID: "evt1", EventType: "login"}}}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
@@ -45,8 +45,8 @@ func TestAuditLogsService_ListAuthenticationForUser(t *testing.T) {
 		if r.URL.Path != "/api/v1/audit/authentication/users/5" || r.Method != http.MethodGet {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		events := []AuditLogEvent{{ID: "e2", EventType: "logout"}}
-		if err := json.NewEncoder(w).Encode(events); err != nil {
+		resp := auditLogResponse{Events: []AuditLogEvent{{ID: "e2", EventType: "logout"}}}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
@@ -73,8 +73,8 @@ func TestAuditLogsService_ListAuthenticationForLogin(t *testing.T) {
 		if r.URL.Path != "/api/v1/audit/authentication/logins/10" || r.Method != http.MethodGet {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		events := []AuditLogEvent{{ID: "e3", EventType: "login"}}
-		if err := json.NewEncoder(w).Encode(events); err != nil {
+		resp := auditLogResponse{Events: []AuditLogEvent{{ID: "e3", EventType: "login"}}}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
@@ -101,8 +101,8 @@ func TestAuditLogsService_ListGradeChangeEvents(t *testing.T) {
 		if r.URL.Path != "/api/v1/audit/grade_change" || r.Method != http.MethodGet {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		events := []AuditLogEvent{{ID: "gc1", EventType: "grade_change"}}
-		if err := json.NewEncoder(w).Encode(events); err != nil {
+		resp := auditLogResponse{Events: []AuditLogEvent{{ID: "gc1", EventType: "grade_change"}}}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
@@ -129,8 +129,8 @@ func TestAuditLogsService_ListGradeChangeForCourse(t *testing.T) {
 		if r.URL.Path != "/api/v1/audit/grade_change/courses/20" || r.Method != http.MethodGet {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		events := []AuditLogEvent{{ID: "gc2"}}
-		if err := json.NewEncoder(w).Encode(events); err != nil {
+		resp := auditLogResponse{Events: []AuditLogEvent{{ID: "gc2"}}}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
