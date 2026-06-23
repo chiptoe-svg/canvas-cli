@@ -172,6 +172,12 @@ func (s *FilesService) UploadToUser(ctx context.Context, userID int64, filePath 
 	return s.upload(ctx, uploadPath, filePath, params)
 }
 
+// UploadToGroup uploads a file to a Canvas group's files.
+func (s *FilesService) UploadToGroup(ctx context.Context, groupID int64, filePath string, params *UploadParams) (*Attachment, error) {
+	uploadPath := fmt.Sprintf("/api/v1/groups/%d/files", groupID)
+	return s.upload(ctx, uploadPath, filePath, params)
+}
+
 // upload is a helper that handles the Canvas three-step upload process
 // Step 1: Request upload parameters from Canvas
 // Step 2: Upload file to the provided URL using multipart/form-data with upload_params
@@ -501,4 +507,228 @@ func (s *FilesService) GetUserQuota(ctx context.Context, userID int64) (*QuotaIn
 type QuotaInfo struct {
 	QuotaUsed int64 `json:"quota_used"`
 	Quota     int64 `json:"quota"`
+}
+
+// ListGroupFiles retrieves files for a group
+func (s *FilesService) ListGroupFiles(ctx context.Context, groupID int64, opts *ListFilesOptions) ([]Attachment, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/files", groupID)
+	return s.listFiles(ctx, path, opts)
+}
+
+// GetGroupQuota retrieves quota information for a group
+func (s *FilesService) GetGroupQuota(ctx context.Context, groupID int64) (*QuotaInfo, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/files/quota", groupID)
+	var quota QuotaInfo
+	if err := s.client.GetJSON(ctx, path, &quota); err != nil {
+		return nil, err
+	}
+	return &quota, nil
+}
+
+// ResetVerifier resets the link verifier for a file.
+// Any existing links using the previous verifier parameter will no longer work.
+func (s *FilesService) ResetVerifier(ctx context.Context, fileID int64) (*Attachment, error) {
+	if err := ValidatePositiveID(fileID, "file_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/files/%d/reset_verifier", fileID)
+
+	var file Attachment
+	if err := s.client.PostJSON(ctx, path, nil, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
+
+// CopyFileParams holds parameters for copying a file into a folder
+type CopyFileParams struct {
+	SourceFileID int64
+	OnDuplicate  string // overwrite | rename
+}
+
+// CopyFile copies a file from elsewhere in Canvas into a destination folder.
+func (s *FilesService) CopyFile(ctx context.Context, destFolderID int64, params *CopyFileParams) (*Attachment, error) {
+	if err := ValidatePositiveID(destFolderID, "dest_folder_id"); err != nil {
+		return nil, err
+	}
+	if params == nil {
+		return nil, ErrNilParams
+	}
+	if err := ValidatePositiveID(params.SourceFileID, "source_file_id"); err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/folders/%d/copy_file", destFolderID)
+
+	body := map[string]interface{}{
+		"source_file_id": params.SourceFileID,
+	}
+	if params.OnDuplicate != "" {
+		body["on_duplicate"] = params.OnDuplicate
+	}
+
+	var file Attachment
+	if err := s.client.PostJSON(ctx, path, body, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
+
+// UsageRights represents copyright and license information for files
+type UsageRights struct {
+	UseJustification string `json:"use_justification"`
+	LegalCopyright   string `json:"legal_copyright,omitempty"`
+	License          string `json:"license,omitempty"`
+	LicenseName      string `json:"license_name,omitempty"`
+	Message          string `json:"message,omitempty"`
+	Restricted       bool   `json:"restricted,omitempty"`
+}
+
+// SetUsageRightsParams holds parameters for setting usage rights on files
+type SetUsageRightsParams struct {
+	FileIDs          []int64
+	FolderIDs        []int64
+	Publish          bool
+	UseJustification string // required: own_copyright|used_by_permission|fair_use|public_domain|creative_commons
+	LegalCopyright   string
+	License          string // required if UseJustification == "creative_commons"
+}
+
+// ContentLicense represents an available content license
+type ContentLicense struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+// filesUsageRightsContextPath returns the context path segment for usage rights.
+// Exactly one of courseID, groupID, userID must be positive.
+func filesUsageRightsContextPath(courseID, groupID, userID int64) (string, error) {
+	positive := 0
+	if courseID > 0 {
+		positive++
+	}
+	if groupID > 0 {
+		positive++
+	}
+	if userID > 0 {
+		positive++
+	}
+	if positive == 0 {
+		return "", fmt.Errorf("one of course-id, group-id, or user-id is required")
+	}
+	if positive > 1 {
+		return "", fmt.Errorf("specify only one of course-id, group-id, or user-id")
+	}
+	switch {
+	case courseID > 0:
+		return fmt.Sprintf("courses/%d", courseID), nil
+	case groupID > 0:
+		return fmt.Sprintf("groups/%d", groupID), nil
+	default:
+		return fmt.Sprintf("users/%d", userID), nil
+	}
+}
+
+// SetUsageRights sets copyright and license information on files.
+func (s *FilesService) SetUsageRights(ctx context.Context, courseID, groupID, userID int64, params *SetUsageRightsParams) (*UsageRights, error) {
+	if params == nil {
+		return nil, ErrNilParams
+	}
+	if err := ValidateNonEmpty(params.UseJustification, "use_justification"); err != nil {
+		return nil, err
+	}
+	if len(params.FileIDs) == 0 && len(params.FolderIDs) == 0 {
+		return nil, fmt.Errorf("at least one file-id or folder-id is required")
+	}
+
+	ctxSeg, err := filesUsageRightsContextPath(courseID, groupID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/%s/usage_rights", ctxSeg)
+
+	body := map[string]interface{}{
+		"usage_rights[use_justification]": params.UseJustification,
+	}
+	if len(params.FileIDs) > 0 {
+		body["file_ids"] = params.FileIDs
+	}
+	if len(params.FolderIDs) > 0 {
+		body["folder_ids"] = params.FolderIDs
+	}
+	if params.Publish {
+		body["publish"] = true
+	}
+	if params.LegalCopyright != "" {
+		body["usage_rights[legal_copyright]"] = params.LegalCopyright
+	}
+	if params.License != "" {
+		body["usage_rights[license]"] = params.License
+	}
+
+	var rights UsageRights
+	if err := s.client.PutJSON(ctx, path, body, &rights); err != nil {
+		return nil, err
+	}
+
+	return &rights, nil
+}
+
+// RemoveUsageRightsParams holds parameters for removing usage rights
+type RemoveUsageRightsParams struct {
+	FileIDs   []int64
+	FolderIDs []int64
+}
+
+// RemoveUsageRights removes copyright and license information from files.
+func (s *FilesService) RemoveUsageRights(ctx context.Context, courseID, groupID, userID int64, params *RemoveUsageRightsParams) error {
+	if params == nil {
+		return ErrNilParams
+	}
+	if len(params.FileIDs) == 0 && len(params.FolderIDs) == 0 {
+		return fmt.Errorf("at least one file-id or folder-id is required")
+	}
+
+	ctxSeg, err := filesUsageRightsContextPath(courseID, groupID, userID)
+	if err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("/api/v1/%s/usage_rights", ctxSeg)
+
+	query := url.Values{}
+	for _, id := range params.FileIDs {
+		query.Add("file_ids[]", strconv.FormatInt(id, 10))
+	}
+	for _, id := range params.FolderIDs {
+		query.Add("folder_ids[]", strconv.FormatInt(id, 10))
+	}
+	if len(query) > 0 {
+		path += "?" + query.Encode()
+	}
+
+	_, err = s.client.Delete(ctx, path)
+	return err
+}
+
+// ListLicenses returns the list of licenses that can be applied to files.
+func (s *FilesService) ListLicenses(ctx context.Context, courseID, groupID, userID int64) ([]ContentLicense, error) {
+	ctxSeg, err := filesUsageRightsContextPath(courseID, groupID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/%s/content_licenses", ctxSeg)
+
+	var licenses []ContentLicense
+	if err := s.client.GetAllPages(ctx, path, &licenses); err != nil {
+		return nil, err
+	}
+
+	return licenses, nil
 }

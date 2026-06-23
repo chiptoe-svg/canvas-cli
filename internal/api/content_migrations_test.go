@@ -206,8 +206,8 @@ func TestContentMigrationsService_ListContentList(t *testing.T) {
 			return
 		}
 
-		if r.URL.Path != "/api/v1/courses/1/content_migrations/123/content_list" {
-			t.Errorf("Expected path /api/v1/courses/1/content_migrations/123/content_list, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/courses/1/content_migrations/123/selective_data" {
+			t.Errorf("Expected path /api/v1/courses/1/content_migrations/123/selective_data, got %s", r.URL.Path)
 		}
 
 		items := []ContentListItem{

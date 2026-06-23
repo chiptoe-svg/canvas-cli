@@ -397,8 +397,8 @@ func TestEnrollmentsService_UpdateLastAttended(t *testing.T) {
 			return
 		}
 
-		if r.URL.Path != "/api/v1/courses/123/enrollments/456/last_attended" {
-			t.Errorf("Expected path /api/v1/courses/123/enrollments/456/last_attended, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/courses/123/users/456/last_attended" {
+			t.Errorf("Expected path /api/v1/courses/123/users/456/last_attended, got %s", r.URL.Path)
 		}
 		if r.Method != http.MethodPut {
 			t.Errorf("Expected PUT method, got %s", r.Method)

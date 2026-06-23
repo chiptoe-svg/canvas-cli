@@ -66,6 +66,9 @@ test/fixtures/*.json
 
 .ai
 
+# Canvas Swagger cache (populated by `make spec-sync`; re-fetch by deleting this dir)
+.canvas-spec/
+
 site/
 
 # Claude session files

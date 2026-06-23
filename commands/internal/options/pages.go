@@ -2,9 +2,21 @@ package options
 
 import "fmt"
 
+// pagesValidateContext checks that exactly one of courseID or groupID is set.
+func pagesValidateContext(courseID, groupID int64) error {
+	if courseID > 0 && groupID > 0 {
+		return fmt.Errorf("specify either --course-id or --group-id, not both")
+	}
+	if courseID <= 0 && groupID <= 0 {
+		return fmt.Errorf("one of --course-id or --group-id is required")
+	}
+	return nil
+}
+
 // PagesListOptions contains options for listing pages
 type PagesListOptions struct {
 	CourseID   int64
+	GroupID    int64
 	Sort       string
 	Order      string
 	SearchTerm string
@@ -14,22 +26,20 @@ type PagesListOptions struct {
 
 // Validate validates the options
 func (o *PagesListOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
-	}
-	return nil
+	return pagesValidateContext(o.CourseID, o.GroupID)
 }
 
 // PagesGetOptions contains options for getting a page
 type PagesGetOptions struct {
 	CourseID int64
+	GroupID  int64
 	URLOrID  string
 }
 
 // Validate validates the options
 func (o *PagesGetOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
+	if err := pagesValidateContext(o.CourseID, o.GroupID); err != nil {
+		return err
 	}
 	if o.URLOrID == "" {
 		return fmt.Errorf("page url or id is required")
@@ -40,19 +50,18 @@ func (o *PagesGetOptions) Validate() error {
 // PagesFrontOptions contains options for getting the front page
 type PagesFrontOptions struct {
 	CourseID int64
+	GroupID  int64
 }
 
 // Validate validates the options
 func (o *PagesFrontOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
-	}
-	return nil
+	return pagesValidateContext(o.CourseID, o.GroupID)
 }
 
 // PagesCreateOptions contains options for creating a page
 type PagesCreateOptions struct {
 	CourseID     int64
+	GroupID      int64
 	Title        string
 	Body         string
 	EditingRoles string
@@ -64,8 +73,8 @@ type PagesCreateOptions struct {
 
 // Validate validates the options
 func (o *PagesCreateOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
+	if err := pagesValidateContext(o.CourseID, o.GroupID); err != nil {
+		return err
 	}
 	if o.Title == "" {
 		return fmt.Errorf("title is required")
@@ -76,6 +85,7 @@ func (o *PagesCreateOptions) Validate() error {
 // PagesUpdateOptions contains options for updating a page
 type PagesUpdateOptions struct {
 	CourseID     int64
+	GroupID      int64
 	URLOrID      string
 	Title        string
 	Body         string
@@ -96,8 +106,8 @@ type PagesUpdateOptions struct {
 
 // Validate validates the options
 func (o *PagesUpdateOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
+	if err := pagesValidateContext(o.CourseID, o.GroupID); err != nil {
+		return err
 	}
 	if o.URLOrID == "" {
 		return fmt.Errorf("page url or id is required")
@@ -108,14 +118,15 @@ func (o *PagesUpdateOptions) Validate() error {
 // PagesDeleteOptions contains options for deleting a page
 type PagesDeleteOptions struct {
 	CourseID int64
+	GroupID  int64
 	URLOrID  string
 	Force    bool
 }
 
 // Validate validates the options
 func (o *PagesDeleteOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
+	if err := pagesValidateContext(o.CourseID, o.GroupID); err != nil {
+		return err
 	}
 	if o.URLOrID == "" {
 		return fmt.Errorf("page url or id is required")
@@ -123,7 +134,7 @@ func (o *PagesDeleteOptions) Validate() error {
 	return nil
 }
 
-// PagesDuplicateOptions contains options for duplicating a page
+// PagesDuplicateOptions contains options for duplicating a page (course-only)
 type PagesDuplicateOptions struct {
 	CourseID int64
 	URLOrID  string
@@ -143,13 +154,14 @@ func (o *PagesDuplicateOptions) Validate() error {
 // PagesRevisionsOptions contains options for listing page revisions
 type PagesRevisionsOptions struct {
 	CourseID int64
+	GroupID  int64
 	URLOrID  string
 }
 
 // Validate validates the options
 func (o *PagesRevisionsOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
+	if err := pagesValidateContext(o.CourseID, o.GroupID); err != nil {
+		return err
 	}
 	if o.URLOrID == "" {
 		return fmt.Errorf("page url or id is required")
@@ -160,14 +172,15 @@ func (o *PagesRevisionsOptions) Validate() error {
 // PagesRevertOptions contains options for reverting to a revision
 type PagesRevertOptions struct {
 	CourseID   int64
+	GroupID    int64
 	URLOrID    string
 	RevisionID int64
 }
 
 // Validate validates the options
 func (o *PagesRevertOptions) Validate() error {
-	if o.CourseID <= 0 {
-		return fmt.Errorf("course-id is required and must be greater than 0")
+	if err := pagesValidateContext(o.CourseID, o.GroupID); err != nil {
+		return err
 	}
 	if o.URLOrID == "" {
 		return fmt.Errorf("page url or id is required")

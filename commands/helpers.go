@@ -18,6 +18,12 @@ import (
 	"github.com/jjuanrivvera/canvas-cli/internal/output"
 )
 
+// boolPtr returns a pointer to the given bool value. Use this when an API
+// parameter needs *bool so that an explicit false is not dropped by omitempty.
+func boolPtr(v bool) *bool {
+	return &v
+}
+
 // mustMarkRequired marks a flag as required and panics if the flag does not
 // exist. A missing flag name is a programmer error that would be caught by any
 // test that constructs the command tree, so a panic is the right signal.

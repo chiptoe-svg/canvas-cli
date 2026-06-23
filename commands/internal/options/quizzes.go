@@ -273,3 +273,291 @@ func (o *QuizzesSubmissionsGetOptions) Validate() error {
 	}
 	return nil
 }
+
+// QuizzesSubmissionsCreateOptions contains options for starting a quiz submission
+type QuizzesSubmissionsCreateOptions struct {
+	CourseID   int64
+	QuizID     int64
+	AccessCode string
+}
+
+// Validate validates the options
+func (o *QuizzesSubmissionsCreateOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesGroupsGetOptions contains options for getting a quiz question group
+type QuizzesGroupsGetOptions struct {
+	CourseID int64
+	QuizID   int64
+	GroupID  int64
+}
+
+// Validate validates the options
+func (o *QuizzesGroupsGetOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesGroupsCreateOptions contains options for creating a quiz question group
+type QuizzesGroupsCreateOptions struct {
+	CourseID       int64
+	QuizID         int64
+	Name           string
+	PickCount      int
+	QuestionPoints float64
+}
+
+// Validate validates the options
+func (o *QuizzesGroupsCreateOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesGroupsUpdateOptions contains options for updating a quiz question group
+type QuizzesGroupsUpdateOptions struct {
+	CourseID       int64
+	QuizID         int64
+	GroupID        int64
+	Name           string
+	PickCount      int
+	QuestionPoints float64
+	NameSet        bool
+	PickCountSet   bool
+	PointsSet      bool
+}
+
+// Validate validates the options
+func (o *QuizzesGroupsUpdateOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	if !o.NameSet && !o.PickCountSet && !o.PointsSet {
+		return fmt.Errorf("at least one field must be specified for update")
+	}
+	return nil
+}
+
+// QuizzesGroupsDeleteOptions contains options for deleting a quiz question group
+type QuizzesGroupsDeleteOptions struct {
+	CourseID int64
+	QuizID   int64
+	GroupID  int64
+	Force    bool
+}
+
+// Validate validates the options
+func (o *QuizzesGroupsDeleteOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.GroupID <= 0 {
+		return fmt.Errorf("group-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesReportsListOptions contains options for listing quiz reports
+type QuizzesReportsListOptions struct {
+	CourseID            int64
+	QuizID              int64
+	IncludesAllVersions bool
+}
+
+// Validate validates the options
+func (o *QuizzesReportsListOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesReportsGetOptions contains options for getting a quiz report
+type QuizzesReportsGetOptions struct {
+	CourseID int64
+	QuizID   int64
+	ReportID int64
+}
+
+// Validate validates the options
+func (o *QuizzesReportsGetOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.ReportID <= 0 {
+		return fmt.Errorf("report-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesReportsCreateOptions contains options for creating a quiz report
+type QuizzesReportsCreateOptions struct {
+	CourseID            int64
+	QuizID              int64
+	ReportType          string
+	IncludesAllVersions bool
+}
+
+// Validate validates the options
+func (o *QuizzesReportsCreateOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.ReportType == "" {
+		return fmt.Errorf("report-type is required")
+	}
+	return nil
+}
+
+// QuizzesReportsDeleteOptions contains options for deleting a quiz report
+type QuizzesReportsDeleteOptions struct {
+	CourseID int64
+	QuizID   int64
+	ReportID int64
+	Force    bool
+}
+
+// Validate validates the options
+func (o *QuizzesReportsDeleteOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.ReportID <= 0 {
+		return fmt.Errorf("report-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesStatisticsListOptions contains options for listing quiz statistics
+type QuizzesStatisticsListOptions struct {
+	CourseID int64
+	QuizID   int64
+}
+
+// Validate validates the options
+func (o *QuizzesStatisticsListOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesExtensionsCreateOptions contains options for creating quiz extensions
+type QuizzesExtensionsCreateOptions struct {
+	CourseID         int64
+	QuizID           int64
+	UserID           int64
+	ExtraAttempts    int
+	ExtraTime        int
+	ManuallyUnlocked bool
+	ExtendFromNow    int
+}
+
+// Validate validates the options
+func (o *QuizzesExtensionsCreateOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.UserID <= 0 {
+		return fmt.Errorf("user-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesIPFiltersListOptions contains options for listing quiz IP filters
+type QuizzesIPFiltersListOptions struct {
+	CourseID int64
+	QuizID   int64
+}
+
+// Validate validates the options
+func (o *QuizzesIPFiltersListOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesAssignmentOverridesListOptions contains options for listing quiz assignment overrides
+type QuizzesAssignmentOverridesListOptions struct {
+	CourseID int64
+	QuizIDs  []int64
+}
+
+// Validate validates the options
+func (o *QuizzesAssignmentOverridesListOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	return nil
+}
+
+// QuizzesAssignmentOverridesSetOptions contains options for setting quiz assignment overrides
+type QuizzesAssignmentOverridesSetOptions struct {
+	CourseID        int64
+	QuizID          int64
+	CourseSectionID int64
+	DueAt           string
+	UnlockAt        string
+	LockAt          string
+}
+
+// Validate validates the options
+func (o *QuizzesAssignmentOverridesSetOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	return nil
+}

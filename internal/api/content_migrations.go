@@ -340,7 +340,7 @@ func (s *ContentMigrationsService) Update(ctx context.Context, courseID, migrati
 
 // ListContentList retrieves available content for selective import
 func (s *ContentMigrationsService) ListContentList(ctx context.Context, courseID, migrationID int64, contentType string) ([]ContentListItem, error) {
-	path := fmt.Sprintf("/api/v1/courses/%d/content_migrations/%d/content_list", courseID, migrationID)
+	path := fmt.Sprintf("/api/v1/courses/%d/content_migrations/%d/selective_data", courseID, migrationID)
 
 	if contentType != "" {
 		path += "?type=" + url.QueryEscape(contentType)

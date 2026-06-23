@@ -111,7 +111,7 @@ func TestContentMigrationsContentCmd(t *testing.T) {
 			Name: "list migration content",
 			Args: []string{"5", "--course-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1/content_migrations/5/content_list": cmdtest.NewMockResponse(`[
+				"/api/v1/courses/1/content_migrations/5/selective_data": cmdtest.NewMockResponse(`[
 					{"type":"assignment","id":"10","label":"HW1"}
 				]`),
 			},
@@ -126,7 +126,7 @@ func TestContentMigrationsContentCmd(t *testing.T) {
 			Name: "list migration content - empty",
 			Args: []string{"5", "--course-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1/content_migrations/5/content_list": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/courses/1/content_migrations/5/selective_data": cmdtest.NewMockResponse(`[]`),
 			},
 			ExpectError:  false,
 			ExpectOutput: "No content available for import",

@@ -32,7 +32,8 @@
 - **Smart Rate Limiting** - Adaptive throttling based on API quotas
 - **Multiple Outputs** - Table, JSON, YAML, and CSV formats
 - **Interactive Mode** - REPL shell with command history and completion
-- **265 Commands** - Full coverage of Canvas LMS resources
+- **98 Command Groups** - Covering 738 of Canvas's 1086 documented API endpoints (67%)
+- **Spec-Verified** - Paths validated against Canvas's official API spec in CI ([details](#api-spec-compliance))
 - **MCP Server** - Use as an AI agent tool via Model Context Protocol
 - **AI Agent Skill** - Bundled skill for Claude Code, Cursor, and other agents (`canvas skills install`)
 - **Signed Releases** - cosign-signed checksums, SBOMs, and a distroless Docker image
@@ -113,10 +114,28 @@ canvas repl
 | **Calendar** | `list`, `get`, `create`, `update`, `delete`, `reserve` |
 | **Files** | `list`, `get`, `upload`, `download`, `delete` |
 | **Sections** | `list`, `get`, `create`, `update`, `delete`, `crosslist` |
-| **Admin** | `admins`, `roles`, `analytics`, `blueprint`, `sis-imports` |
-| **Utilities** | `shell`, `doctor`, `webhook`, `api`, `version` |
+| **Polls** | `polls`, `choices`, `sessions`, `submissions` |
+| **Folders / Files** | `folders`, `files`, multi-context (course / group / user) |
+| **Favorites / Bookmarks** | `favorites`, `bookmarks`, `course-nicknames` |
+| **Account Admin** | `auth-providers`, `csp-settings`, `account-reports`, `enrollment-terms`, `developer-keys`, `grading-period-sets` |
+| **Grading** | `grading-periods`, `grading-standards`, `rubric-associations`, `live-assessments` |
+| **Content** | `content-exports`, `content-migrations`, `blackout-dates`, `course-pacing`, `blueprint` |
+| **Comms / Misc** | `conversations`, `comm-channels`, `content-shares`, `media`, `conferences`, `eportfolios`, `audit` |
+| **Admin** | `admins`, `roles`, `analytics`, `sis-imports`, `appointment-groups` |
+| **Utilities** | `repl`, `doctor`, `webhook`, `api`, `version` |
 
-See [full command reference](https://jjuanrivvera.github.io/canvas-cli/commands/) for all options and flags.
+This is a sample — the CLI has **98 command groups** covering 67% of Canvas's
+official API. See the [full command reference](https://jjuanrivvera.github.io/canvas-cli/commands/)
+for all 600+ commands and their flags.
+
+## API Spec Compliance
+
+Canvas CLI's API paths are validated in CI against Canvas's **official API
+spec** (Swagger 1.2, committed under `testdata/spec/`). A network-free contract
+test harvests every endpoint the CLI calls and asserts it matches a documented
+Canvas endpoint — so a wrong path fails the build. The committed manifest is
+refreshed from a live Canvas host with `make spec-sync`, and `make spec-coverage`
+reports which documented endpoints aren't implemented yet.
 
 ## Configuration
 
@@ -136,7 +155,7 @@ See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-sta
 
 ## MCP Server Mode
 
-Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing 253 of its 265 commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot). Only the `canvas mcp` management commands themselves are excluded.
+Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing nearly all of its commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot). Only the `canvas mcp` management commands themselves are excluded.
 
 ```bash
 # Start as STDIO MCP server

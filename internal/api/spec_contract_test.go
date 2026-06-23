@@ -1,0 +1,240 @@
+package api
+
+import (
+	"encoding/json"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+	"testing"
+)
+
+// specEndpoint mirrors testdata/spec/canvas_endpoints.json.
+type specEndpoint struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+}
+
+type specManifest struct {
+	Endpoints []specEndpoint `json:"endpoints"`
+}
+
+// knownUndocumented lists CLI paths that have no matching endpoint in the official
+// Canvas Swagger 1.2 spec. Every entry MUST have a real justification explaining
+// why it is legitimately absent from the spec. Do not add entries for actual bugs —
+// fix those in the implementation instead.
+//
+// Refresh the manifest with: make spec-sync
+var knownUndocumented = map[string]string{
+	// No entries: the official Canvas Swagger 1.2 spec (fetched via make spec-sync)
+	// now documents all paths the CLI currently calls, including the previously
+	// "undocumented" assignment-scoped bulk-grade endpoint
+	// POST /api/v1/courses/:id/assignments/:id/submissions/update_grades.
+}
+
+// TestSpecContract_CLIPathsAreDocumented verifies that every path the CLI
+// calls in internal/api/ matches at least one endpoint in the official Canvas
+// Swagger 1.2 spec committed to testdata/spec/canvas_endpoints.json.
+//
+// The manifest is sourced from the official Canvas Swagger API (not the gitignored
+// .ai/canvas-lms-docs mirror). Refresh it from a live Canvas host with:
+//
+//	make spec-sync
+//
+// Triage process for failures:
+//
+//	(a) Real CLI bug — path is wrong; fix the implementation, do not allowlist
+//	(b) Normalization artifact — fix normalizePath in tools/speccheck/normalize.go
+//	(c) Legitimately absent from official spec — add to knownUndocumented with a real comment
+func TestSpecContract_CLIPathsAreDocumented(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "spec", "canvas_endpoints.json"))
+	if err != nil {
+		t.Fatalf("cannot read manifest (run `make spec-sync` first): %v", err)
+	}
+
+	var man specManifest
+	if err := json.Unmarshal(data, &man); err != nil {
+		t.Fatalf("parsing manifest: %v", err)
+	}
+	if len(man.Endpoints) == 0 {
+		t.Fatal("manifest has no endpoints — run `make spec-sync`")
+	}
+
+	// Build a set of normalized documented paths.
+	docPaths := map[string]bool{}
+	for _, ep := range man.Endpoints {
+		norm := specNormalizePath(ep.Path)
+		docPaths[norm] = true
+		// The CLI builds many paths through a single context-segment template,
+		// e.g. fmt.Sprintf("/api/v1/%s/folders", ctx) where ctx is
+		// "courses/123" | "groups/123" | "users/123". That normalizes to
+		// /api/v1/:x/folders — one segment where the documented path has two
+		// (courses/:course_id). Register a context-collapsed alias so these
+		// legitimate multi-context paths match.
+		for _, alias := range collapseContext(norm) {
+			docPaths[alias] = true
+		}
+	}
+
+	// Harvest CLI paths from internal/api non-test source files.
+	cliPaths, err := specHarvestCLIPaths(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatalf("harvesting CLI paths: %v", err)
+	}
+
+	var failures []string
+	for _, rawPath := range cliPaths {
+		norm := specNormalizePath(rawPath)
+		if docPaths[norm] {
+			continue
+		}
+		if reason, ok := knownUndocumented[norm]; ok {
+			t.Logf("SKIP undocumented (allowed): %s — %s", norm, reason)
+			continue
+		}
+		failures = append(failures, rawPath+" -> "+norm)
+	}
+	sort.Strings(failures)
+	for _, f := range failures {
+		t.Errorf("CLI path has no documented Canvas endpoint: %s\n"+
+			"  Triage: (a) fix the CLI path, (b) fix the normalizer, or (c) add to knownUndocumented with justification", f)
+	}
+}
+
+// ctxPairRe matches a leading Canvas context pair like /courses/:x at the start
+// of a normalized path (context word + id).
+var ctxPairRe = regexp.MustCompile(`^/api/v1/(courses|groups|users|accounts|sections)/:x(/|$)`)
+
+// collapseContext returns context-templated aliases of a documented path so the
+// contract matcher recognizes the two ways the CLI builds multi-context paths
+// (discussions, pages, files, folders... live under courses OR groups OR users):
+//
+//   - combined verb:   fmt.Sprintf("/api/v1/%s/folders", "courses/123")
+//     → /api/v1/:x/folders        (context pair collapses to one :x)
+//   - split verbs:     fmt.Sprintf("/api/v1/%s/%d/discussion_topics", "courses", 123)
+//     → /api/v1/:x/:x/discussion_topics  (context word becomes :x, id stays :x)
+//
+// Returns nil if the path has no leading context pair.
+func collapseContext(norm string) []string {
+	if !ctxPairRe.MatchString(norm) {
+		return nil
+	}
+	return []string{
+		ctxPairRe.ReplaceAllString(norm, "/api/v1/:x$2"),    // combined: courses/:x → :x
+		ctxPairRe.ReplaceAllString(norm, "/api/v1/:x/:x$2"), // split:    courses/:x → :x/:x
+	}
+}
+
+// specNormalizePath mirrors tools/speccheck/normalize.go. Kept here inline to
+// avoid a dependency on the tool package from the test package.
+//
+//   - :param_name → :x
+//   - %d/%s/%v   → :x
+//   - /self/      → /:x/
+//   - query string stripped
+func specNormalizePath(path string) string {
+	if i := strings.IndexByte(path, '?'); i >= 0 {
+		path = path[:i]
+	}
+	path = strings.TrimRight(path, "/")
+	path = specFmtVerbRe.ReplaceAllString(path, ":x")
+	path = specParamRe.ReplaceAllString(path, ":x")
+	path = specSelfSegRe.ReplaceAllStringFunc(path, func(m string) string {
+		if strings.HasSuffix(m, "/") {
+			return "/:x/"
+		}
+		return "/:x"
+	})
+	return path
+}
+
+var (
+	specParamRe   = regexp.MustCompile(`:[a-z_]+`)
+	specFmtVerbRe = regexp.MustCompile(`%[a-z]`)
+	specSelfSegRe = regexp.MustCompile(`/self(/|$)`)
+)
+
+// specHarvestCLIPaths walks internal/api/ (non-test .go files) and extracts
+// /api/v1/... and /api/lti/... string literals including fmt.Sprintf format strings.
+func specHarvestCLIPaths(repoRoot string) ([]string, error) {
+	dir := filepath.Join(repoRoot, "internal", "api")
+	fset := token.NewFileSet()
+	seen := map[string]bool{}
+
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		f, parseErr := parser.ParseFile(fset, path, nil, 0)
+		if parseErr != nil {
+			return parseErr
+		}
+		ast.Inspect(f, func(n ast.Node) bool {
+			switch v := n.(type) {
+			case *ast.BasicLit:
+				if v.Kind == token.STRING {
+					s := specUnquote(v.Value)
+					if specIsAPIPath(s) {
+						seen[s] = true
+					}
+				}
+			case *ast.CallExpr:
+				if specIsFmtSprintf(v) && len(v.Args) > 0 {
+					if lit, ok := v.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
+						s := specUnquote(lit.Value)
+						if specIsAPIPath(s) {
+							seen[s] = true
+						}
+					}
+				}
+			}
+			return true
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(seen))
+	for p := range seen {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+	return paths, nil
+}
+
+func specIsAPIPath(s string) bool {
+	return strings.HasPrefix(s, "/api/v1/") || strings.HasPrefix(s, "/api/lti/")
+}
+
+func specIsFmtSprintf(call *ast.CallExpr) bool {
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	pkg, ok := sel.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return pkg.Name == "fmt" && sel.Sel.Name == "Sprintf"
+}
+
+func specUnquote(s string) string {
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		return s[1 : len(s)-1]
+	}
+	if len(s) >= 2 && s[0] == '`' && s[len(s)-1] == '`' {
+		return s[1 : len(s)-1]
+	}
+	return s
+}

@@ -367,9 +367,11 @@ type LastAttendedParams struct {
 	Date string // ISO8601 format
 }
 
-// UpdateLastAttended updates the last attended date for an enrollment
-func (s *EnrollmentsService) UpdateLastAttended(ctx context.Context, courseID, enrollmentID int64, date string) (*Enrollment, error) {
-	path := fmt.Sprintf("/api/v1/courses/%d/enrollments/%d/last_attended", courseID, enrollmentID)
+// UpdateLastAttended updates the last attended date for a user in a course.
+// Canvas scopes this endpoint under the user, not the enrollment:
+// PUT /api/v1/courses/:course_id/users/:user_id/last_attended
+func (s *EnrollmentsService) UpdateLastAttended(ctx context.Context, courseID, userID int64, date string) (*Enrollment, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/users/%d/last_attended", courseID, userID)
 
 	body := map[string]interface{}{
 		"date": date,

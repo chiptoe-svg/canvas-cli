@@ -129,6 +129,7 @@ nav:
   - Development:
     - development/index.md
     - Architecture: development/architecture.md
+    - API Coverage: development/api-coverage.md
     - Contributing: development/contributing.md
   - Reference:
     - Environment Variables: reference/environment-variables.md

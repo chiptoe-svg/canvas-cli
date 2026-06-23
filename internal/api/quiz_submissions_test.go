@@ -296,6 +296,43 @@ func TestQuizSubmissionsService_Complete(t *testing.T) {
 	}
 }
 
+func TestQuizSubmissionsService_Create(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Path != "/api/v1/courses/1/quizzes/10/submissions" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(QuizSubmissionsResponse{
+			QuizSubmissions: []QuizSubmission{
+				{ID: 99, QuizID: 10, UserID: 5, WorkflowState: "untaken"},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := newTestClient(t, server.URL)
+	svc := NewQuizSubmissionsService(client)
+
+	sub, err := svc.Create(context.Background(), 1, 10, &StartQuizSubmissionParams{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sub.ID != 99 {
+		t.Errorf("expected ID 99, got %d", sub.ID)
+	}
+	if sub.WorkflowState != "untaken" {
+		t.Errorf("expected WorkflowState 'untaken', got %s", sub.WorkflowState)
+	}
+}
+
 func TestNewQuizSubmissionsService(t *testing.T) {
 	client, err := NewClient(ClientConfig{
 		BaseURL: "https://canvas.example.com",

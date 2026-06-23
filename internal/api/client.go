@@ -637,6 +637,36 @@ func (c *Client) PutJSON(ctx context.Context, path string, body interface{}, res
 	return nil
 }
 
+// PatchJSON performs a PATCH request with JSON body and decodes JSON response.
+// Canvas uses PATCH for partial updates on some endpoints (e.g. grading_periods/batch_update).
+func (c *Client) PatchJSON(ctx context.Context, path string, body interface{}, result interface{}) error {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPatch, path, bytes.NewReader(jsonBody))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if err := checkSoftError(bodyBytes); err != nil {
+		return err
+	}
+
+	if result != nil {
+		return json.Unmarshal(bodyBytes, result)
+	}
+
+	return nil
+}
+
 // maxPaginationPages is an upper bound on the number of pages fetched in a
 // single GetAllPages / GetAllPagesGeneric call. A misbehaving server that keeps
 // returning the same Link: next header would otherwise loop forever.

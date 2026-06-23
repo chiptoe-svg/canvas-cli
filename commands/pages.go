@@ -46,11 +46,12 @@ func newPagesListCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List pages in a course",
-		Long: `List all wiki pages in a Canvas course.
+		Short: "List pages in a course or group",
+		Long: `List all wiki pages in a Canvas course or group.
 
 Examples:
   canvas pages list --course-id 123
+  canvas pages list --group-id 456
   canvas pages list --course-id 123 --sort title --order asc
   canvas pages list --course-id 123 --search "intro"
   canvas pages list --course-id 123 --published true`,
@@ -66,13 +67,13 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 	cmd.Flags().StringVar(&opts.Sort, "sort", "", "Sort by: title, created_at, updated_at")
 	cmd.Flags().StringVar(&opts.Order, "order", "", "Sort order: asc, desc")
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search by page title")
 	cmd.Flags().StringVar(&opts.Published, "published", "", "Filter by published status: true, false")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Additional data to include (body)")
-	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -87,7 +88,7 @@ func newPagesGetCmd() *cobra.Command {
 
 Examples:
   canvas pages get --course-id 123 my-page-title
-  canvas pages get --course-id 123 page_id:456`,
+  canvas pages get --group-id 456 my-page-title`,
 		Args: ExactArgsWithUsage(1, "url-or-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.URLOrID = args[0]
@@ -102,8 +103,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	mustMarkRequired(cmd, "course-id")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 
 	return cmd
 }
@@ -114,10 +115,11 @@ func newPagesFrontCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "front",
 		Short: "Get the front page",
-		Long: `Get the front page for a course.
+		Long: `Get the front page for a course or group.
 
 Examples:
-  canvas pages front --course-id 123`,
+  canvas pages front --course-id 123
+  canvas pages front --group-id 456`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -130,8 +132,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	mustMarkRequired(cmd, "course-id")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 
 	return cmd
 }
@@ -142,10 +144,11 @@ func newPagesCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new page",
-		Long: `Create a new wiki page in a course.
+		Long: `Create a new wiki page in a course or group.
 
 Examples:
   canvas pages create --course-id 123 --title "Welcome"
+  canvas pages create --group-id 456 --title "Group Intro"
   canvas pages create --course-id 123 --title "Syllabus" --body "<p>Course syllabus</p>"
   canvas pages create --course-id 123 --title "Home" --front-page --published`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -160,7 +163,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Page title (required)")
 	cmd.Flags().StringVar(&opts.Body, "body", "", "Page body (HTML)")
 	cmd.Flags().StringVar(&opts.EditingRoles, "editing-roles", "", "Roles that can edit: teachers,students,members,public")
@@ -168,7 +172,7 @@ Examples:
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish the page")
 	cmd.Flags().BoolVar(&opts.FrontPage, "front-page", false, "Set as front page")
 	cmd.Flags().StringVar(&opts.PublishAt, "publish-at", "", "Schedule publication date (ISO 8601)")
-	mustMarkRequired(cmd, "course-id", "title")
+	mustMarkRequired(cmd, "title")
 
 	return cmd
 }
@@ -179,11 +183,11 @@ func newPagesUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update <url-or-id>",
 		Short: "Update an existing page",
-		Long: `Update an existing wiki page.
+		Long: `Update an existing wiki page in a course or group.
 
 Examples:
   canvas pages update --course-id 123 my-page --title "New Title"
-  canvas pages update --course-id 123 my-page --body "<p>Updated content</p>"
+  canvas pages update --group-id 456 my-page --body "<p>Updated content</p>"
   canvas pages update --course-id 123 my-page --published`,
 		Args: ExactArgsWithUsage(1, "url-or-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -207,7 +211,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "New page title")
 	cmd.Flags().StringVar(&opts.Body, "body", "", "New page body (HTML)")
 	cmd.Flags().StringVar(&opts.EditingRoles, "editing-roles", "", "Roles that can edit: teachers,students,members,public")
@@ -215,7 +220,6 @@ Examples:
 	cmd.Flags().BoolVar(&opts.Published, "published", false, "Publish the page")
 	cmd.Flags().BoolVar(&opts.FrontPage, "front-page", false, "Set as front page")
 	cmd.Flags().StringVar(&opts.PublishAt, "publish-at", "", "Schedule publication date (ISO 8601)")
-	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -226,10 +230,11 @@ func newPagesDeleteCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <url-or-id>",
 		Short: "Delete a page",
-		Long: `Delete a wiki page from a course.
+		Long: `Delete a wiki page from a course or group.
 
 Examples:
-  canvas pages delete --course-id 123 my-page-url`,
+  canvas pages delete --course-id 123 my-page-url
+  canvas pages delete --group-id 456 my-page-url`,
 		Args: ExactArgsWithUsage(1, "url-or-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.URLOrID = args[0]
@@ -244,9 +249,9 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Skip confirmation prompt")
-	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -287,10 +292,11 @@ func newPagesRevisionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "revisions <url-or-id>",
 		Short: "List page revisions",
-		Long: `List all revisions for a wiki page.
+		Long: `List all revisions for a wiki page in a course or group.
 
 Examples:
-  canvas pages revisions --course-id 123 my-page-url`,
+  canvas pages revisions --course-id 123 my-page-url
+  canvas pages revisions --group-id 456 my-page-url`,
 		Args: ExactArgsWithUsage(1, "url-or-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.URLOrID = args[0]
@@ -305,8 +311,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	mustMarkRequired(cmd, "course-id")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 
 	return cmd
 }
@@ -317,10 +323,11 @@ func newPagesRevertCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "revert <url-or-id> <revision-id>",
 		Short: "Revert to a specific revision",
-		Long: `Revert a wiki page to a specific revision.
+		Long: `Revert a wiki page to a specific revision in a course or group.
 
 Examples:
-  canvas pages revert --course-id 123 my-page-url 5`,
+  canvas pages revert --course-id 123 my-page-url 5
+  canvas pages revert --group-id 456 my-page-url 3`,
 		Args: ExactArgsWithUsage(2, "url-or-id", "revision-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.URLOrID = args[0]
@@ -340,8 +347,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
-	mustMarkRequired(cmd, "course-id")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Group ID")
 
 	return cmd
 }
@@ -350,6 +357,7 @@ func runPagesList(ctx context.Context, client *api.Client, opts *options.PagesLi
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.list", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"sort":      opts.Sort,
 	})
 
@@ -367,10 +375,19 @@ func runPagesList(ctx context.Context, client *api.Client, opts *options.PagesLi
 		apiOpts.Published = &pub
 	}
 
-	pages, err := pagesService.List(ctx, opts.CourseID, apiOpts)
+	var pages []api.Page
+	var err error
+
+	if opts.GroupID > 0 {
+		pages, err = pagesService.GroupList(ctx, opts.GroupID, apiOpts)
+	} else {
+		pages, err = pagesService.List(ctx, opts.CourseID, apiOpts)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.list", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 		})
 		return fmt.Errorf("failed to list pages: %w", err)
 	}
@@ -384,15 +401,25 @@ func runPagesGet(ctx context.Context, client *api.Client, opts *options.PagesGet
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.get", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"url_or_id": opts.URLOrID,
 	})
 
 	pagesService := api.NewPagesService(client)
 
-	page, err := pagesService.Get(ctx, opts.CourseID, opts.URLOrID)
+	var page *api.Page
+	var err error
+
+	if opts.GroupID > 0 {
+		page, err = pagesService.GroupGet(ctx, opts.GroupID, opts.URLOrID)
+	} else {
+		page, err = pagesService.Get(ctx, opts.CourseID, opts.URLOrID)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.get", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"url_or_id": opts.URLOrID,
 		})
 		return fmt.Errorf("failed to get page: %w", err)
@@ -406,14 +433,24 @@ func runPagesFront(ctx context.Context, client *api.Client, opts *options.PagesF
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.front", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 	})
 
 	pagesService := api.NewPagesService(client)
 
-	page, err := pagesService.GetFrontPage(ctx, opts.CourseID)
+	var page *api.Page
+	var err error
+
+	if opts.GroupID > 0 {
+		page, err = pagesService.GroupGetFrontPage(ctx, opts.GroupID)
+	} else {
+		page, err = pagesService.GetFrontPage(ctx, opts.CourseID)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.front", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 		})
 		return fmt.Errorf("failed to get front page: %w", err)
 	}
@@ -426,6 +463,7 @@ func runPagesCreate(ctx context.Context, client *api.Client, opts *options.Pages
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.create", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"title":     opts.Title,
 	})
 
@@ -441,10 +479,19 @@ func runPagesCreate(ctx context.Context, client *api.Client, opts *options.Pages
 		PublishAt:      opts.PublishAt,
 	}
 
-	page, err := pagesService.Create(ctx, opts.CourseID, params)
+	var page *api.Page
+	var err error
+
+	if opts.GroupID > 0 {
+		page, err = pagesService.GroupCreate(ctx, opts.GroupID, params)
+	} else {
+		page, err = pagesService.Create(ctx, opts.CourseID, params)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.create", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"title":     opts.Title,
 		})
 		return fmt.Errorf("failed to create page: %w", err)
@@ -458,6 +505,7 @@ func runPagesUpdate(ctx context.Context, client *api.Client, opts *options.Pages
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.update", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"url_or_id": opts.URLOrID,
 	})
 
@@ -487,10 +535,19 @@ func runPagesUpdate(ctx context.Context, client *api.Client, opts *options.Pages
 		params.PublishAt = &opts.PublishAt
 	}
 
-	page, err := pagesService.Update(ctx, opts.CourseID, opts.URLOrID, params)
+	var page *api.Page
+	var err error
+
+	if opts.GroupID > 0 {
+		page, err = pagesService.GroupUpdate(ctx, opts.GroupID, opts.URLOrID, params)
+	} else {
+		page, err = pagesService.Update(ctx, opts.CourseID, opts.URLOrID, params)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.update", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"url_or_id": opts.URLOrID,
 		})
 		return fmt.Errorf("failed to update page: %w", err)
@@ -504,6 +561,7 @@ func runPagesDelete(ctx context.Context, client *api.Client, opts *options.Pages
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.delete", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"url_or_id": opts.URLOrID,
 		"force":     opts.Force,
 	})
@@ -522,9 +580,16 @@ func runPagesDelete(ctx context.Context, client *api.Client, opts *options.Pages
 
 	pagesService := api.NewPagesService(client)
 
-	if err := pagesService.Delete(ctx, opts.CourseID, opts.URLOrID); err != nil {
+	if opts.GroupID > 0 {
+		err = pagesService.GroupDelete(ctx, opts.GroupID, opts.URLOrID)
+	} else {
+		err = pagesService.Delete(ctx, opts.CourseID, opts.URLOrID)
+	}
+
+	if err != nil {
 		logger.LogCommandError(ctx, "pages.delete", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"url_or_id": opts.URLOrID,
 		})
 		return fmt.Errorf("failed to delete page: %w", err)
@@ -561,15 +626,25 @@ func runPagesRevisions(ctx context.Context, client *api.Client, opts *options.Pa
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.revisions", map[string]interface{}{
 		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 		"url_or_id": opts.URLOrID,
 	})
 
 	pagesService := api.NewPagesService(client)
 
-	revisions, err := pagesService.ListRevisions(ctx, opts.CourseID, opts.URLOrID)
+	var revisions []api.PageRevision
+	var err error
+
+	if opts.GroupID > 0 {
+		revisions, err = pagesService.GroupListRevisions(ctx, opts.GroupID, opts.URLOrID)
+	} else {
+		revisions, err = pagesService.ListRevisions(ctx, opts.CourseID, opts.URLOrID)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.revisions", err, map[string]interface{}{
 			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 			"url_or_id": opts.URLOrID,
 		})
 		return fmt.Errorf("failed to list revisions: %w", err)
@@ -584,16 +659,26 @@ func runPagesRevert(ctx context.Context, client *api.Client, opts *options.Pages
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "pages.revert", map[string]interface{}{
 		"course_id":   opts.CourseID,
+		"group_id":    opts.GroupID,
 		"url_or_id":   opts.URLOrID,
 		"revision_id": opts.RevisionID,
 	})
 
 	pagesService := api.NewPagesService(client)
 
-	revision, err := pagesService.RevertToRevision(ctx, opts.CourseID, opts.URLOrID, opts.RevisionID)
+	var revision *api.PageRevision
+	var err error
+
+	if opts.GroupID > 0 {
+		revision, err = pagesService.GroupRevertToRevision(ctx, opts.GroupID, opts.URLOrID, opts.RevisionID)
+	} else {
+		revision, err = pagesService.RevertToRevision(ctx, opts.CourseID, opts.URLOrID, opts.RevisionID)
+	}
+
 	if err != nil {
 		logger.LogCommandError(ctx, "pages.revert", err, map[string]interface{}{
 			"course_id":   opts.CourseID,
+			"group_id":    opts.GroupID,
 			"url_or_id":   opts.URLOrID,
 			"revision_id": opts.RevisionID,
 		})

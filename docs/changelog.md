@@ -10,6 +10,56 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Added
+
+- **API spec-compliance harness**: CLI endpoint paths are now validated in CI
+  against Canvas's official API spec (Swagger 1.2), committed under
+  `testdata/spec/`. A network-free contract test fails the build on any path
+  Canvas doesn't document. `make spec-sync` refreshes the manifest from a live
+  Canvas host; `make spec-coverage` reports the gap. See
+  [API Coverage](docs/development/api-coverage.md).
+- **Major API coverage expansion**: 31% → 67% of Canvas's documented endpoints
+  (52 → 98 command groups). New command groups include `polls`,
+  `appointment-groups`, `folders`, `favorites`, `bookmarks`, `course-nicknames`,
+  `observees`, `comm-channels`, `content-shares`, `audit`, `media`,
+  `conferences`, `collaborations`, `eportfolios`, `brand`, `jwts`, `progress`,
+  `history`, account administration (`auth-providers`, `csp-settings`,
+  `account-reports`, `enrollment-terms`, `developer-keys`,
+  `grading-period-sets`), grading (`grading-periods`, `grading-standards`,
+  `rubric-associations`, `live-assessments`), and content management
+  (`content-exports`, `blackout-dates`, `course-pacing`).
+- **Full quizzes surface**: reports, statistics, extensions, IP filters,
+  question groups, and submission questions.
+- **Multi-context support**: discussions, pages, files, folders, and
+  content-migrations now work under group and user contexts via `--group-id`
+  and `--user-id`, in addition to courses.
+
+### Fixed
+
+- **Response envelope parsing**: many newly added endpoints decoded Canvas's
+  named-array envelopes (e.g. `{"polls":[...]}`, `{"events":[...]}`) into bare
+  Go types and would fail against a live Canvas; all corrected and now verified
+  by shape-asserting tests (polls, audit logs, account calendars, SIS imports,
+  quiz submission questions, notification preferences).
+- **Request construction**: `csp-settings` domain removal no longer discards
+  its argument; `files set-usage-rights` no longer drops all but the last ID;
+  group file uploads target `/groups/:id/files` instead of the folder endpoint;
+  account/grading param bodies use proper nested JSON instead of unparsed
+  bracketed keys; a deliberate `false` for weighted grading periods is no
+  longer dropped.
+- **Field/return types**: `course-pacing` root-account field and
+  `user-features` enabled-list return type corrected.
+- Earlier path fixes surfaced by the harness: content-migrations selective
+  import (`/selective_data`), last-attended (user-scoped), and quiz IP filters
+  (require `:quiz_id`).
+
+### Changed
+
+- CI coverage accounting is HTTP-method-aware (a path isn't counted implemented
+  just because the CLI has a different verb on it).
+- AGENTS.md documents the spec-compliance + coverage workflow; the bundled
+  agent skill's command map covers the expanded surface.
+
 ### Planned
 - Canvas Studio integration
 - GraphQL API support

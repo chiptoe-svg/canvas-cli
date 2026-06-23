@@ -44,6 +44,48 @@ var quizzesSubmissionsCmd = &cobra.Command{
 	Long:    `View and manage quiz submissions.`,
 }
 
+// quizzesGroupsCmd represents the quizzes question-groups command group
+var quizzesGroupsCmd = &cobra.Command{
+	Use:   "groups",
+	Short: "Manage quiz question groups",
+	Long:  `Manage question groups within a quiz for random question selection.`,
+}
+
+// quizzesReportsCmd represents the quizzes reports command group
+var quizzesReportsCmd = &cobra.Command{
+	Use:   "reports",
+	Short: "Manage quiz reports",
+	Long:  `Generate and view quiz reports such as student analysis and item analysis.`,
+}
+
+// quizzesStatisticsCmd represents the quizzes statistics command group
+var quizzesStatisticsCmd = &cobra.Command{
+	Use:   "statistics",
+	Short: "View quiz statistics",
+	Long:  `View statistical data for a quiz including score distributions and question analysis.`,
+}
+
+// quizzesExtensionsCmd represents the quizzes extensions command group
+var quizzesExtensionsCmd = &cobra.Command{
+	Use:   "extensions",
+	Short: "Manage quiz extensions",
+	Long:  `Grant quiz time extensions or extra attempts to students.`,
+}
+
+// quizzesIPFiltersCmd represents the quizzes ip-filters command group
+var quizzesIPFiltersCmd = &cobra.Command{
+	Use:   "ip-filters",
+	Short: "List quiz IP filters",
+	Long:  `List available IP address filters for quizzes in a course.`,
+}
+
+// quizzesAssignmentOverridesCmd represents the quizzes assignment-overrides command group
+var quizzesAssignmentOverridesCmd = &cobra.Command{
+	Use:   "assignment-overrides",
+	Short: "Manage quiz assignment overrides",
+	Long:  `View and set assignment overrides for quizzes (due dates per section/student).`,
+}
+
 func init() {
 	rootCmd.AddCommand(quizzesCmd)
 	quizzesCmd.AddCommand(newQuizzesListCmd())
@@ -53,6 +95,12 @@ func init() {
 	quizzesCmd.AddCommand(newQuizzesDeleteCmd())
 	quizzesCmd.AddCommand(quizzesQuestionsCmd)
 	quizzesCmd.AddCommand(quizzesSubmissionsCmd)
+	quizzesCmd.AddCommand(quizzesGroupsCmd)
+	quizzesCmd.AddCommand(quizzesReportsCmd)
+	quizzesCmd.AddCommand(quizzesStatisticsCmd)
+	quizzesCmd.AddCommand(quizzesExtensionsCmd)
+	quizzesCmd.AddCommand(quizzesIPFiltersCmd)
+	quizzesCmd.AddCommand(quizzesAssignmentOverridesCmd)
 
 	// Questions subcommands
 	quizzesQuestionsCmd.AddCommand(newQuizzesQuestionsListCmd())
@@ -63,6 +111,32 @@ func init() {
 	// Submissions subcommands
 	quizzesSubmissionsCmd.AddCommand(newQuizzesSubmissionsListCmd())
 	quizzesSubmissionsCmd.AddCommand(newQuizzesSubmissionsGetCmd())
+	quizzesSubmissionsCmd.AddCommand(newQuizzesSubmissionsCreateCmd())
+
+	// Question groups subcommands
+	quizzesGroupsCmd.AddCommand(newQuizzesGroupsGetCmd())
+	quizzesGroupsCmd.AddCommand(newQuizzesGroupsCreateCmd())
+	quizzesGroupsCmd.AddCommand(newQuizzesGroupsUpdateCmd())
+	quizzesGroupsCmd.AddCommand(newQuizzesGroupsDeleteCmd())
+
+	// Reports subcommands
+	quizzesReportsCmd.AddCommand(newQuizzesReportsListCmd())
+	quizzesReportsCmd.AddCommand(newQuizzesReportsGetCmd())
+	quizzesReportsCmd.AddCommand(newQuizzesReportsCreateCmd())
+	quizzesReportsCmd.AddCommand(newQuizzesReportsDeleteCmd())
+
+	// Statistics subcommands
+	quizzesStatisticsCmd.AddCommand(newQuizzesStatisticsListCmd())
+
+	// Extensions subcommands
+	quizzesExtensionsCmd.AddCommand(newQuizzesExtensionsCreateCmd())
+
+	// IP filters subcommands
+	quizzesIPFiltersCmd.AddCommand(newQuizzesIPFiltersListCmd())
+
+	// Assignment overrides subcommands
+	quizzesAssignmentOverridesCmd.AddCommand(newQuizzesAssignmentOverridesListCmd())
+	quizzesAssignmentOverridesCmd.AddCommand(newQuizzesAssignmentOverridesSetCmd())
 }
 
 func newQuizzesListCmd() *cobra.Command {
@@ -940,5 +1014,979 @@ func runQuizzesSubmissionsGet(ctx context.Context, client *api.Client, opts *opt
 	}
 
 	logger.LogCommandComplete(ctx, "quizzes.submissions.get", 1)
+	return nil
+}
+
+// ---- Quiz Submissions: Create (start a submission) ----
+
+func newQuizzesSubmissionsCreateCmd() *cobra.Command {
+	opts := &options.QuizzesSubmissionsCreateOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Start a new quiz submission",
+		Long: `Start taking a quiz by creating a new submission.
+
+Examples:
+  canvas quizzes submissions create --course-id 123 --quiz-id 456
+  canvas quizzes submissions create --course-id 123 --quiz-id 456 --access-code secret`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesSubmissionsCreate(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().StringVar(&opts.AccessCode, "access-code", "", "Quiz access code")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesSubmissionsCreate(ctx context.Context, client *api.Client, opts *options.QuizzesSubmissionsCreateOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.submissions.create", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+	})
+
+	service := api.NewQuizSubmissionsService(client)
+
+	params := &api.StartQuizSubmissionParams{
+		AccessCode: opts.AccessCode,
+	}
+
+	submission, err := service.Create(ctx, opts.CourseID, opts.QuizID, params)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.submissions.create", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+		})
+		return fmt.Errorf("failed to start quiz submission: %w", err)
+	}
+
+	printInfo("Quiz submission started (ID: %d)\n", submission.ID)
+	if err := formatOutput(submission, nil); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.submissions.create", 1)
+	return nil
+}
+
+// ---- Quiz Question Groups ----
+
+func newQuizzesGroupsGetCmd() *cobra.Command {
+	opts := &options.QuizzesGroupsGetOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "get <group-id>",
+		Short: "Get a quiz question group",
+		Long: `Get details of a specific quiz question group.
+
+Examples:
+  canvas quizzes groups get 3 --course-id 123 --quiz-id 456`,
+		Args: ExactArgsWithUsage(1, "group-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid group ID: %s", args[0])
+			}
+			opts.GroupID = groupID
+
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesGroupsGet(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesGroupsGet(ctx context.Context, client *api.Client, opts *options.QuizzesGroupsGetOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.groups.get", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"group_id":  opts.GroupID,
+	})
+
+	service := api.NewQuizQuestionGroupsService(client)
+
+	group, err := service.Get(ctx, opts.CourseID, opts.QuizID, opts.GroupID)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.groups.get", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+			"group_id":  opts.GroupID,
+		})
+		return fmt.Errorf("failed to get quiz question group: %w", err)
+	}
+
+	if err := formatOutput(group, nil); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.groups.get", 1)
+	return nil
+}
+
+func newQuizzesGroupsCreateCmd() *cobra.Command {
+	opts := &options.QuizzesGroupsCreateOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a quiz question group",
+		Long: `Create a new question group in a quiz for random question selection.
+
+Examples:
+  canvas quizzes groups create --course-id 123 --quiz-id 456 --name "Chapter 5 Questions" --pick-count 5 --points 2`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesGroupsCreate(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().StringVar(&opts.Name, "name", "", "Group name")
+	cmd.Flags().IntVar(&opts.PickCount, "pick-count", 0, "Number of questions to pick from group")
+	cmd.Flags().Float64Var(&opts.QuestionPoints, "points", 0, "Points per question in group")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesGroupsCreate(ctx context.Context, client *api.Client, opts *options.QuizzesGroupsCreateOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.groups.create", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"name":      opts.Name,
+	})
+
+	service := api.NewQuizQuestionGroupsService(client)
+
+	params := &api.CreateQuizQuestionGroupParams{
+		Name:           opts.Name,
+		PickCount:      opts.PickCount,
+		QuestionPoints: opts.QuestionPoints,
+	}
+
+	group, err := service.Create(ctx, opts.CourseID, opts.QuizID, params)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.groups.create", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+		})
+		return fmt.Errorf("failed to create quiz question group: %w", err)
+	}
+
+	printInfo("Quiz question group created (ID: %d)\n", group.ID)
+	if err := formatOutput(group, nil); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.groups.create", 1)
+	return nil
+}
+
+func newQuizzesGroupsUpdateCmd() *cobra.Command {
+	opts := &options.QuizzesGroupsUpdateOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "update <group-id>",
+		Short: "Update a quiz question group",
+		Long: `Update an existing quiz question group.
+
+Examples:
+  canvas quizzes groups update 3 --course-id 123 --quiz-id 456 --pick-count 10`,
+		Args: ExactArgsWithUsage(1, "group-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid group ID: %s", args[0])
+			}
+			opts.GroupID = groupID
+			opts.NameSet = cmd.Flags().Changed("name")
+			opts.PickCountSet = cmd.Flags().Changed("pick-count")
+			opts.PointsSet = cmd.Flags().Changed("points")
+
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesGroupsUpdate(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().StringVar(&opts.Name, "name", "", "Group name")
+	cmd.Flags().IntVar(&opts.PickCount, "pick-count", 0, "Number of questions to pick from group")
+	cmd.Flags().Float64Var(&opts.QuestionPoints, "points", 0, "Points per question in group")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesGroupsUpdate(ctx context.Context, client *api.Client, opts *options.QuizzesGroupsUpdateOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.groups.update", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"group_id":  opts.GroupID,
+	})
+
+	service := api.NewQuizQuestionGroupsService(client)
+
+	params := &api.UpdateQuizQuestionGroupParams{}
+	if opts.NameSet {
+		params.Name = &opts.Name
+	}
+	if opts.PickCountSet {
+		params.PickCount = &opts.PickCount
+	}
+	if opts.PointsSet {
+		params.QuestionPoints = &opts.QuestionPoints
+	}
+
+	group, err := service.Update(ctx, opts.CourseID, opts.QuizID, opts.GroupID, params)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.groups.update", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+			"group_id":  opts.GroupID,
+		})
+		return fmt.Errorf("failed to update quiz question group: %w", err)
+	}
+
+	printInfo("Quiz question group updated (ID: %d)\n", group.ID)
+	if err := formatOutput(group, nil); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.groups.update", 1)
+	return nil
+}
+
+func newQuizzesGroupsDeleteCmd() *cobra.Command {
+	opts := &options.QuizzesGroupsDeleteOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "delete <group-id>",
+		Short: "Delete a quiz question group",
+		Long: `Delete a quiz question group.
+
+Examples:
+  canvas quizzes groups delete 3 --course-id 123 --quiz-id 456 --force`,
+		Args: ExactArgsWithUsage(1, "group-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid group ID: %s", args[0])
+			}
+			opts.GroupID = groupID
+
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesGroupsDelete(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesGroupsDelete(ctx context.Context, client *api.Client, opts *options.QuizzesGroupsDeleteOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.groups.delete", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"group_id":  opts.GroupID,
+	})
+
+	ok, confirmErr := confirmDeleteWithDetails("quiz question group", opts.GroupID, map[string]interface{}{
+		"quiz_id": opts.QuizID,
+	}, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
+	}
+
+	service := api.NewQuizQuestionGroupsService(client)
+
+	if err := service.Delete(ctx, opts.CourseID, opts.QuizID, opts.GroupID); err != nil {
+		logger.LogCommandError(ctx, "quizzes.groups.delete", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+			"group_id":  opts.GroupID,
+		})
+		return fmt.Errorf("failed to delete quiz question group: %w", err)
+	}
+
+	printInfo("Quiz question group %d deleted\n", opts.GroupID)
+	logger.LogCommandComplete(ctx, "quizzes.groups.delete", 1)
+	return nil
+}
+
+// ---- Quiz Reports ----
+
+func newQuizzesReportsListCmd() *cobra.Command {
+	opts := &options.QuizzesReportsListOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List quiz reports",
+		Long: `List all reports for a quiz.
+
+Examples:
+  canvas quizzes reports list --course-id 123 --quiz-id 456`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesReportsList(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().BoolVar(&opts.IncludesAllVersions, "all-versions", false, "Include all quiz versions")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesReportsList(ctx context.Context, client *api.Client, opts *options.QuizzesReportsListOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.reports.list", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+	})
+
+	service := api.NewQuizReportsService(client)
+
+	apiOpts := &api.ListQuizReportsOptions{IncludesAllVersions: opts.IncludesAllVersions}
+	reports, err := service.List(ctx, opts.CourseID, opts.QuizID, apiOpts)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.reports.list", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+		})
+		return fmt.Errorf("failed to list quiz reports: %w", err)
+	}
+
+	if err := formatEmptyOrOutput(reports, "No reports found"); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.reports.list", len(reports))
+	return nil
+}
+
+func newQuizzesReportsGetCmd() *cobra.Command {
+	opts := &options.QuizzesReportsGetOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "get <report-id>",
+		Short: "Get a quiz report",
+		Long: `Get details of a specific quiz report.
+
+Examples:
+  canvas quizzes reports get 5 --course-id 123 --quiz-id 456`,
+		Args: ExactArgsWithUsage(1, "report-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			reportID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid report ID: %s", args[0])
+			}
+			opts.ReportID = reportID
+
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesReportsGet(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesReportsGet(ctx context.Context, client *api.Client, opts *options.QuizzesReportsGetOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.reports.get", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"report_id": opts.ReportID,
+	})
+
+	service := api.NewQuizReportsService(client)
+
+	report, err := service.Get(ctx, opts.CourseID, opts.QuizID, opts.ReportID, false)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.reports.get", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+			"report_id": opts.ReportID,
+		})
+		return fmt.Errorf("failed to get quiz report: %w", err)
+	}
+
+	if err := formatOutput(report, nil); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.reports.get", 1)
+	return nil
+}
+
+func newQuizzesReportsCreateCmd() *cobra.Command {
+	opts := &options.QuizzesReportsCreateOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create (or retrieve) a quiz report",
+		Long: `Generate a quiz report. Report types: student_analysis, item_analysis.
+
+Examples:
+  canvas quizzes reports create --course-id 123 --quiz-id 456 --report-type student_analysis`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesReportsCreate(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().StringVar(&opts.ReportType, "report-type", "", "Report type: student_analysis, item_analysis (required)")
+	cmd.Flags().BoolVar(&opts.IncludesAllVersions, "all-versions", false, "Include all quiz versions")
+	mustMarkRequired(cmd, "course-id", "quiz-id", "report-type")
+
+	return cmd
+}
+
+func runQuizzesReportsCreate(ctx context.Context, client *api.Client, opts *options.QuizzesReportsCreateOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.reports.create", map[string]interface{}{
+		"course_id":   opts.CourseID,
+		"quiz_id":     opts.QuizID,
+		"report_type": opts.ReportType,
+	})
+
+	service := api.NewQuizReportsService(client)
+
+	params := &api.CreateQuizReportParams{
+		ReportType:          opts.ReportType,
+		IncludesAllVersions: opts.IncludesAllVersions,
+	}
+
+	report, err := service.Create(ctx, opts.CourseID, opts.QuizID, params)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.reports.create", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+		})
+		return fmt.Errorf("failed to create quiz report: %w", err)
+	}
+
+	printInfo("Quiz report created (ID: %d)\n", report.ID)
+	if err := formatOutput(report, nil); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.reports.create", 1)
+	return nil
+}
+
+func newQuizzesReportsDeleteCmd() *cobra.Command {
+	opts := &options.QuizzesReportsDeleteOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "delete <report-id>",
+		Short: "Delete a quiz report",
+		Long: `Delete a quiz report.
+
+Examples:
+  canvas quizzes reports delete 5 --course-id 123 --quiz-id 456 --force`,
+		Args: ExactArgsWithUsage(1, "report-id"),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			reportID, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid report ID: %s", args[0])
+			}
+			opts.ReportID = reportID
+
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesReportsDelete(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesReportsDelete(ctx context.Context, client *api.Client, opts *options.QuizzesReportsDeleteOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.reports.delete", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"report_id": opts.ReportID,
+	})
+
+	ok, confirmErr := confirmDeleteWithDetails("quiz report", opts.ReportID, map[string]interface{}{
+		"quiz_id": opts.QuizID,
+	}, opts.Force)
+	if confirmErr != nil {
+		return confirmErr
+	}
+	if !ok {
+		return nil
+	}
+
+	service := api.NewQuizReportsService(client)
+
+	if err := service.Delete(ctx, opts.CourseID, opts.QuizID, opts.ReportID); err != nil {
+		logger.LogCommandError(ctx, "quizzes.reports.delete", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+			"report_id": opts.ReportID,
+		})
+		return fmt.Errorf("failed to delete quiz report: %w", err)
+	}
+
+	printInfo("Quiz report %d deleted\n", opts.ReportID)
+	logger.LogCommandComplete(ctx, "quizzes.reports.delete", 1)
+	return nil
+}
+
+// ---- Quiz Statistics ----
+
+func newQuizzesStatisticsListCmd() *cobra.Command {
+	opts := &options.QuizzesStatisticsListOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "View quiz statistics",
+		Long: `View statistical data for a quiz.
+
+Examples:
+  canvas quizzes statistics list --course-id 123 --quiz-id 456`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesStatisticsList(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesStatisticsList(ctx context.Context, client *api.Client, opts *options.QuizzesStatisticsListOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.statistics.list", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+	})
+
+	service := api.NewQuizStatisticsService(client)
+
+	stats, err := service.List(ctx, opts.CourseID, opts.QuizID)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.statistics.list", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+		})
+		return fmt.Errorf("failed to get quiz statistics: %w", err)
+	}
+
+	if err := formatEmptyOrOutput(stats, "No statistics found"); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.statistics.list", len(stats))
+	return nil
+}
+
+// ---- Quiz Extensions ----
+
+func newQuizzesExtensionsCreateCmd() *cobra.Command {
+	opts := &options.QuizzesExtensionsCreateOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Grant a quiz extension to a student",
+		Long: `Grant extra time or attempts on a quiz to a specific student.
+
+Examples:
+  canvas quizzes extensions create --course-id 123 --quiz-id 456 --user-id 789 --extra-time 30
+  canvas quizzes extensions create --course-id 123 --quiz-id 456 --user-id 789 --extra-attempts 2`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesExtensionsCreate(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID to extend (required)")
+	cmd.Flags().IntVar(&opts.ExtraAttempts, "extra-attempts", 0, "Extra attempts to grant")
+	cmd.Flags().IntVar(&opts.ExtraTime, "extra-time", 0, "Extra time in minutes")
+	cmd.Flags().BoolVar(&opts.ManuallyUnlocked, "manually-unlocked", false, "Manually unlock for student")
+	cmd.Flags().IntVar(&opts.ExtendFromNow, "extend-from-now", 0, "Extend from now by N minutes")
+	mustMarkRequired(cmd, "course-id", "quiz-id", "user-id")
+
+	return cmd
+}
+
+func runQuizzesExtensionsCreate(ctx context.Context, client *api.Client, opts *options.QuizzesExtensionsCreateOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.extensions.create", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+		"user_id":   opts.UserID,
+	})
+
+	service := api.NewQuizExtensionsService(client)
+
+	entries := []api.QuizExtensionEntry{
+		{
+			UserID:           opts.UserID,
+			ExtraAttempts:    opts.ExtraAttempts,
+			ExtraTime:        opts.ExtraTime,
+			ManuallyUnlocked: opts.ManuallyUnlocked,
+			ExtendFromNow:    opts.ExtendFromNow,
+		},
+	}
+
+	exts, err := service.Create(ctx, opts.CourseID, opts.QuizID, entries)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.extensions.create", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+			"user_id":   opts.UserID,
+		})
+		return fmt.Errorf("failed to create quiz extension: %w", err)
+	}
+
+	if err := formatEmptyOrOutput(exts, "No extension data returned"); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.extensions.create", len(exts))
+	return nil
+}
+
+// ---- Quiz IP Filters ----
+
+func newQuizzesIPFiltersListCmd() *cobra.Command {
+	opts := &options.QuizzesIPFiltersListOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List quiz IP filters",
+		Long: `List IP address filters available for quizzes in a course.
+
+Examples:
+  canvas quizzes ip-filters list --course-id 123 --quiz-id 456`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesIPFiltersList(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesIPFiltersList(ctx context.Context, client *api.Client, opts *options.QuizzesIPFiltersListOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.ip-filters.list", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+	})
+
+	service := api.NewQuizIPFiltersService(client)
+
+	filters, err := service.List(ctx, opts.CourseID, opts.QuizID)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.ip-filters.list", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+		})
+		return fmt.Errorf("failed to list quiz IP filters: %w", err)
+	}
+
+	if err := formatEmptyOrOutput(filters, "No IP filters found"); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.ip-filters.list", len(filters))
+	return nil
+}
+
+// ---- Quiz Assignment Overrides ----
+
+func newQuizzesAssignmentOverridesListCmd() *cobra.Command {
+	opts := &options.QuizzesAssignmentOverridesListOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List quiz assignment overrides",
+		Long: `List assignment overrides for quizzes in a course.
+
+Examples:
+  canvas quizzes assignment-overrides list --course-id 123`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesAssignmentOverridesList(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
+
+	return cmd
+}
+
+func runQuizzesAssignmentOverridesList(ctx context.Context, client *api.Client, opts *options.QuizzesAssignmentOverridesListOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.assignment-overrides.list", map[string]interface{}{
+		"course_id": opts.CourseID,
+	})
+
+	service := api.NewQuizAssignmentOverridesService(client)
+
+	overrides, err := service.List(ctx, opts.CourseID, opts.QuizIDs)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.assignment-overrides.list", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+		})
+		return fmt.Errorf("failed to list quiz assignment overrides: %w", err)
+	}
+
+	if err := formatEmptyOrOutput(overrides, "No assignment overrides found"); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.assignment-overrides.list", len(overrides))
+	return nil
+}
+
+func newQuizzesAssignmentOverridesSetCmd() *cobra.Command {
+	opts := &options.QuizzesAssignmentOverridesSetOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "set",
+		Short: "Set quiz assignment overrides",
+		Long: `Create or update assignment overrides for a quiz.
+
+Examples:
+  canvas quizzes assignment-overrides set --course-id 123 --quiz-id 456 --section-id 789 --due-at "2026-08-01T23:59:00Z"`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
+			client, err := getAPIClient()
+			if err != nil {
+				return err
+			}
+
+			return runQuizzesAssignmentOverridesSet(cmd.Context(), client, opts)
+		},
+	}
+
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	cmd.Flags().Int64Var(&opts.QuizID, "quiz-id", 0, "Quiz ID (required)")
+	cmd.Flags().Int64Var(&opts.CourseSectionID, "section-id", 0, "Course section ID for override")
+	cmd.Flags().StringVar(&opts.DueAt, "due-at", "", "Due date (ISO 8601)")
+	cmd.Flags().StringVar(&opts.UnlockAt, "unlock-at", "", "Unlock date (ISO 8601)")
+	cmd.Flags().StringVar(&opts.LockAt, "lock-at", "", "Lock date (ISO 8601)")
+	mustMarkRequired(cmd, "course-id", "quiz-id")
+
+	return cmd
+}
+
+func runQuizzesAssignmentOverridesSet(ctx context.Context, client *api.Client, opts *options.QuizzesAssignmentOverridesSetOptions) error {
+	logger := logging.NewCommandLogger(verbose)
+
+	logger.LogCommandStart(ctx, "quizzes.assignment-overrides.set", map[string]interface{}{
+		"course_id": opts.CourseID,
+		"quiz_id":   opts.QuizID,
+	})
+
+	service := api.NewQuizAssignmentOverridesService(client)
+
+	override := api.AssignmentOverrideEntry{}
+	if opts.CourseSectionID > 0 {
+		override.CourseSectionID = opts.CourseSectionID
+	}
+	if opts.DueAt != "" {
+		override.DueAt = opts.DueAt
+	}
+	if opts.UnlockAt != "" {
+		override.UnlockAt = opts.UnlockAt
+	}
+	if opts.LockAt != "" {
+		override.LockAt = opts.LockAt
+	}
+
+	quizIDStr := strconv.FormatInt(opts.QuizID, 10)
+	params := &api.SetQuizAssignmentOverridesParams{
+		QuizAssignmentOverrides: []api.QuizAssignmentOverrideSetInput{
+			{
+				QuizID:    quizIDStr,
+				Overrides: []api.AssignmentOverrideEntry{override},
+			},
+		},
+	}
+
+	overrides, err := service.Set(ctx, opts.CourseID, params)
+	if err != nil {
+		logger.LogCommandError(ctx, "quizzes.assignment-overrides.set", err, map[string]interface{}{
+			"course_id": opts.CourseID,
+			"quiz_id":   opts.QuizID,
+		})
+		return fmt.Errorf("failed to set quiz assignment overrides: %w", err)
+	}
+
+	if err := formatEmptyOrOutput(overrides, "No overrides returned"); err != nil {
+		return fmt.Errorf("failed to print results: %w", err)
+	}
+
+	logger.LogCommandComplete(ctx, "quizzes.assignment-overrides.set", len(overrides))
 	return nil
 }
