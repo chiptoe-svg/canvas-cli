@@ -12,6 +12,19 @@ sync by `make docs-gen` and the documentation workflow.
 
 ### Added
 
+- **API coverage raised to 80%** (875 of 1086 documented endpoint patterns,
+  method-aware): added ~100 service-layer endpoints across assignments,
+  quizzes, modules, outcomes, outcome-imports, courses, sections,
+  content-migrations, files, folders, pages, discussions, blueprint, accounts,
+  and assignment-groups, each validated by the contract test and covered with
+  assertion-rich tests (method + path + request body + parsed response fields).
+- **Accurate, method-aware coverage measurement**: the `speccheck` coverage
+  harvester now pairs each path with its HTTP verb and resolves context-path
+  helper functions, so coverage is counted at (method, path) granularity on
+  both sides (previously mismatched-granularity).
+
+### Added (spec harness, earlier in this cycle)
+
 - **API spec-compliance harness**: CLI endpoint paths are now validated in CI
   against Canvas's official API spec (Swagger 1.2), committed under
   `testdata/spec/`. A network-free contract test fails the build on any path
