@@ -35,6 +35,8 @@ Pass `--all-writes` to fold the approval tier into the hard-block set, leaving o
 
 The guard classifies every leaf command in the live command tree by its verb (the last path segment, e.g. `delete` in `canvas courses delete`). Compound command names like `delete-comment` are split on `-` and any token matching an irreversible verb triggers the hard-block. Commands under local/utility top-level groups (`auth`, `config`, `cache`, `agent`, `telemetry`, etc.) are excluded entirely — they do not call the Canvas API and must never be gated.
 
+**Classification is fail-safe.** A command is only left _allowed_ if its verb is on an explicit read allowlist (`get`, `list`, `show`, `me`, `search`, …). Irreversible verbs are hard-blocked; **everything else — ordinary writes _and_ any verb the guard doesn't recognize — defaults to "require approval."** So a future command, or a non-obvious mutating verb like `merge`, `cancel`, `bind`, `copy`, or `assign-members`, is gated by default rather than slipping through as a read. Because the guard derives this from the live command tree, regenerating it after an upgrade automatically covers commands added since.
+
 After upgrading `canvas`, regenerate the guard config to capture any new commands:
 
 ```bash

@@ -13,9 +13,12 @@ running destructive canvas operations, derived from the live command tree so the
 list is always complete.
 
 By default it hard-blocks the irreversible actions (delete, remove, conclude,
-crosslist, uncrosslist, deactivate, unpublish, unlink, clear, abort, reset)
-and makes ordinary writes (create, update, publish, grade, ...) require
-approval; read operations stay allowed. Pass --all-writes to block writes too.
+crosslist, deactivate, unpublish, cancel, close, merge, split, reset, ...) and
+makes everything else that isn't a known read (create, update, grade, and any
+verb the guard doesn't recognize) require approval. Classification is fail-safe:
+only an explicit allowlist of read verbs (get, list, show, ...) stays allowed,
+so a new or non-obvious mutating command is gated rather than slipping through.
+Pass --all-writes to block writes too.
 
 IMPORTANT: the "canvas api" escape hatch can issue any HTTP verb. The guard
 blocks "canvas api DELETE/PUT/POST" patterns on the Bash surface but cannot

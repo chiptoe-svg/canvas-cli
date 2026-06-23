@@ -230,6 +230,34 @@ func TestClassifyCanvasCommands_Buckets(t *testing.T) {
 	assertNotContainsPath(t, "read", read, "api GET")
 }
 
+// TestClassifyCanvasCommands_FailSafeDefault is the regression guard for the
+// classifier's most important property: a verb the guard does not recognize is
+// treated as a WRITE requiring approval, never silently allowed as a read. This
+// keeps future commands (and non-obvious mutating verbs) gated by default.
+func TestClassifyCanvasCommands_FailSafeDefault(t *testing.T) {
+	root := &cobra.Command{Use: "canvas"}
+	grp := &cobra.Command{Use: "widgets"}
+	// A verb that exists in no set today (stands in for a future command).
+	for _, v := range []string{"frobnicate", "merge", "cancel", "split", "close", "get"} {
+		grp.AddCommand(&cobra.Command{Use: v, RunE: func(_ *cobra.Command, _ []string) error { return nil }})
+	}
+	root.AddCommand(grp)
+
+	read, writes, irreversible := classifyCanvasCommands(root)
+
+	// Unknown verb must NOT be allowed.
+	assertNotContainsPath(t, "read", read, "widgets frobnicate")
+	assertContainsPath(t, "write (fail-safe)", writes, "widgets frobnicate")
+
+	// Destructive verbs that were previously mis-bucketed must hard-block.
+	for _, v := range []string{"merge", "cancel", "split", "close"} {
+		assertContainsPath(t, "irreversible", irreversible, "widgets "+v)
+	}
+
+	// A genuine read still reads.
+	assertContainsPath(t, "read", read, "widgets get")
+}
+
 func TestClassifyCanvasCommands_LocalGroupsExcluded(t *testing.T) {
 	// Build a tree with all local groups and verify none leak through.
 	root := &cobra.Command{Use: "canvas"}

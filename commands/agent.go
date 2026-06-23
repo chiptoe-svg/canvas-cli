@@ -26,6 +26,10 @@ var canvasIrreversibleVerbs = map[string]bool{
 	"unlink":      true,
 	"clear":       true,
 	"void":        true,
+	"cancel":      true,
+	"close":       true,
+	"merge":       true, // user merge — data loss
+	"split":       true, // reverse of merge, but lossy
 }
 
 // canvasWriteVerbs are Canvas operations that mutate data but can be recovered
@@ -77,6 +81,35 @@ var canvasWriteVerbs = map[string]bool{
 	"link":                true,
 	"enable":              true,
 	"disable":             true,
+}
+
+// canvasReadVerbs is an explicit allowlist of read-only operations. Anything not
+// in this set (and not irreversible) is treated as a write requiring approval —
+// a fail-SAFE default, so a verb the guard hasn't seen (a future command, or a
+// mutating verb like "merge"/"cancel"/"bind"/"copy" that isn't obviously a
+// "create") is gated rather than silently allowed. Matched on the full leaf
+// command name only (no token splitting), so a compound like "delete-entry"
+// can never match a read token.
+var canvasReadVerbs = map[string]bool{
+	"get": true, "list": true, "show": true, "me": true, "search": true,
+	"view": true, "feed": true, "front": true, "profile": true, "quota": true,
+	"permissions": true, "tabs": true, "items": true, "members": true,
+	"memberships": true, "comments": true, "replies": true, "entries": true,
+	"entry-list": true, "results": true, "alignments": true, "revisions": true,
+	"history": true, "history-day": true, "history-submissions": true,
+	"changes": true, "issues": true, "migrators": true, "students": true,
+	"recent-students": true, "missing-submissions": true, "page-views": true,
+	"upcoming-events": true, "unread-count": true, "todo": true, "tracks": true,
+	"runs": true, "next": true, "licenses": true, "errors": true,
+	"department": true, "effective-due-dates": true, "late-policy": true,
+	"completed-statistics": true, "term-activity": true, "term-grades": true,
+	"term-statistics": true, "list-closed": true, "list-enabled": true,
+	"list-opened": true, "list-received": true, "list-sent": true,
+	"list-for-account": true, "list-periods": true, "get-flag": true,
+	"enabled": true, "resolve-path": true, "epub-get": true, "download": true,
+	"content": true, "settings": true, "sso-settings": true, "logins": true,
+	"overrides": true, "pages": true, "media": true, "collaborations": true,
+	"conferences": true, "assignment-override": true,
 }
 
 // canvasLocalGroups are top-level command groups that never call the Canvas
@@ -131,9 +164,12 @@ running destructive canvas operations, derived from the live command tree so the
 list is always complete.
 
 By default it hard-blocks the irreversible actions (delete, remove, conclude,
-crosslist, uncrosslist, deactivate, unpublish, unlink, clear, abort, reset)
-and makes ordinary writes (create, update, publish, grade, ...) require
-approval; read operations stay allowed. Pass --all-writes to block writes too.
+crosslist, deactivate, unpublish, cancel, close, merge, split, reset, ...) and
+makes everything else that isn't a known read (create, update, grade, and any
+verb the guard doesn't recognize) require approval. Classification is fail-safe:
+only an explicit allowlist of read verbs (get, list, show, ...) stays allowed,
+so a new or non-obvious mutating command is gated rather than slipping through.
+Pass --all-writes to block writes too.
 
 IMPORTANT: the "canvas api" escape hatch can issue any HTTP verb. The guard
 blocks "canvas api DELETE/PUT/POST" patterns on the Bash surface but cannot
@@ -242,6 +278,12 @@ func isCanvasWriteVerb(name string) bool {
 	return false
 }
 
+// isCanvasReadVerb reports whether a command name is a known read-only verb.
+// Matched on the full leaf name only — unknown verbs are deliberately NOT reads.
+func isCanvasReadVerb(name string) bool {
+	return canvasReadVerbs[name]
+}
+
 // topLevelGroup returns the top-level command group name for a given command by
 // walking up the parent chain.
 func topLevelGroup(c *cobra.Command) string {
@@ -294,13 +336,16 @@ func classifyCanvasCommands(root *cobra.Command) (read, writes, irreversible []c
 				verb: sub.Name(),
 			}
 
+			// Fail-safe ordering: hard-block irreversible verbs, allow only
+			// explicit reads, and treat everything else — known writes AND any
+			// verb the guard doesn't recognize — as a write requiring approval.
 			switch {
 			case isCanvasIrreversibleVerb(sub.Name()):
 				irreversible = append(irreversible, gc)
-			case isCanvasWriteVerb(sub.Name()):
-				writes = append(writes, gc)
-			default:
+			case isCanvasReadVerb(sub.Name()):
 				read = append(read, gc)
+			default:
+				writes = append(writes, gc)
 			}
 		}
 	}
