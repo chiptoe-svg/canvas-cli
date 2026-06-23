@@ -7,9 +7,6 @@ import (
 	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
 )
 
-// groupAPIErr is a reusable 404 mock for group-not-found scenarios.
-var groupAPIErr = cmdtest.NewErrorResponse(404, "group not found")
-
 // groupCategoryAPIErr is a reusable 404 mock for category-not-found scenarios.
 var groupCategoryAPIErr = cmdtest.NewErrorResponse(404, "category not found")
 

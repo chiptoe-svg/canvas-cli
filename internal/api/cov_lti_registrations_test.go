@@ -17,10 +17,10 @@ func TestCovLTIRegistrations_AllMethods(t *testing.T) {
 		// Return whichever shape the caller might decode: list endpoints get an
 		// array, single-resource endpoints an object. Default to an object; the
 		// few list methods are pointed at array responses below by path suffix.
-		switch {
-		case r.URL.Path == "/api/v1/accounts/1/lti_registrations",
-			r.URL.Path == "/api/v1/accounts/1/lti_registrations/2/history",
-			r.URL.Path == "/api/v1/accounts/1/lti_registrations/2/controls":
+		switch r.URL.Path {
+		case "/api/v1/accounts/1/lti_registrations",
+			"/api/v1/accounts/1/lti_registrations/2/history",
+			"/api/v1/accounts/1/lti_registrations/2/controls":
 			_, _ = w.Write([]byte(`[{"id":2,"name":"Tool"}]`))
 		default:
 			_, _ = w.Write([]byte(`{"id":2,"name":"Tool"}`))

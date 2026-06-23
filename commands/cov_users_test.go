@@ -612,11 +612,6 @@ func TestCovFavorites_CoursesAdd_Happy(t *testing.T) {
 			"/api/v1/users/self/favorites/courses/123": cmdtest.NewMockResponse(`{"id":123,"name":"Added Course"}`),
 		},
 		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Added to favorites") || strings.Contains(output, "Added Course") {
-				// Accept either format
-			}
-		},
 	}
 	cmdtest.RunCommandTest(t, newFavoritesCoursesAddCmd(), tc)
 }
@@ -688,11 +683,6 @@ func TestCovFavorites_CoursesReset_Happy(t *testing.T) {
 			"/api/v1/users/self/favorites/courses": cmdtest.NewMockResponse(`[{"id":1,"name":"Default Course"}]`),
 		},
 		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "reset") || !strings.Contains(output, "defaults") {
-				// Accept any success message
-			}
-		},
 	}
 	cmdtest.RunCommandTest(t, newFavoritesCoursesResetCmd(), tc)
 }

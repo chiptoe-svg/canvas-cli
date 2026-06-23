@@ -140,7 +140,7 @@ func TestPollDeleteCmd(t *testing.T) {
 			Name: "delete poll with force",
 			Args: []string{"1", "--force"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1": cmdtest.MockResponse{StatusCode: 204, Body: ""},
+				"/api/v1/polls/1": {StatusCode: 204, Body: ""},
 			},
 			ExpectError: false,
 		},
@@ -255,7 +255,7 @@ func TestPollChoiceDeleteCmd(t *testing.T) {
 			Name: "delete poll choice with force",
 			Args: []string{"10", "--poll-id", "1", "--force"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/polls/1/poll_choices/10": cmdtest.MockResponse{StatusCode: 204, Body: ""},
+				"/api/v1/polls/1/poll_choices/10": {StatusCode: 204, Body: ""},
 			},
 			ExpectError: false,
 		},
