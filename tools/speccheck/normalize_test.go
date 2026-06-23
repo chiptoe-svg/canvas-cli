@@ -370,6 +370,63 @@ func TestExtractModels_NoDuplicates(t *testing.T) {
 	}
 }
 
+// TestCollapseContextPath_MatchesSpecContractImpl verifies that the
+// collapseContextPath implementation in tools/speccheck/normalize.go produces
+// the same aliases as the equivalent collapseContext function inside
+// internal/api/spec_contract_test.go.
+//
+// Both functions must stay in sync because coverage.go uses collapseContextPath
+// when matching CLI endpoints against the spec, and the contract test uses
+// collapseContext when matching CLI paths against documented endpoints. Drift
+// between the two produces a false "implemented" or false "missing" result.
+//
+// We can't import spec_contract_test.go here (it's in a different package and
+// a test-only file), so we replicate its logic inline and assert both produce
+// identical output for a representative set of paths.
+func TestCollapseContextPath_MatchesSpecContractImpl(t *testing.T) {
+	// specCollapseContext mirrors collapseContext in internal/api/spec_contract_test.go.
+	specCtxPairRe := ctxPairRe // both use the same regex pattern
+	specCollapseContext := func(norm string) []string {
+		if !specCtxPairRe.MatchString(norm) {
+			return nil
+		}
+		return []string{
+			specCtxPairRe.ReplaceAllString(norm, "/api/v1/:x$2"),
+			specCtxPairRe.ReplaceAllString(norm, "/api/v1/:x/:x$2"),
+		}
+	}
+
+	paths := []string{
+		"/api/v1/courses/:x/discussion_topics",
+		"/api/v1/groups/:x/files",
+		"/api/v1/accounts/:x/outcome_groups",
+		"/api/v1/sections/:x/assignments/:x/submissions",
+		"/api/v1/users/:x/profile",
+		"/api/v1/courses/:x",
+		"/api/v1/global/outcome_groups/:x",    // no context pair — should return nil
+		"/api/v1/outcomes/:x",                 // no context pair
+		"/api/v1/courses/:x/pages/front_page", // literal final segment
+	}
+
+	for _, p := range paths {
+		norm := normalizePath(p) // already normalized but run through for safety
+		gotTool := collapseContextPath(norm)
+		gotContract := specCollapseContext(norm)
+
+		if len(gotTool) != len(gotContract) {
+			t.Errorf("collapseContextPath vs collapseContext length mismatch for %q: tool=%v contract=%v",
+				p, gotTool, gotContract)
+			continue
+		}
+		for i := range gotTool {
+			if gotTool[i] != gotContract[i] {
+				t.Errorf("collapseContextPath vs collapseContext differ at index %d for %q: tool=%q contract=%q",
+					i, p, gotTool[i], gotContract[i])
+			}
+		}
+	}
+}
+
 // TestIsAPIPath verifies the helper that filters API paths.
 func TestIsAPIPath(t *testing.T) {
 	cases := []struct {

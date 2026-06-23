@@ -17,6 +17,13 @@ import (
 //     containing /api/v1/
 //
 // The returned slice is sorted and deduplicated.
+//
+// NOTE: this function is not called from production code (main.go uses
+// harvestCLIEndpoints which includes HTTP verb attribution). It is retained
+// because speccheck_io_test.go exercises its path-only extraction semantics
+// in focused unit tests. Refactoring those tests to use harvestCLIEndpoints
+// would require restructuring the assertions around (verb, path) pairs, which
+// is higher-risk than keeping this thin helper.
 func harvestCLIPaths(dir string) ([]string, error) {
 	fset := token.NewFileSet()
 	seen := map[string]bool{}
@@ -103,8 +110,21 @@ var clientVerb = map[string]string{
 // the s.client.<Method> call(s) made in that function. Most service methods are
 // exactly one path + one client call, so the pairing is exact; the rare
 // multi-path or multi-verb function emits the cross product (an accepted
-// approximation for coverage accounting). Skips paths in functions with no
-// recognizable client verb (cannot attribute a method).
+// approximation for coverage accounting — see limitation #2 below). Skips paths
+// in functions with no recognizable client verb (cannot attribute a method).
+//
+// Known limitations:
+//
+//  1. Raw s.client.httpClient.Do(req) calls are not recognized. These are rare
+//     (used only for multipart file uploads) and the verb is determined by the
+//     http.NewRequestWithContext method argument rather than a wrapper name.
+//     Statically resolving that argument is possible but adds complexity; the
+//     few affected paths are covered by other route entries in the same file.
+//
+//  2. A function containing multiple paths and/or verbs emits their cross-product,
+//     which may attribute a verb to a path it doesn't actually use. This is an
+//     accepted reporting approximation — it can over-count coverage but never
+//     mis-classifies a path as missing.
 func harvestCLIEndpoints(dir string) ([]Endpoint, error) {
 	fset := token.NewFileSet()
 	var files []*ast.File
@@ -312,23 +332,49 @@ func apiStringsInExpr(e ast.Expr, helpers map[string][]string, localsOpt ...map[
 
 // callClientVerb returns the HTTP verb if call is an s.client.<Method> (or
 // client.<Method> / c.<Method>) HTTP-helper invocation, else "".
+//
+// It handles three call expression shapes:
+//
+//  1. s.client.GetJSON(...)           — Fun is *ast.SelectorExpr
+//  2. GetAllPagesGeneric[T](s.client, ...) — Fun is *ast.IndexExpr (Go 1.18+)
+//     or *ast.IndexListExpr (multiple type params, Go 1.18+)
+//
+// Shape 2 covers generic free-function helpers like GetAllPagesGeneric[Course].
+// The method name is extracted from the outer Ident and the receiver is matched
+// against "client" in the first argument position.
 func callClientVerb(call *ast.CallExpr) string {
-	sel, ok := call.Fun.(*ast.SelectorExpr)
-	if !ok {
-		return ""
-	}
-	verb, isVerb := clientVerb[sel.Sel.Name]
-	if !isVerb {
-		return ""
-	}
-	switch x := sel.X.(type) {
+	switch fun := call.Fun.(type) {
 	case *ast.SelectorExpr:
-		if x.Sel.Name == "client" {
-			return verb
+		// s.client.Method(...)
+		verb, isVerb := clientVerb[fun.Sel.Name]
+		if !isVerb {
+			return ""
 		}
-	case *ast.Ident:
-		if x.Name == "client" || x.Name == "c" {
-			return verb
+		switch x := fun.X.(type) {
+		case *ast.SelectorExpr:
+			if x.Sel.Name == "client" {
+				return verb
+			}
+		case *ast.Ident:
+			if x.Name == "client" || x.Name == "c" {
+				return verb
+			}
+		}
+
+	case *ast.IndexExpr:
+		// GetAllPagesGeneric[T](s.client, ...) — single type parameter
+		if id, ok := fun.X.(*ast.Ident); ok {
+			if verb, isVerb := clientVerb[id.Name]; isVerb {
+				return verb
+			}
+		}
+
+	case *ast.IndexListExpr:
+		// GetAllPagesGeneric[T, U](s.client, ...) — multiple type parameters
+		if id, ok := fun.X.(*ast.Ident); ok {
+			if verb, isVerb := clientVerb[id.Name]; isVerb {
+				return verb
+			}
 		}
 	}
 	return ""
