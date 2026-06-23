@@ -303,3 +303,78 @@ func (s *BlueprintService) GetMigration(ctx context.Context, courseID int64, tem
 
 	return &migration, nil
 }
+
+// BlueprintSubscription represents a blueprint subscription for a course
+type BlueprintSubscription struct {
+	ID              int64                  `json:"id"`
+	TemplateID      int64                  `json:"template_id"`
+	BlueprintCourse map[string]interface{} `json:"blueprint_course,omitempty"`
+}
+
+// ListSubscriptions retrieves blueprint subscriptions for a course (as a child course)
+// Canvas path: GET /api/v1/courses/:course_id/blueprint_subscriptions
+func (s *BlueprintService) ListSubscriptions(ctx context.Context, courseID int64) ([]BlueprintSubscription, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/blueprint_subscriptions", courseID)
+
+	var subscriptions []BlueprintSubscription
+	if err := s.client.GetAllPages(ctx, path, &subscriptions); err != nil {
+		return nil, err
+	}
+
+	return subscriptions, nil
+}
+
+// ListSubscriptionMigrations retrieves migrations for a blueprint subscription
+// Canvas path: GET /api/v1/courses/:course_id/blueprint_subscriptions/:subscription_id/migrations
+func (s *BlueprintService) ListSubscriptionMigrations(ctx context.Context, courseID, subscriptionID int64) ([]BlueprintMigration, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/blueprint_subscriptions/%d/migrations", courseID, subscriptionID)
+
+	var migrations []BlueprintMigration
+	if err := s.client.GetAllPages(ctx, path, &migrations); err != nil {
+		return nil, err
+	}
+
+	return migrations, nil
+}
+
+// GetSubscriptionMigration retrieves a single migration for a blueprint subscription
+// Canvas path: GET /api/v1/courses/:course_id/blueprint_subscriptions/:subscription_id/migrations/:id
+func (s *BlueprintService) GetSubscriptionMigration(ctx context.Context, courseID, subscriptionID, migrationID int64) (*BlueprintMigration, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/blueprint_subscriptions/%d/migrations/%d", courseID, subscriptionID, migrationID)
+
+	var migration BlueprintMigration
+	if err := s.client.GetJSON(ctx, path, &migration); err != nil {
+		return nil, err
+	}
+
+	return &migration, nil
+}
+
+// GetMigrationDetails retrieves details of a blueprint template migration
+// Canvas path: GET /api/v1/courses/:course_id/blueprint_templates/:template_id/migrations/:id/details
+func (s *BlueprintService) GetMigrationDetails(ctx context.Context, courseID int64, templateID string, migrationID int64) ([]map[string]interface{}, error) {
+	if templateID == "" {
+		templateID = "default"
+	}
+	path := fmt.Sprintf("/api/v1/courses/%d/blueprint_templates/%s/migrations/%d/details", courseID, templateID, migrationID)
+
+	var result []map[string]interface{}
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetSubscriptionMigrationDetails retrieves details of a subscription migration
+// Canvas path: GET /api/v1/courses/:course_id/blueprint_subscriptions/:subscription_id/migrations/:id/details
+func (s *BlueprintService) GetSubscriptionMigrationDetails(ctx context.Context, courseID, subscriptionID, migrationID int64) ([]map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/blueprint_subscriptions/%d/migrations/%d/details", courseID, subscriptionID, migrationID)
+
+	var result []map[string]interface{}
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

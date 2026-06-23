@@ -591,3 +591,49 @@ func (s *ModulesService) GetItemSequence(ctx context.Context, courseID int64, as
 
 	return &sequence, nil
 }
+
+// ModuleOverrideParams holds parameters for updating module assignment overrides
+type ModuleOverrideParams struct {
+	StudentIDs      []int64 `json:"student_ids,omitempty"`
+	CourseSectionID int64   `json:"course_section_id,omitempty"`
+	GroupID         int64   `json:"group_id,omitempty"`
+	DueAt           *string `json:"due_at,omitempty"`
+	UnlockAt        *string `json:"unlock_at,omitempty"`
+	LockAt          *string `json:"lock_at,omitempty"`
+}
+
+// ListAssignmentOverrides retrieves assignment overrides for a module.
+// Uses GetAllPages because Canvas paginates this endpoint.
+func (s *ModulesService) ListAssignmentOverrides(ctx context.Context, courseID, moduleID int64) ([]AssignmentOverride, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/modules/%d/assignment_overrides", courseID, moduleID)
+	var overrides []AssignmentOverride
+	if err := s.client.GetAllPages(ctx, path, &overrides); err != nil {
+		return nil, err
+	}
+	return overrides, nil
+}
+
+// UpdateAssignmentOverrides updates assignment overrides for a module
+func (s *ModulesService) UpdateAssignmentOverrides(ctx context.Context, courseID, moduleID int64, params []ModuleOverrideParams) ([]AssignmentOverride, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/modules/%d/assignment_overrides", courseID, moduleID)
+	body := map[string]interface{}{"assignment_overrides": params}
+	var overrides []AssignmentOverride
+	if err := s.client.PutJSON(ctx, path, body, &overrides); err != nil {
+		return nil, err
+	}
+	return overrides, nil
+}
+
+// Publish publishes a module
+func (s *ModulesService) Publish(ctx context.Context, courseID, moduleID int64) (*Module, error) {
+	published := true
+	params := &UpdateModuleParams{Published: &published}
+	return s.Update(ctx, courseID, moduleID, params)
+}
+
+// Unpublish unpublishes a module
+func (s *ModulesService) Unpublish(ctx context.Context, courseID, moduleID int64) (*Module, error) {
+	published := false
+	params := &UpdateModuleParams{Published: &published}
+	return s.Update(ctx, courseID, moduleID, params)
+}

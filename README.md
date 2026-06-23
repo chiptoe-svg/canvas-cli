@@ -32,8 +32,8 @@
 - **Smart Rate Limiting** - Adaptive throttling based on API quotas
 - **Multiple Outputs** - Table, JSON, YAML, and CSV formats
 - **Interactive Mode** - REPL shell with command history and completion
-- **98 Command Groups** - Covering 738 of Canvas's 1086 documented API endpoints (67%)
-- **Spec-Verified** - Paths validated against Canvas's official API spec in CI ([details](#api-spec-compliance))
+- **80% API Coverage** - 876 of Canvas's 1086 documented endpoints implemented in the service layer, exposed through 98 command groups
+- **Spec-Verified** - Every endpoint path validated against Canvas's official API spec in CI ([details](#api-spec-compliance))
 - **MCP Server** - Use as an AI agent tool via Model Context Protocol
 - **AI Agent Skill** - Bundled skill for Claude Code, Cursor, and other agents (`canvas skills install`)
 - **Signed Releases** - cosign-signed checksums, SBOMs, and a distroless Docker image
@@ -124,8 +124,9 @@ canvas repl
 | **Admin** | `admins`, `roles`, `analytics`, `sis-imports`, `appointment-groups` |
 | **Utilities** | `repl`, `doctor`, `webhook`, `api`, `version` |
 
-This is a sample — the CLI has **98 command groups** covering 67% of Canvas's
-official API. See the [full command reference](https://jjuanrivvera.github.io/canvas-cli/commands/)
+This is a sample — the CLI has **98 command groups**, and its service layer
+implements **80%** of Canvas's official API. See the
+[full command reference](https://jjuanrivvera.github.io/canvas-cli/commands/)
 for all 600+ commands and their flags.
 
 ## API Spec Compliance

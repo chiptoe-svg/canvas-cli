@@ -206,6 +206,84 @@ func TestSectionsService_Uncrosslist_WithOverride(t *testing.T) {
 	}
 }
 
+// TestSectionsService_GradeSubmission_FullBody asserts that GradeSubmission
+// sends the full body including SecondsLateOverride, RubricAssessment, and all
+// comment fields — not just PostedGrade/Excuse/LatePolicyStatus/TextComment.
+func TestSectionsService_GradeSubmission_FullBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.URL.Path != "/api/v1/sections/5/assignments/10/submissions/99" || r.Method != http.MethodPut {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		sub, ok := body["submission"].(map[string]interface{})
+		if !ok {
+			t.Fatal("expected submission object")
+		}
+		if sub["posted_grade"] != "A" {
+			t.Errorf("expected posted_grade=A, got %v", sub["posted_grade"])
+		}
+		if sub["seconds_late_override"] == nil {
+			t.Error("expected seconds_late_override set")
+		}
+		comment, ok := body["comment"].(map[string]interface{})
+		if !ok {
+			t.Fatal("expected comment object")
+		}
+		if comment["text_comment"] != "Great work" {
+			t.Errorf("expected text_comment, got %v", comment["text_comment"])
+		}
+		if comment["group_comment"] != true {
+			t.Errorf("expected group_comment=true, got %v", comment["group_comment"])
+		}
+		rubric, ok := body["rubric_assessment"].(map[string]interface{})
+		if !ok {
+			t.Fatal("expected rubric_assessment object")
+		}
+		criterion, ok := rubric["criterion_1"].(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected criterion_1 in rubric_assessment, got %v", rubric)
+		}
+		if criterion["points"] == nil {
+			t.Error("expected points in criterion")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(Submission{ID: 999})
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "t"})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	svc := NewSectionsService(client)
+	secondsLate := 3600
+	sub, err := svc.GradeSubmission(context.Background(), 5, 10, 99, &GradeSubmissionParams{
+		PostedGrade:         "A",
+		SecondsLateOverride: &secondsLate,
+		Comment: &SubmissionCommentParams{
+			TextComment:  "Great work",
+			GroupComment: true,
+		},
+		RubricAssessment: map[string]RubricAssessmentParams{
+			"criterion_1": {Points: 5.0, Rating: "full_marks", Comments: "Excellent"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("GradeSubmission full body: %v", err)
+	}
+	if sub.ID != 999 {
+		t.Errorf("expected submission ID 999, got %d", sub.ID)
+	}
+}
+
 func TestSectionsService_ListCourse_WithPageOpts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {

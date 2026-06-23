@@ -334,10 +334,10 @@ type CreateOutcomeParams struct {
 	CalculationInt    int
 }
 
-// CreateOutcomeAccount creates a new outcome in an account group
-func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, groupID int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
-	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/outcomes", accountID, groupID)
-
+// buildCreateOutcomeBody constructs the POST body for outcome creation, mapping all
+// CreateOutcomeParams fields to their Canvas JSON keys. Shared by all three
+// CreateOutcome* methods so field coverage is consistent.
+func buildCreateOutcomeBody(params *CreateOutcomeParams) map[string]interface{} {
 	body := map[string]interface{}{
 		"title": params.Title,
 	}
@@ -369,6 +369,15 @@ func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, g
 	if params.CalculationInt > 0 {
 		body["calculation_int"] = params.CalculationInt
 	}
+
+	return body
+}
+
+// CreateOutcomeAccount creates a new outcome in an account group
+func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, groupID int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/outcomes", accountID, groupID)
+
+	body := buildCreateOutcomeBody(params)
 
 	var link OutcomeLink
 	if err := s.client.PostJSON(ctx, path, body, &link); err != nil {
@@ -382,37 +391,7 @@ func (s *OutcomesService) CreateOutcomeAccount(ctx context.Context, accountID, g
 func (s *OutcomesService) CreateOutcomeCourse(ctx context.Context, courseID, groupID int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
 	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d/outcomes", courseID, groupID)
 
-	body := map[string]interface{}{
-		"title": params.Title,
-	}
-
-	if params.DisplayName != "" {
-		body["display_name"] = params.DisplayName
-	}
-
-	if params.Description != "" {
-		body["description"] = params.Description
-	}
-
-	if params.VendorGUID != "" {
-		body["vendor_guid"] = params.VendorGUID
-	}
-
-	if params.MasteryPoints > 0 {
-		body["mastery_points"] = params.MasteryPoints
-	}
-
-	if len(params.Ratings) > 0 {
-		body["ratings"] = params.Ratings
-	}
-
-	if params.CalculationMethod != "" {
-		body["calculation_method"] = params.CalculationMethod
-	}
-
-	if params.CalculationInt > 0 {
-		body["calculation_int"] = params.CalculationInt
-	}
+	body := buildCreateOutcomeBody(params)
 
 	var link OutcomeLink
 	if err := s.client.PostJSON(ctx, path, body, &link); err != nil {
@@ -551,4 +530,377 @@ func (s *OutcomesService) GetAlignments(ctx context.Context, courseID int64, stu
 	}
 
 	return alignments, nil
+}
+
+// OutcomeRollupScore represents a rollup score
+type OutcomeRollupScore struct {
+	// Score is float64 because Canvas mastery scores can be fractional (e.g. 2.5).
+	Score float64                 `json:"score"`
+	Count int                     `json:"count"`
+	Links OutcomeRollupScoreLinks `json:"links"`
+}
+
+// OutcomeRollupScoreLinks contains the outcome ID for a rollup score
+type OutcomeRollupScoreLinks struct {
+	Outcome int64 `json:"outcome"`
+}
+
+// OutcomeRollupLinks contains context references for a rollup
+type OutcomeRollupLinks struct {
+	Course  int64 `json:"course,omitempty"`
+	User    int64 `json:"user,omitempty"`
+	Section int64 `json:"section,omitempty"`
+}
+
+// OutcomeRollup represents an outcome rollup for a user/course
+type OutcomeRollup struct {
+	Name   string               `json:"name"`
+	Links  OutcomeRollupLinks   `json:"links"`
+	Scores []OutcomeRollupScore `json:"scores"`
+}
+
+// OutcomeRollupsResponse wraps rollups response
+type OutcomeRollupsResponse struct {
+	Rollups []OutcomeRollup `json:"rollups"`
+}
+
+// OutcomeRollupsOptions holds query params for rollups
+type OutcomeRollupsOptions struct {
+	Aggregate     string
+	AggregateStat string // Canvas param: aggregate_stat
+	UserIDs       []int64
+	OutcomeIDs    []int64
+	Include       []string
+	Page          int
+	PerPage       int
+}
+
+// ProficiencyRating represents a single proficiency rating level
+type ProficiencyRating struct {
+	Color       string  `json:"color"`
+	Description string  `json:"description"`
+	Mastery     bool    `json:"mastery"`
+	Points      float64 `json:"points"`
+}
+
+// OutcomeProficiency holds proficiency rating settings
+type OutcomeProficiency struct {
+	Ratings []ProficiencyRating `json:"ratings"`
+}
+
+// OutcomeProficiencyParams holds params for creating/updating proficiency
+type OutcomeProficiencyParams struct {
+	Ratings []ProficiencyRating `json:"ratings"`
+}
+
+// OutcomeGroupParams holds params for creating/updating an outcome group
+type OutcomeGroupParams struct {
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	VendorGUID  string `json:"vendor_guid,omitempty"`
+}
+
+// OutcomeGroupImportParams holds params for importing an outcome group
+type OutcomeGroupImportParams struct {
+	SourceOutcomeGroupID int64 `json:"source_outcome_group_id"`
+	Async                bool  `json:"async,omitempty"`
+}
+
+// GetRollupsCourse retrieves outcome rollups for a course
+func (s *OutcomesService) GetRollupsCourse(ctx context.Context, courseID int64, opts *OutcomeRollupsOptions) (*OutcomeRollupsResponse, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_rollups", courseID)
+	if opts != nil {
+		query := url.Values{}
+		if opts.Aggregate != "" {
+			query.Add("aggregate", opts.Aggregate)
+		}
+		if opts.AggregateStat != "" {
+			query.Add("aggregate_stat", opts.AggregateStat)
+		}
+		for _, uid := range opts.UserIDs {
+			query.Add("user_ids[]", strconv.FormatInt(uid, 10))
+		}
+		for _, oid := range opts.OutcomeIDs {
+			query.Add("outcome_ids[]", strconv.FormatInt(oid, 10))
+		}
+		for _, inc := range opts.Include {
+			query.Add("include[]", inc)
+		}
+		if opts.Page > 0 {
+			query.Add("page", strconv.Itoa(opts.Page))
+		}
+		if opts.PerPage > 0 {
+			query.Add("per_page", strconv.Itoa(opts.PerPage))
+		}
+		if len(query) > 0 {
+			path += "?" + query.Encode()
+		}
+	}
+	var response OutcomeRollupsResponse
+	if err := s.client.GetJSON(ctx, path, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+// GetProficiencyCourse retrieves outcome proficiency for a course
+func (s *OutcomesService) GetProficiencyCourse(ctx context.Context, courseID int64) (*OutcomeProficiency, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_proficiency", courseID)
+	var result OutcomeProficiency
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// UpdateProficiencyCourse creates or updates outcome proficiency for a course
+func (s *OutcomesService) UpdateProficiencyCourse(ctx context.Context, courseID int64, params *OutcomeProficiencyParams) (*OutcomeProficiency, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_proficiency", courseID)
+	var result OutcomeProficiency
+	if err := s.client.PostJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ListGroupLinksCourse retrieves outcome group links for a course
+func (s *OutcomesService) ListGroupLinksCourse(ctx context.Context, courseID int64) ([]OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_group_links", courseID)
+	var links []OutcomeLink
+	if err := s.client.GetAllPages(ctx, path, &links); err != nil {
+		return nil, err
+	}
+	return links, nil
+}
+
+// GetGlobalRootGroup retrieves the global root outcome group
+func (s *OutcomesService) GetGlobalRootGroup(ctx context.Context) (*OutcomeGroup, error) {
+	path := "/api/v1/global/root_outcome_group"
+	var group OutcomeGroup
+	if err := s.client.GetJSON(ctx, path, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// GetGlobalGroup retrieves a global outcome group by ID
+func (s *OutcomesService) GetGlobalGroup(ctx context.Context, id int64) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d", id)
+	var group OutcomeGroup
+	if err := s.client.GetJSON(ctx, path, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// UpdateGlobalGroup updates a global outcome group
+func (s *OutcomesService) UpdateGlobalGroup(ctx context.Context, id int64, params *OutcomeGroupParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d", id)
+	var group OutcomeGroup
+	if err := s.client.PutJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// DeleteGlobalGroup deletes a global outcome group
+func (s *OutcomesService) DeleteGlobalGroup(ctx context.Context, id int64) error {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d", id)
+	_, err := s.client.Delete(ctx, path)
+	return err
+}
+
+// ListGlobalGroupSubgroups retrieves subgroups of a global outcome group
+func (s *OutcomesService) ListGlobalGroupSubgroups(ctx context.Context, id int64) ([]OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/subgroups", id)
+	var groups []OutcomeGroup
+	if err := s.client.GetAllPages(ctx, path, &groups); err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+// CreateGlobalGroupSubgroup creates a subgroup within a global outcome group
+func (s *OutcomesService) CreateGlobalGroupSubgroup(ctx context.Context, id int64, params *OutcomeGroupParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/subgroups", id)
+	var group OutcomeGroup
+	if err := s.client.PostJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// ListGlobalGroupOutcomes retrieves outcomes in a global outcome group
+func (s *OutcomesService) ListGlobalGroupOutcomes(ctx context.Context, id int64) ([]OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/outcomes", id)
+	var links []OutcomeLink
+	if err := s.client.GetAllPages(ctx, path, &links); err != nil {
+		return nil, err
+	}
+	return links, nil
+}
+
+// CreateGlobalGroupOutcome creates an outcome in a global outcome group
+func (s *OutcomesService) CreateGlobalGroupOutcome(ctx context.Context, id int64, params *CreateOutcomeParams) (*OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/outcomes", id)
+	body := buildCreateOutcomeBody(params)
+	var link OutcomeLink
+	if err := s.client.PostJSON(ctx, path, body, &link); err != nil {
+		return nil, err
+	}
+	return &link, nil
+}
+
+// DeleteGlobalGroupOutcome removes an outcome from a global outcome group
+func (s *OutcomesService) DeleteGlobalGroupOutcome(ctx context.Context, id, outcomeID int64) (*OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/outcomes/%d", id, outcomeID)
+	var link OutcomeLink
+	if err := s.client.DeleteJSON(ctx, path, &link); err != nil {
+		return nil, err
+	}
+	return &link, nil
+}
+
+// LinkGlobalGroupOutcome links an outcome to a global outcome group
+func (s *OutcomesService) LinkGlobalGroupOutcome(ctx context.Context, id, outcomeID int64) (*OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/outcomes/%d", id, outcomeID)
+	var link OutcomeLink
+	if err := s.client.PutJSON(ctx, path, nil, &link); err != nil {
+		return nil, err
+	}
+	return &link, nil
+}
+
+// ImportGlobalGroup imports an outcome group into a global outcome group
+func (s *OutcomesService) ImportGlobalGroup(ctx context.Context, id int64, params *OutcomeGroupImportParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/global/outcome_groups/%d/import", id)
+	var group OutcomeGroup
+	if err := s.client.PostJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// DeleteGroupAccount deletes an outcome group from an account
+func (s *OutcomesService) DeleteGroupAccount(ctx context.Context, accountID, id int64) error {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d", accountID, id)
+	_, err := s.client.Delete(ctx, path)
+	return err
+}
+
+// UpdateGroupAccount updates an outcome group in an account
+func (s *OutcomesService) UpdateGroupAccount(ctx context.Context, accountID, id int64, params *OutcomeGroupParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d", accountID, id)
+	var group OutcomeGroup
+	if err := s.client.PutJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// ImportGroupAccount imports an outcome group into an account group
+func (s *OutcomesService) ImportGroupAccount(ctx context.Context, accountID, id int64, params *OutcomeGroupImportParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/import", accountID, id)
+	var group OutcomeGroup
+	if err := s.client.PostJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// ListGroupSubgroupsAccount retrieves subgroups of an account outcome group
+func (s *OutcomesService) ListGroupSubgroupsAccount(ctx context.Context, accountID, id int64) ([]OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/subgroups", accountID, id)
+	var groups []OutcomeGroup
+	if err := s.client.GetAllPages(ctx, path, &groups); err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+// CreateGroupSubgroupAccount creates a subgroup within an account outcome group
+func (s *OutcomesService) CreateGroupSubgroupAccount(ctx context.Context, accountID, id int64, params *OutcomeGroupParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_groups/%d/subgroups", accountID, id)
+	var group OutcomeGroup
+	if err := s.client.PostJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// DeleteGroupCourse deletes an outcome group from a course
+func (s *OutcomesService) DeleteGroupCourse(ctx context.Context, courseID, id int64) error {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d", courseID, id)
+	_, err := s.client.Delete(ctx, path)
+	return err
+}
+
+// UpdateGroupCourse updates an outcome group in a course
+func (s *OutcomesService) UpdateGroupCourse(ctx context.Context, courseID, id int64, params *OutcomeGroupParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d", courseID, id)
+	var group OutcomeGroup
+	if err := s.client.PutJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// ImportGroupCourse imports an outcome group into a course group
+func (s *OutcomesService) ImportGroupCourse(ctx context.Context, courseID, id int64, params *OutcomeGroupImportParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d/import", courseID, id)
+	var group OutcomeGroup
+	if err := s.client.PostJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// ListGroupSubgroupsCourse retrieves subgroups of a course outcome group
+func (s *OutcomesService) ListGroupSubgroupsCourse(ctx context.Context, courseID, id int64) ([]OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d/subgroups", courseID, id)
+	var groups []OutcomeGroup
+	if err := s.client.GetAllPages(ctx, path, &groups); err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+// CreateGroupSubgroupCourse creates a subgroup within a course outcome group
+func (s *OutcomesService) CreateGroupSubgroupCourse(ctx context.Context, courseID, id int64, params *OutcomeGroupParams) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_groups/%d/subgroups", courseID, id)
+	var group OutcomeGroup
+	if err := s.client.PostJSON(ctx, path, params, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// GetRootGroupCourse retrieves the root outcome group for a course
+func (s *OutcomesService) GetRootGroupCourse(ctx context.Context, courseID int64) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/root_outcome_group", courseID)
+	var group OutcomeGroup
+	if err := s.client.GetJSON(ctx, path, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// GetRootGroupAccount retrieves the root outcome group for an account
+func (s *OutcomesService) GetRootGroupAccount(ctx context.Context, accountID int64) (*OutcomeGroup, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/root_outcome_group", accountID)
+	var group OutcomeGroup
+	if err := s.client.GetJSON(ctx, path, &group); err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// ListGroupLinksAccount retrieves outcome group links for an account
+func (s *OutcomesService) ListGroupLinksAccount(ctx context.Context, accountID int64) ([]OutcomeLink, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/outcome_group_links", accountID)
+	var links []OutcomeLink
+	if err := s.client.GetAllPages(ctx, path, &links); err != nil {
+		return nil, err
+	}
+	return links, nil
 }

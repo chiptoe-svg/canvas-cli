@@ -377,3 +377,163 @@ func (s *ContentMigrationsService) ListMigrationIssues(ctx context.Context, cour
 
 	return issues, nil
 }
+
+// GetMigrationIssue retrieves a single migration issue for a course
+func (s *ContentMigrationsService) GetMigrationIssue(ctx context.Context, courseID, migrationID, issueID int64) (*MigrationIssue, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/content_migrations/%d/migration_issues/%d", courseID, migrationID, issueID)
+
+	var issue MigrationIssue
+	if err := s.client.GetJSON(ctx, path, &issue); err != nil {
+		return nil, err
+	}
+
+	return &issue, nil
+}
+
+// UpdateMigrationIssue updates a migration issue for a course
+func (s *ContentMigrationsService) UpdateMigrationIssue(ctx context.Context, courseID, migrationID, issueID int64, params *MigrationIssueUpdateParams) (*MigrationIssue, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/content_migrations/%d/migration_issues/%d", courseID, migrationID, issueID)
+
+	var issue MigrationIssue
+	if err := s.client.PutJSON(ctx, path, params, &issue); err != nil {
+		return nil, err
+	}
+
+	return &issue, nil
+}
+
+// GetAssetIDMapping retrieves the asset ID mapping for a course content migration
+func (s *ContentMigrationsService) GetAssetIDMapping(ctx context.Context, courseID, migrationID int64) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/content_migrations/%d/asset_id_mapping", courseID, migrationID)
+
+	var result map[string]interface{}
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// ListMigrationIssuesForGroup retrieves content migration issues for a group
+func (s *ContentMigrationsService) ListMigrationIssuesForGroup(ctx context.Context, groupID, migrationID int64) ([]MigrationIssue, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d/migration_issues", groupID, migrationID)
+
+	var issues []MigrationIssue
+	if err := s.client.GetAllPages(ctx, path, &issues); err != nil {
+		return nil, err
+	}
+
+	return issues, nil
+}
+
+// GetMigrationIssueForGroup retrieves a single migration issue for a group
+func (s *ContentMigrationsService) GetMigrationIssueForGroup(ctx context.Context, groupID, migrationID, issueID int64) (*MigrationIssue, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d/migration_issues/%d", groupID, migrationID, issueID)
+
+	var issue MigrationIssue
+	if err := s.client.GetJSON(ctx, path, &issue); err != nil {
+		return nil, err
+	}
+
+	return &issue, nil
+}
+
+// UpdateMigrationIssueForGroup updates a migration issue for a group
+func (s *ContentMigrationsService) UpdateMigrationIssueForGroup(ctx context.Context, groupID, migrationID, issueID int64, params *MigrationIssueUpdateParams) (*MigrationIssue, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d/migration_issues/%d", groupID, migrationID, issueID)
+
+	var issue MigrationIssue
+	if err := s.client.PutJSON(ctx, path, params, &issue); err != nil {
+		return nil, err
+	}
+
+	return &issue, nil
+}
+
+// ListForGroup retrieves content migrations for a group
+func (s *ContentMigrationsService) ListForGroup(ctx context.Context, groupID int64) ([]ContentMigration, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations", groupID)
+
+	var migrations []ContentMigration
+	if err := s.client.GetAllPages(ctx, path, &migrations); err != nil {
+		return nil, err
+	}
+
+	return migrations, nil
+}
+
+// CreateForGroup creates a content migration for a group
+func (s *ContentMigrationsService) CreateForGroup(ctx context.Context, groupID int64, params *CreateContentMigrationParams) (*ContentMigration, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations", groupID)
+
+	body := map[string]interface{}{
+		"migration_type": params.MigrationType,
+	}
+	if params.SourceCourseID != nil {
+		body["settings"] = map[string]interface{}{
+			"source_course_id": *params.SourceCourseID,
+		}
+	}
+
+	var migration ContentMigration
+	if err := s.client.PostJSON(ctx, path, body, &migration); err != nil {
+		return nil, err
+	}
+
+	return &migration, nil
+}
+
+// GetForGroup retrieves a single content migration for a group
+func (s *ContentMigrationsService) GetForGroup(ctx context.Context, groupID, migrationID int64) (*ContentMigration, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d", groupID, migrationID)
+
+	var migration ContentMigration
+	if err := s.client.GetJSON(ctx, path, &migration); err != nil {
+		return nil, err
+	}
+
+	return &migration, nil
+}
+
+// UpdateForGroup updates a content migration for a group
+func (s *ContentMigrationsService) UpdateForGroup(ctx context.Context, groupID, migrationID int64, params *UpdateContentMigrationParams) (*ContentMigration, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d", groupID, migrationID)
+
+	var migration ContentMigration
+	if err := s.client.PutJSON(ctx, path, params, &migration); err != nil {
+		return nil, err
+	}
+
+	return &migration, nil
+}
+
+// GetSelectiveDataForGroup retrieves selective data for a group content migration.
+// Accepts an optional contentType filter (Canvas param: "type"), uses GetAllPages
+// because the endpoint is paginated, and returns typed []ContentListItem to match
+// the course-scoped ListContentList.
+func (s *ContentMigrationsService) GetSelectiveDataForGroup(ctx context.Context, groupID, migrationID int64, contentType string) ([]ContentListItem, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/%d/selective_data", groupID, migrationID)
+
+	if contentType != "" {
+		path += "?type=" + url.QueryEscape(contentType)
+	}
+
+	var result []ContentListItem
+	if err := s.client.GetAllPages(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetMigratorsForGroup retrieves migrators available for groups
+func (s *ContentMigrationsService) GetMigratorsForGroup(ctx context.Context, groupID int64) ([]Migrator, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/content_migrations/migrators", groupID)
+
+	var migrators []Migrator
+	if err := s.client.GetAllPages(ctx, path, &migrators); err != nil {
+		return nil, err
+	}
+
+	return migrators, nil
+}

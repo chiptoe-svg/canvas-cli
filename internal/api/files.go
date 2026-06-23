@@ -732,3 +732,112 @@ func (s *FilesService) ListLicenses(ctx context.Context, courseID, groupID, user
 
 	return licenses, nil
 }
+
+// FileDateDetails represents date availability details for a file.
+//
+// Date fields intentionally omit `omitempty`: a nil pointer marshals as JSON
+// null, which tells Canvas to explicitly clear the date. Using omitempty would
+// silently drop nil fields and make it impossible to unset a date via PUT.
+// The Canvas date_details API follows "send null to clear" semantics.
+type FileDateDetails struct {
+	DueAt     *string              `json:"due_at"`
+	UnlockAt  *string              `json:"unlock_at"`
+	LockAt    *string              `json:"lock_at"`
+	Overrides []AssignmentOverride `json:"overrides,omitempty"`
+}
+
+// GetCourseDateDetails retrieves date details for a file in a course context
+// Canvas path: GET /api/v1/courses/:course_id/files/:attachment_id/date_details
+func (s *FilesService) GetCourseDateDetails(ctx context.Context, courseID, attachmentID int64) (*FileDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/files/%d/date_details", courseID, attachmentID)
+
+	var result FileDateDetails
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateCourseDateDetails updates date details for a file in a course context
+// Canvas path: PUT /api/v1/courses/:course_id/files/:attachment_id/date_details
+func (s *FilesService) UpdateCourseDateDetails(ctx context.Context, courseID, attachmentID int64, params *FileDateDetails) (*FileDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/files/%d/date_details", courseID, attachmentID)
+
+	var result FileDateDetails
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// FilePublicURL represents the public URL for a file
+type FilePublicURL struct {
+	PublicURL string `json:"public_url"`
+}
+
+// GetPublicURL retrieves the public URL for a file
+// Canvas path: GET /api/v1/files/:id/public_url
+func (s *FilesService) GetPublicURL(ctx context.Context, fileID int64) (*FilePublicURL, error) {
+	path := fmt.Sprintf("/api/v1/files/%d/public_url", fileID)
+
+	var result FilePublicURL
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetIconMetadata retrieves icon metadata for a file
+// Canvas path: GET /api/v1/files/:id/icon_metadata
+func (s *FilesService) GetIconMetadata(ctx context.Context, fileID int64) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/files/%d/icon_metadata", fileID)
+
+	var result map[string]interface{}
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetGroupFile retrieves a file by ID in a group context
+// Canvas path: GET /api/v1/groups/:group_id/files/:id
+func (s *FilesService) GetGroupFile(ctx context.Context, groupID, fileID int64) (*Attachment, error) {
+	path := fmt.Sprintf("/api/v1/groups/%d/files/%d", groupID, fileID)
+
+	var file Attachment
+	if err := s.client.GetJSON(ctx, path, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
+
+// GetCourseFile retrieves a file by ID in a course context
+// Canvas path: GET /api/v1/courses/:course_id/files/:id
+func (s *FilesService) GetCourseFile(ctx context.Context, courseID, fileID int64) (*Attachment, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/files/%d", courseID, fileID)
+
+	var file Attachment
+	if err := s.client.GetJSON(ctx, path, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
+
+// GetFileRef retrieves a file by migration ID in a course context
+// Canvas path: GET /api/v1/courses/:course_id/files/file_ref/:migration_id
+func (s *FilesService) GetFileRef(ctx context.Context, courseID int64, migrationID string) (*Attachment, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/files/file_ref/%s", courseID, migrationID)
+
+	var file Attachment
+	if err := s.client.GetJSON(ctx, path, &file); err != nil {
+		return nil, err
+	}
+
+	return &file, nil
+}
