@@ -1,0 +1,370 @@
+package commands
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/spf13/cobra"
+)
+
+// --- Claude Code ---
+
+func emitCanvasClaudeCode(cmd *cobra.Command, g canvasGuardPlan, write bool) error {
+	blocked := g.blocked()
+	asked := g.asked()
+
+	// A) Exact, non-regex deny rules — one entry per blocked command path.
+	// Claude matches permission rules as literal prefix patterns, so
+	// "Bash(canvas courses delete:*)" matches exactly that subcommand prefix
+	// and cannot false-match an argument that happens to contain "delete".
+	deny := []string{}
+	for _, gc := range blocked {
+		deny = append(deny, fmt.Sprintf("Bash(canvas %s:*)", gc.cli))
+	}
+	// Hard-block the raw-api escape for known destructive HTTP methods.
+	// These are exact prefix patterns; PATCH is included as it is also
+	// write-capable. They cannot false-match a GET whose URL path contains
+	// "delete" or "post" because the method token position is fixed.
+	deny = append(deny,
+		"Bash(canvas api DELETE:*)",
+		"Bash(canvas api PUT:*)",
+		"Bash(canvas api POST:*)",
+		"Bash(canvas api PATCH:*)",
+	)
+	// Exact MCP tool names — no regex, no glob. Each blocked command has a
+	// deterministic tool name (e.g. "mcp__canvas__canvas_courses_delete").
+	for _, gc := range blocked {
+		deny = append(deny, "mcp__canvas__"+gc.tool)
+	}
+
+	// A) Exact, non-regex ask rules.
+	ask := []string{}
+	for _, gc := range asked {
+		ask = append(ask, fmt.Sprintf("Bash(canvas %s:*)", gc.cli))
+	}
+	for _, gc := range asked {
+		ask = append(ask, "mcp__canvas__"+gc.tool)
+	}
+
+	projectRoot := findProjectRoot(cmd)
+	// ${CLAUDE_PROJECT_DIR} is the Claude runtime variable; it is NOT expanded
+	// at write time — Claude substitutes it when loading the hook.
+	hookPath := "${CLAUDE_PROJECT_DIR}/.claude/hooks/canvas-guard.sh"
+	hookEntry := func(matcher string) map[string]any {
+		return map[string]any{
+			"matcher": matcher,
+			"hooks":   []any{map[string]any{"type": "command", "command": hookPath}},
+		}
+	}
+	settings := map[string]any{
+		"permissions": map[string]any{"deny": deny, "ask": ask},
+		"hooks": map[string]any{
+			// Hook on both Bash and the exact canvas MCP namespace.
+			"PreToolUse": []any{hookEntry("Bash"), hookEntry("mcp__canvas__")},
+		},
+	}
+	settingsJSON, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	out := cmd.OutOrStdout()
+	fmt.Fprintln(out, "# Claude Code agent-safety config. The MCP-tool branch of the hook is a hard")
+	fmt.Fprintln(out, "# block (structured tool names can't be obfuscated); the Bash branch is")
+	fmt.Fprintln(out, "# best-effort — it defeats quote/backslash tricks but not variable")
+	fmt.Fprintln(out, "# indirection or shell aliases, so MCP-only operation (or a read-only")
+	fmt.Fprintln(out, "# sandbox) is the strongest guarantee. The permission rules are")
+	fmt.Fprintln(out, "# belt-and-suspenders. The 'canvas api' escape hatch is partially covered")
+	fmt.Fprintln(out, "# (DELETE/PUT/POST/PATCH patterns) but can bypass verb classification —")
+	fmt.Fprintln(out, "# prefer MCP-only operation for a hard guarantee. Regenerate after upgrading.")
+	fmt.Fprintln(out)
+
+	hookScriptPath := canvasHookScriptPath(write, projectRoot)
+	hookContent := canvasHookScript(blocked)
+	if err := canvasWriteOrPrint(cmd, write, hookScriptPath, hookContent, 0o755); err != nil {
+		return err
+	}
+	fmt.Fprintln(out)
+
+	settingsPath := canvasClaudeSettingsPath(write, projectRoot)
+	return canvasWriteOrPrint(cmd, write, settingsPath, string(settingsJSON)+"\n", 0o644)
+}
+
+// canvasHookScriptPath returns the path for the hook script. When writing,
+// it resolves to <projectRoot>/.claude/hooks/canvas-guard.sh so the file
+// lands under the git root regardless of CWD.
+func canvasHookScriptPath(write bool, projectRoot string) string {
+	if write {
+		return filepath.Join(projectRoot, ".claude", "hooks", "canvas-guard.sh")
+	}
+	return ".claude/hooks/canvas-guard.sh"
+}
+
+// canvasClaudeSettingsPath returns the path for settings.json. When writing,
+// it resolves to <projectRoot>/.claude/settings.json.
+func canvasClaudeSettingsPath(write bool, projectRoot string) string {
+	if write {
+		return filepath.Join(projectRoot, ".claude", "settings.json")
+	}
+	return ".claude/settings.json"
+}
+
+// canvasHookScript generates the PreToolUse hook script. It uses exact
+// command-path anchored matching rather than bare-verb grep so that arguments
+// containing a blocked word do not cause false positives
+// (e.g. "canvas pages create --title 'How to delete a student'" is allowed;
+// only "canvas courses delete" at the command position is blocked).
+func canvasHookScript(blocked []canvasGuardCmd) string {
+	// Build ordered, deduplicated cli-path list for the Bash branch and
+	// exact tool-name list for the MCP branch.
+	seenCLI := map[string]bool{}
+	seenTool := map[string]bool{}
+	var cliPaths []string
+	var toolNames []string
+	for _, gc := range blocked {
+		if !seenCLI[gc.cli] {
+			seenCLI[gc.cli] = true
+			cliPaths = append(cliPaths, gc.cli)
+		}
+		if !seenTool[gc.tool] {
+			seenTool[gc.tool] = true
+			toolNames = append(toolNames, "mcp__canvas__"+gc.tool)
+		}
+	}
+
+	// Emit the cli-paths as a shell array assignment.
+	var cliArray strings.Builder
+	cliArray.WriteString("blocked_cmds=(\n")
+	for _, p := range cliPaths {
+		// Escape any single quotes in the path (there should be none, but be safe).
+		safe := strings.ReplaceAll(p, "'", "'\\''")
+		cliArray.WriteString("  '" + safe + "'\n")
+	}
+	cliArray.WriteString(")")
+
+	// Emit the mcp tool names as a shell array.
+	var toolArray strings.Builder
+	toolArray.WriteString("blocked_tools=(\n")
+	for _, t := range toolNames {
+		safe := strings.ReplaceAll(t, "'", "'\\''")
+		toolArray.WriteString("  '" + safe + "'\n")
+	}
+	toolArray.WriteString(")")
+
+	return `#!/usr/bin/env bash
+# canvas agent guard — blocks irreversible canvas operations on the Bash and MCP
+# surfaces. Generated by ` + "`canvas agent guard`" + `; regenerate after
+# upgrading canvas so new actions are covered.
+#
+# MATCHING STRATEGY: commands are matched by exact SUBCOMMAND PATH at the
+# command position, not by bare verbs anywhere in the line. This prevents:
+#   - false positives: "canvas pages create --title 'How to delete a student'"
+#     is NOT blocked because "pages create" is not in the blocked set.
+#   - false negatives: bare-verb grep would miss "canvas courses delete" only
+#     when "delete" appears after a pipe or semicolon in a multi-command line.
+#
+# For each blocked cli-path P, we check whether the CLEANED command string
+# matches the anchored ERE:
+#   (^|[;&|(]+)[[:space:]]*canvas[[:space:]]+<P>([[:space:]]|$)
+# which ensures canvas+P appears at a command position.
+#
+# The MCP branch is an exact set-membership check — no glob or regex.
+# The "canvas api" escape hatch is caught by method-position matching:
+#   canvas api (DELETE|PUT|POST|PATCH) at word boundary.
+#
+# De-obfuscation: quotes (\042 / \047) and backslash (\134) are stripped from
+# the raw command string before pattern matching to defeat trivial tricks like
+#   canvas courses de""lete 5
+# Variable indirection (a=delete; canvas courses $a 5) and aliases are NOT
+# defeated — use MCP-only mode or a read-only sandbox for a hard guarantee.
+
+# --- blocked command paths (Bash surface) ---
+` + cliArray.String() + `
+
+# --- blocked MCP tool names (exact) ---
+` + toolArray.String() + `
+
+input=$(cat)
+
+# deny_raw emits a denial with a FIXED reason via printf (no jq needed).
+deny_raw() {
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+  exit 0
+}
+
+# deobfuscate strips quote chars (\042=", \047=', \134=\) and collapses
+# newlines to a single line so obfuscation tricks can't split a token across
+# lines. Applied in BOTH the jq and no-jq branches.
+deobfuscate() {
+  printf '%s' "$1" | tr -d '\042\047\134' | tr '\n' ' '
+}
+
+# bash_is_blocked returns 0 (true) if the cleaned command contains a blocked
+# canvas subcommand at the command position.
+bash_is_blocked() {
+  local cleaned="$1"
+  local p
+  for p in "${blocked_cmds[@]}"; do
+    # Escape any regex metacharacters in the path (paths are "word word" so
+    # only spaces need escaping to [[:space:]]+).
+    local pat
+    pat=$(printf '%s' "$p" | sed 's/ /[[:space:]]+/g')
+    if printf '%s' "$cleaned" | grep -qiE "(^|[;&|([:space:]]+)canvas[[:space:]]+${pat}([[:space:]]|\$)"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# api_is_blocked returns 0 (true) if the command is a destructive raw-api call.
+# Matches canvas api (DELETE|PUT|POST|PATCH) at the method position only, so
+# a GET whose PATH contains "delete" or "posts" is NOT blocked.
+api_is_blocked() {
+  local cleaned="$1"
+  printf '%s' "$cleaned" | grep -qiE "(^|[;&|([:space:]]+)canvas[[:space:]]+api[[:space:]]+(DELETE|PUT|POST|PATCH)[[:space:]/]"
+}
+
+# Without jq we cannot isolate the tool_name/command fields. Fail safe: apply
+# the same de-obfuscation and anchored path matching on the raw payload rather
+# than a loose canvas.*verb scan that would flag any Bash line mentioning
+# canvas+verb (e.g. "cat courses_delete.go").
+if ! command -v jq >/dev/null 2>&1; then
+  flat=$(printf '%s' "$input" | tr '\n' ' ')
+  cleaned=$(deobfuscate "$flat")
+  if bash_is_blocked "$cleaned"; then
+    deny_raw "canvas agent guard: irreversible operation blocked (jq unavailable; raw match)."
+  fi
+  if api_is_blocked "$cleaned"; then
+    deny_raw "canvas agent guard: destructive raw-api call blocked (jq unavailable; raw match)."
+  fi
+  exit 0
+fi
+
+# deny emits the denial with a jq-escaped reason so an interpolated value
+# can never break out of the JSON string.
+deny() {
+  jq -c -n --arg r "$1" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+  exit 0
+}
+
+tool=$(printf '%s' "$input" | jq -r '.tool_name // empty')
+case "$tool" in
+  Bash)
+    raw_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
+    cleaned=$(deobfuscate "$raw_cmd")
+    if bash_is_blocked "$cleaned"; then
+      deny "canvas agent guard: irreversible operation blocked."
+    fi
+    if api_is_blocked "$cleaned"; then
+      deny "canvas agent guard: destructive raw-api call blocked. Use dedicated commands or MCP-only mode."
+    fi
+    ;;
+  *)
+    # MCP branch: exact set-membership — no substring or regex match.
+    for t in "${blocked_tools[@]}"; do
+      if [ "$tool" = "$t" ]; then
+        deny "canvas agent guard: irreversible MCP tool blocked (${tool})."
+      fi
+    done
+    ;;
+esac
+exit 0
+`
+}
+
+// --- Codex ---
+
+func emitCanvasCodex(cmd *cobra.Command, g canvasGuardPlan, write bool) error {
+	out := cmd.OutOrStdout()
+	fmt.Fprintln(out, "# Codex agent-safety config (~/.codex/config.toml).")
+	fmt.Fprintln(out, "# IMPORTANT: Codex sandboxes restrict FILESYSTEM and COMMAND EXECUTION,")
+	fmt.Fprintln(out, "# not network access. This means Codex cannot hard-block Canvas API calls")
+	fmt.Fprintln(out, "# the way a Claude Code PreToolUse hook can — Codex can only gate them")
+	fmt.Fprintln(out, "# via the approval_policy setting. The read-only sandbox prevents local")
+	fmt.Fprintln(out, "# writes but a Canvas CLI command still reaches the Canvas API over the")
+	fmt.Fprintln(out, "# network. Setting approval_policy='untrusted' causes Codex to pause and")
+	fmt.Fprintln(out, "# request human approval before any shell command or MCP tool call.")
+	fmt.Fprintln(out, "#")
+	fmt.Fprintln(out, "# For a hard block on Canvas destructive actions, use --host claude-code")
+	fmt.Fprintln(out, "# (Claude Code's PreToolUse hook provides command-level denial) or run")
+	fmt.Fprintln(out, "# the agent MCP-only with a Claude Code guard installed.")
+	fmt.Fprintln(out)
+
+	// --all-writes does not change the Codex output materially because Codex
+	// has no per-command deny hook. Both modes produce the same approval gate.
+	content := `sandbox_mode    = "read-only"
+approval_policy = "untrusted"
+
+# approval_policy="untrusted" pauses before EVERY shell command and MCP tool
+# call. This is the strictest Codex setting available for network-capable
+# commands. It does NOT hard-block Canvas destructive operations — it requires
+# human approval, which a human could mistakenly grant. See comment above.
+`
+	if write {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("cannot determine home directory for Codex config: %w", err)
+		}
+		return canvasWriteOrPrint(cmd, write, filepath.Join(home, ".codex", "config.toml"), content, 0o644)
+	}
+	return canvasWriteOrPrint(cmd, write, "~/.codex/config.toml", content, 0o644)
+}
+
+// --- OpenCode ---
+
+func emitCanvasOpenCode(cmd *cobra.Command, g canvasGuardPlan, write bool) error {
+	blocked := g.blocked()
+	asked := g.asked()
+
+	// C) Exact per-command rules — no trailing-glob verb patterns.
+	// "canvas * delete*" would shadow reads like "canvas config settings"
+	// if settings matched. Instead emit one exact rule per command.
+	bashRules := map[string]any{"*": "allow"}
+	permRules := map[string]any{}
+
+	for _, gc := range blocked {
+		bashRules["canvas "+gc.cli] = "deny"
+		permRules[gc.tool] = "deny"
+	}
+	// Block destructive raw-api calls.
+	bashRules["canvas api DELETE"] = "deny"
+	bashRules["canvas api PUT"] = "deny"
+	bashRules["canvas api POST"] = "deny"
+	bashRules["canvas api PATCH"] = "deny"
+
+	for _, gc := range asked {
+		bashRules["canvas "+gc.cli] = "ask"
+		permRules[gc.tool] = "ask"
+	}
+	permRules["bash"] = bashRules
+
+	cfg := map[string]any{
+		"$schema":    "https://opencode.ai/config.json",
+		"permission": permRules,
+	}
+	b, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	out := cmd.OutOrStdout()
+	fmt.Fprintln(out, "# OpenCode agent-safety config (opencode.json). `deny` is a hard block;")
+	fmt.Fprintln(out, "# `ask` prompts. Exact per-command rules take precedence over the `*`")
+	fmt.Fprintln(out, "# catch-all, which allows everything else. Destructive raw-api HTTP methods")
+	fmt.Fprintln(out, "# (DELETE/PUT/POST/PATCH) are also blocked on the Bash surface.")
+	fmt.Fprintln(out)
+	return canvasWriteOrPrint(cmd, write, canvasOpenCodeConfigPath(), string(b)+"\n", 0o644)
+}
+
+func canvasOpenCodeConfigPath() string {
+	return "opencode.json"
+}
+
+// canvasGuardHosts returns the list of known host identifiers for completion.
+// It is exported as a helper for tests.
+func canvasGuardHosts() []string {
+	return []string{"claude-code", "codex", "opencode"}
+}

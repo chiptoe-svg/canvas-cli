@@ -12,6 +12,18 @@ sync by `make docs-gen` and the documentation workflow.
 
 ### Added
 
+- **Agent safety guard** (`canvas agent guard --host claude-code|codex|opencode`):
+  generates AI-agent safety config — permission rules plus a `PreToolUse` hook —
+  that hard-blocks irreversible Canvas operations (delete, conclude, crosslist,
+  cancel, close, merge, split, reset, …) and requires approval for ordinary
+  writes, derived from the live command tree. Classification is fail-safe: only
+  an explicit read allowlist stays allowed, so unrecognized/future verbs are
+  gated rather than slipping through. Rules are emitted as exact command paths
+  and exact MCP tool names; the hook matches the subcommand at the command
+  position (no false positives from verb words in arguments) and covers the
+  `canvas api` raw escape hatch (incl. PATCH). `--write` installs the config
+  under the project root without overwriting existing files. See the
+  [Agent Safety guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/).
 - **API coverage raised to 80%** (876 of 1086 documented endpoint patterns,
   method-aware): added ~100 service-layer endpoints across assignments,
   quizzes, modules, outcomes, outcome-imports, courses, sections,

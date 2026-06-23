@@ -52,6 +52,7 @@ canvas submissions bulk-grade --course-id 123 --csv grades.csv # Bulk grade from
 * [canvas account-reports](canvas_account-reports.md)	 - Manage Canvas account reports
 * [canvas accounts](canvas_accounts.md)	 - Manage Canvas accounts
 * [canvas admins](canvas_admins.md)	 - Manage account administrators
+* [canvas agent](canvas_agent.md)	 - Helpers for running canvas under an AI agent
 * [canvas alias](canvas_alias.md)	 - Manage command aliases
 * [canvas analytics](canvas_analytics.md)	 - View Canvas analytics
 * [canvas announcements](canvas_announcements.md)	 - Manage Canvas announcements
