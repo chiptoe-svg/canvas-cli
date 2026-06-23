@@ -451,3 +451,96 @@ type ReorderItem struct {
 	ID   int64  `json:"id"`
 	Type string `json:"type"` // "question" or "group"
 }
+
+// QuizGroup represents a quiz question group
+type QuizGroup struct {
+	ID               int64  `json:"id"`
+	QuizID           int64  `json:"quiz_id"`
+	Name             string `json:"name"`
+	PickCount        int    `json:"pick_count"`
+	QuestionPoints   int    `json:"question_points"`
+	AssessmentQuizID int64  `json:"assessment_question_bank_id,omitempty"`
+	Position         int    `json:"position"`
+}
+
+// QuizDateDetails holds date/availability details for a quiz
+type QuizDateDetails struct {
+	DueAt     *time.Time           `json:"due_at,omitempty"`
+	UnlockAt  *time.Time           `json:"unlock_at,omitempty"`
+	LockAt    *time.Time           `json:"lock_at,omitempty"`
+	Overrides []AssignmentOverride `json:"overrides,omitempty"`
+}
+
+// QuizDateDetailsParams holds parameters for updating quiz date details
+type QuizDateDetailsParams struct {
+	DueAt    *string `json:"due_at,omitempty"`
+	UnlockAt *string `json:"unlock_at,omitempty"`
+	LockAt   *string `json:"lock_at,omitempty"`
+}
+
+// QuizMessageParams holds params for messaging quiz submission users
+type QuizMessageParams struct {
+	Body           string `json:"body"`
+	RecipientGroup string `json:"recipients"`
+}
+
+// ValidateAccessCode validates an access code for a quiz
+func (s *QuizzesService) ValidateAccessCode(ctx context.Context, courseID, quizID int64, accessCode string) (bool, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/validate_access_code", courseID, quizID)
+	body := map[string]interface{}{"access_code": accessCode}
+	var result map[string]interface{}
+	if err := s.client.PostJSON(ctx, path, body, &result); err != nil {
+		return false, err
+	}
+	valid, _ := result["valid"].(bool)
+	return valid, nil
+}
+
+// MessageSubmissionUsers sends a message to quiz submission users
+func (s *QuizzesService) MessageSubmissionUsers(ctx context.Context, courseID, quizID int64, params *QuizMessageParams) error {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submission_users/message", courseID, quizID)
+	return s.client.PostJSON(ctx, path, params, nil)
+}
+
+// GetCurrentUserSubmission retrieves the current user's submission for a quiz
+func (s *QuizzesService) GetCurrentUserSubmission(ctx context.Context, courseID, quizID int64) (*QuizSubmission, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submission", courseID, quizID)
+	var response QuizSubmissionsResponse
+	if err := s.client.GetJSON(ctx, path, &response); err != nil {
+		return nil, err
+	}
+	if len(response.QuizSubmissions) == 0 {
+		return nil, fmt.Errorf("no submission found")
+	}
+	return &response.QuizSubmissions[0], nil
+}
+
+// ListGroups retrieves question groups for a quiz
+func (s *QuizzesService) ListGroups(ctx context.Context, courseID, quizID int64) ([]QuizGroup, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/groups", courseID, quizID)
+	var groups []QuizGroup
+	if err := s.client.GetAllPages(ctx, path, &groups); err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+// GetDateDetails retrieves date details for a quiz
+func (s *QuizzesService) GetDateDetails(ctx context.Context, courseID, quizID int64) (*QuizDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/date_details", courseID, quizID)
+	var result QuizDateDetails
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// UpdateDateDetails updates date details for a quiz
+func (s *QuizzesService) UpdateDateDetails(ctx context.Context, courseID, quizID int64, params *QuizDateDetailsParams) (*QuizDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/date_details", courseID, quizID)
+	var result QuizDateDetails
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

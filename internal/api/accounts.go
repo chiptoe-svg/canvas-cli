@@ -239,3 +239,92 @@ func (s *AccountsService) ListUsers(ctx context.Context, accountID int64, opts *
 
 	return users, nil
 }
+
+// UpdateAccountParams holds parameters for updating an account
+type UpdateAccountParams struct {
+	Name                  string `json:"name,omitempty"`
+	SISAccountID          string `json:"sis_account_id,omitempty"`
+	DefaultTimeZone       string `json:"default_time_zone,omitempty"`
+	DefaultStorageQuotaMb int    `json:"default_storage_quota_mb,omitempty"`
+}
+
+// Update updates an account
+// Canvas path: PUT /api/v1/accounts/:id
+func (s *AccountsService) Update(ctx context.Context, accountID int64, params *UpdateAccountParams) (*Account, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d", accountID)
+
+	body := map[string]interface{}{
+		"account": params,
+	}
+
+	var account Account
+	if err := s.client.PutJSON(ctx, path, body, &account); err != nil {
+		return nil, err
+	}
+
+	return &account, nil
+}
+
+// CreateSubAccountParams holds parameters for creating a sub-account
+type CreateSubAccountParams struct {
+	Name                  string `json:"name"`
+	SISAccountID          string `json:"sis_account_id,omitempty"`
+	DefaultStorageQuotaMb int    `json:"default_storage_quota_mb,omitempty"`
+	DefaultTimeZone       string `json:"default_time_zone,omitempty"`
+}
+
+// CreateSubAccount creates a new sub-account under the given account
+// Canvas path: POST /api/v1/accounts/:account_id/sub_accounts
+func (s *AccountsService) CreateSubAccount(ctx context.Context, accountID int64, params *CreateSubAccountParams) (*Account, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/sub_accounts", accountID)
+
+	body := map[string]interface{}{
+		"account": params,
+	}
+
+	var account Account
+	if err := s.client.PostJSON(ctx, path, body, &account); err != nil {
+		return nil, err
+	}
+
+	return &account, nil
+}
+
+// DeleteUser removes a user from an account
+// Canvas path: DELETE /api/v1/accounts/:account_id/users
+func (s *AccountsService) DeleteUser(ctx context.Context, accountID, userID int64) (*User, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/users/%d", accountID, userID)
+
+	var user User
+	if err := s.client.DeleteJSON(ctx, path, &user); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// UpdateCourses batch-updates courses in an account
+// Canvas path: PUT /api/v1/accounts/:account_id/courses
+func (s *AccountsService) UpdateCourses(ctx context.Context, accountID int64, params map[string]interface{}) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/courses", accountID)
+
+	var result map[string]interface{}
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetAdminSelf retrieves the admin info for the current user in an account
+// Canvas path: GET /api/v1/accounts/:account_id/admins/self
+func (s *AccountsService) GetAdminSelf(ctx context.Context, accountID int64) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%d/admins/self", accountID)
+
+	var result map[string]interface{}
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

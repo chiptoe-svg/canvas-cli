@@ -215,3 +215,48 @@ func (s *QuizSubmissionsService) Create(ctx context.Context, courseID, quizID in
 
 	return &response.QuizSubmissions[0], nil
 }
+
+// QuizSubmissionEvent represents an event in a quiz submission
+type QuizSubmissionEvent struct {
+	CreatedAt string      `json:"created_at"`
+	EventType string      `json:"event_type"`
+	EventData interface{} `json:"event_data,omitempty"`
+}
+
+// QuizSubmissionEventsResponse wraps quiz submission events
+type QuizSubmissionEventsResponse struct {
+	QuizSubmissionEvents []QuizSubmissionEvent `json:"quiz_submission_events"`
+}
+
+// QuizSubmissionTime holds timing info for a quiz submission
+type QuizSubmissionTime struct {
+	EndAt    *time.Time `json:"end_at,omitempty"`
+	TimeLeft int        `json:"time_left"`
+}
+
+// ListEvents retrieves events for a quiz submission
+func (s *QuizSubmissionsService) ListEvents(ctx context.Context, courseID, quizID, submissionID int64) ([]QuizSubmissionEvent, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submissions/%d/events", courseID, quizID, submissionID)
+	var response QuizSubmissionEventsResponse
+	if err := s.client.GetJSON(ctx, path, &response); err != nil {
+		return nil, err
+	}
+	return response.QuizSubmissionEvents, nil
+}
+
+// CreateEvents submits events for a quiz submission
+func (s *QuizSubmissionsService) CreateEvents(ctx context.Context, courseID, quizID, submissionID int64, events []QuizSubmissionEvent) error {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submissions/%d/events", courseID, quizID, submissionID)
+	body := QuizSubmissionEventsResponse{QuizSubmissionEvents: events}
+	return s.client.PostJSON(ctx, path, body, nil)
+}
+
+// GetTime retrieves timing information for a quiz submission
+func (s *QuizSubmissionsService) GetTime(ctx context.Context, courseID, quizID, submissionID int64) (*QuizSubmissionTime, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submissions/%d/time", courseID, quizID, submissionID)
+	var result QuizSubmissionTime
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

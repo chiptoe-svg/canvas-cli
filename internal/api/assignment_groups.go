@@ -260,3 +260,41 @@ func (s *AssignmentGroupsService) Delete(ctx context.Context, courseID, groupID 
 
 	return &group, nil
 }
+
+// ListGroupAssignmentsOptions holds options for listing assignments in a group
+type ListGroupAssignmentsOptions struct {
+	Include                 []string
+	OverrideAssignmentDates *bool
+	Page                    int
+	PerPage                 int
+}
+
+// ListAssignments retrieves assignments for a specific assignment group
+func (s *AssignmentGroupsService) ListAssignments(ctx context.Context, courseID, groupID int64, opts *ListGroupAssignmentsOptions) ([]Assignment, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/assignment_groups/%d/assignments", courseID, groupID)
+
+	if opts != nil {
+		query := url.Values{}
+		for _, inc := range opts.Include {
+			query.Add("include[]", inc)
+		}
+		if opts.OverrideAssignmentDates != nil {
+			query.Add("override_assignment_dates", strconv.FormatBool(*opts.OverrideAssignmentDates))
+		}
+		if opts.Page > 0 {
+			query.Add("page", strconv.Itoa(opts.Page))
+		}
+		if opts.PerPage > 0 {
+			query.Add("per_page", strconv.Itoa(opts.PerPage))
+		}
+		if len(query) > 0 {
+			path += "?" + query.Encode()
+		}
+	}
+
+	var assignments []Assignment
+	if err := s.client.GetAllPages(ctx, path, &assignments); err != nil {
+		return nil, err
+	}
+	return NormalizeAssignments(assignments), nil
+}

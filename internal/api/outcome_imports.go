@@ -148,3 +148,43 @@ func (s *AccountOutcomeImportsService) UpdateOutcomeProficiency(ctx context.Cont
 
 	return result, nil
 }
+
+// CourseOutcomeImportsService handles outcome import API calls for courses
+type CourseOutcomeImportsService struct {
+	client *Client
+}
+
+// NewCourseOutcomeImportsService creates a new course outcome imports service
+func NewCourseOutcomeImportsService(client *Client) *CourseOutcomeImportsService {
+	return &CourseOutcomeImportsService{client: client}
+}
+
+// Create initiates an outcome import for a course
+func (s *CourseOutcomeImportsService) Create(ctx context.Context, courseID int64, body map[string]interface{}) (*OutcomeImport, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_imports", courseID)
+	var result OutcomeImport
+	if err := s.client.PostJSON(ctx, path, body, &result); err != nil {
+		return nil, fmt.Errorf("failed to create course outcome import: %w", err)
+	}
+	return &result, nil
+}
+
+// Get retrieves an outcome import by ID for a course
+func (s *CourseOutcomeImportsService) Get(ctx context.Context, courseID, id int64) (*OutcomeImport, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_imports/%d", courseID, id)
+	var result OutcomeImport
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, fmt.Errorf("failed to get course outcome import: %w", err)
+	}
+	return &result, nil
+}
+
+// GetCreatedGroupIDs returns the IDs of outcome groups created during a course import
+func (s *CourseOutcomeImportsService) GetCreatedGroupIDs(ctx context.Context, courseID, id int64) ([]int64, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/outcome_imports/%d/created_group_ids", courseID, id)
+	var result []int64
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, fmt.Errorf("failed to get course outcome import created group IDs: %w", err)
+	}
+	return result, nil
+}

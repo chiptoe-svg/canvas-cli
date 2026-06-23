@@ -771,3 +771,37 @@ func (s *AnnouncementsService) List(ctx context.Context, opts *ListAnnouncements
 
 	return announcements, nil
 }
+
+// DiscussionDateDetails holds date availability details for a discussion topic
+type DiscussionDateDetails struct {
+	DueAt     *string              `json:"due_at,omitempty"`
+	UnlockAt  *string              `json:"unlock_at,omitempty"`
+	LockAt    *string              `json:"lock_at,omitempty"`
+	Overrides []AssignmentOverride `json:"overrides,omitempty"`
+}
+
+// GetDateDetails retrieves date details for a discussion topic in a course
+// Canvas path: GET /api/v1/courses/:course_id/discussion_topics/:discussion_topic_id/date_details
+func (s *DiscussionsService) GetDateDetails(ctx context.Context, courseID, topicID int64) (*DiscussionDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/discussion_topics/%d/date_details", courseID, topicID)
+
+	var result DiscussionDateDetails
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateDateDetails updates date details for a discussion topic in a course
+// Canvas path: PUT /api/v1/courses/:course_id/discussion_topics/:discussion_topic_id/date_details
+func (s *DiscussionsService) UpdateDateDetails(ctx context.Context, courseID, topicID int64, params *DiscussionDateDetails) (*DiscussionDateDetails, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/discussion_topics/%d/date_details", courseID, topicID)
+
+	var result DiscussionDateDetails
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}

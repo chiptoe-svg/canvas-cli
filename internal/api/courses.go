@@ -309,3 +309,246 @@ func (s *CoursesService) Delete(ctx context.Context, courseID int64, event strin
 	_, err := s.client.Delete(ctx, path)
 	return err
 }
+
+// GetActivityStream retrieves the activity stream for a course
+// Canvas path: GET /api/v1/courses/:course_id/activity_stream
+func (s *CoursesService) GetActivityStream(ctx context.Context, courseID int64) ([]ActivityStreamItem, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/activity_stream", courseID)
+
+	var items []ActivityStreamItem
+	if err := s.client.GetAllPages(ctx, path, &items); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+// GetActivityStreamSummary retrieves a summary of the activity stream for a course
+// Canvas path: GET /api/v1/courses/:course_id/activity_stream/summary
+func (s *CoursesService) GetActivityStreamSummary(ctx context.Context, courseID int64) ([]ActivityStreamSummary, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/activity_stream/summary", courseID)
+
+	var items []ActivityStreamSummary
+	if err := s.client.GetJSON(ctx, path, &items); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+// GetStudents retrieves all students enrolled in a course
+// Canvas path: GET /api/v1/courses/:course_id/students
+func (s *CoursesService) GetStudents(ctx context.Context, courseID int64) ([]User, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/students", courseID)
+
+	var users []User
+	if err := s.client.GetAllPages(ctx, path, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// ListCourseUsersOptions holds options for listing users in a course
+type ListCourseUsersOptions struct {
+	SearchTerm      string
+	Include         []string // enrollments, locked, avatar_url, test_student, bio, custom_links, current_grading_period_scores, uuid
+	Sort            string
+	EnrollmentType  []string // student, teacher, ta, observer, designer
+	EnrollmentRole  []string
+	EnrollmentState []string
+	Page            int
+	PerPage         int
+}
+
+// GetUser retrieves a single user in a course
+// Canvas path: GET /api/v1/courses/:course_id/users/:id
+func (s *CoursesService) GetUser(ctx context.Context, courseID, userID int64, include []string) (*User, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/users/%d", courseID, userID)
+
+	if len(include) > 0 {
+		query := url.Values{}
+		for _, inc := range include {
+			query.Add("include[]", inc)
+		}
+		path += "?" + query.Encode()
+	}
+
+	var user User
+	if err := s.client.GetJSON(ctx, path, &user); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// ListUsers retrieves all users enrolled in a course
+// Canvas path: GET /api/v1/courses/:course_id/users
+// Already handled by ListEnrollments in enrollment, but exposed here for convenience
+func (s *CoursesService) ListUsers(ctx context.Context, courseID int64, opts *ListCourseUsersOptions) ([]User, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/users", courseID)
+
+	if opts != nil {
+		query := url.Values{}
+		if opts.SearchTerm != "" {
+			query.Add("search_term", opts.SearchTerm)
+		}
+		for _, inc := range opts.Include {
+			query.Add("include[]", inc)
+		}
+		if opts.Sort != "" {
+			query.Add("sort", opts.Sort)
+		}
+		for _, et := range opts.EnrollmentType {
+			query.Add("enrollment_type[]", et)
+		}
+		for _, er := range opts.EnrollmentRole {
+			query.Add("enrollment_role[]", er)
+		}
+		for _, es := range opts.EnrollmentState {
+			query.Add("enrollment_state[]", es)
+		}
+		if opts.Page > 0 {
+			query.Add("page", strconv.Itoa(opts.Page))
+		}
+		if opts.PerPage > 0 {
+			query.Add("per_page", strconv.Itoa(opts.PerPage))
+		}
+		if len(query) > 0 {
+			path += "?" + query.Encode()
+		}
+	}
+
+	var users []User
+	if err := s.client.GetAllPages(ctx, path, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// GetUserProgress retrieves a user's progress in a course
+// Canvas path: GET /api/v1/courses/:course_id/users/:user_id/progress
+func (s *CoursesService) GetUserProgress(ctx context.Context, courseID, userID int64) (*CourseProgress, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/users/%d/progress", courseID, userID)
+
+	var progress CourseProgress
+	if err := s.client.GetJSON(ctx, path, &progress); err != nil {
+		return nil, err
+	}
+
+	return &progress, nil
+}
+
+// SearchUsers searches for users in a course
+// Canvas path: GET /api/v1/courses/:course_id/search_users
+func (s *CoursesService) SearchUsers(ctx context.Context, courseID int64, searchTerm string) ([]User, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/search_users", courseID)
+
+	if searchTerm != "" {
+		path += "?search_term=" + url.QueryEscape(searchTerm)
+	}
+
+	var users []User
+	if err := s.client.GetAllPages(ctx, path, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// GetStudentViewStudent retrieves the test student for a course
+// Canvas path: GET /api/v1/courses/:course_id/student_view_student
+func (s *CoursesService) GetStudentViewStudent(ctx context.Context, courseID int64) (*User, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/student_view_student", courseID)
+
+	var user User
+	if err := s.client.GetJSON(ctx, path, &user); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// ResetContent resets a course back to default blank state
+// Canvas path: POST /api/v1/courses/:course_id/reset_content
+func (s *CoursesService) ResetContent(ctx context.Context, courseID int64) (*Course, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/reset_content", courseID)
+
+	var course Course
+	if err := s.client.PostJSON(ctx, path, nil, &course); err != nil {
+		return nil, err
+	}
+
+	return &course, nil
+}
+
+// CourseProgress represents a user's progress in a course
+type CourseProgress struct {
+	RequirementCount          int     `json:"requirement_count"`
+	RequirementCompletedCount int     `json:"requirement_completed_count"`
+	NextRequirementURL        string  `json:"next_requirement_url,omitempty"`
+	CompletedAt               *string `json:"completed_at,omitempty"`
+}
+
+// ContentShareUser represents a user available for content sharing
+type ContentShareUser struct {
+	ID          int64  `json:"id"`
+	DisplayName string `json:"display_name"`
+	AvatarURL   string `json:"avatar_image_url,omitempty"`
+}
+
+// GetContentShareUsers retrieves users available for content sharing in a course
+// Canvas path: GET /api/v1/courses/:course_id/content_share_users
+func (s *CoursesService) GetContentShareUsers(ctx context.Context, courseID int64, searchTerm string) ([]ContentShareUser, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/content_share_users", courseID)
+	if searchTerm != "" {
+		path += "?search_term=" + url.QueryEscape(searchTerm)
+	}
+
+	var users []ContentShareUser
+	if err := s.client.GetAllPages(ctx, path, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// GetPotentialCollaborators retrieves potential collaborators for a course
+// Canvas path: GET /api/v1/courses/:course_id/potential_collaborators
+func (s *CoursesService) GetPotentialCollaborators(ctx context.Context, courseID int64) ([]User, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/potential_collaborators", courseID)
+
+	var users []User
+	if err := s.client.GetAllPages(ctx, path, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// GetCSPSettings retrieves CSP settings for a course
+// Canvas path: GET /api/v1/courses/:course_id/csp_settings
+func (s *CoursesService) GetCSPSettings(ctx context.Context, courseID int64) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/csp_settings", courseID)
+
+	var result map[string]interface{}
+	if err := s.client.GetJSON(ctx, path, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// UpdateCSPSettings updates CSP settings for a course
+// Canvas path: PUT /api/v1/courses/:course_id/csp_settings
+func (s *CoursesService) UpdateCSPSettings(ctx context.Context, courseID int64, params map[string]interface{}) (map[string]interface{}, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/csp_settings", courseID)
+
+	var result map[string]interface{}
+	if err := s.client.PutJSON(ctx, path, params, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
