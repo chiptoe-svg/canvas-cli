@@ -10,6 +10,13 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Planned
+
+- Canvas Studio integration
+- GraphQL API support
+
+## [1.10.0] - 2026-06-23
+
 ### Added
 
 - **Agent safety guard** (`canvas agent guard --host claude-code|codex|opencode`):
@@ -34,9 +41,6 @@ sync by `make docs-gen` and the documentation workflow.
   harvester now pairs each path with its HTTP verb and resolves context-path
   helper functions, so coverage is counted at (method, path) granularity on
   both sides (previously mismatched-granularity).
-
-### Added (spec harness, earlier in this cycle)
-
 - **API spec-compliance harness**: CLI endpoint paths are now validated in CI
   against Canvas's official API spec (Swagger 1.2), committed under
   `testdata/spec/`. A network-free contract test fails the build on any path
@@ -84,10 +88,6 @@ sync by `make docs-gen` and the documentation workflow.
   just because the CLI has a different verb on it).
 - AGENTS.md documents the spec-compliance + coverage workflow; the bundled
   agent skill's command map covers the expanded surface.
-
-### Planned
-- Canvas Studio integration
-- GraphQL API support
 
 ## [1.9.1] - 2026-06-11
 
