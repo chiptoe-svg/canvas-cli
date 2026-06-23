@@ -77,16 +77,21 @@ canvas assignments list --course-id 123 --filter "Quiz 1"                       
 
 | Area | Resources |
 |---|---|
-| Teaching | `courses`, `assignments`, `assignment-groups`, `modules`, `pages`, `quizzes`, `discussions`, `announcements`, `rubrics`, `outcomes`, `overrides`, `peer-reviews` |
-| Grading | `submissions` (`grade`, `bulk-grade`, `add-comment`), `grades` (`history`, `feed`, `columns`) |
-| People | `users`, `enrollments`, `sections`, `groups`, `conversations` |
-| Content | `files` (`upload`, `download`, `quota`), `calendar`, `content-migrations` |
-| Admin | `accounts`, `admins`, `roles`, `analytics`, `blueprint`, `sis-imports`, `external-tools` |
-| Utility | `api` (raw requests), `sync`, `context`, `alias`, `cache`, `doctor`, `mcp`, `repl`/`shell`, `webhook` |
+| Teaching | `courses`, `assignments`, `assignment-groups`, `modules`, `pages`, `quizzes` (incl. `reports`, `statistics`, `question-groups`, `ip-filters`), `discussions`, `announcements`, `rubrics`, `rubric-associations`, `outcomes`, `overrides`, `peer-reviews`, `polls` |
+| Grading | `submissions` (`grade`, `bulk-grade`, `add-comment`), `grades`, `grading-periods`, `grading-standards`, `grading-period-sets`, `live-assessments` |
+| People | `users`, `enrollments`, `sections`, `groups` (`memberships`, `categories`), `conversations`, `comm-channels`, `observees`, `appointment-groups` |
+| Content & files | `files`, `folders`, `calendar`, `content-migrations`, `content-exports`, `content-shares`, `blueprint`, `course-pacing`, `blackout-dates`, `media`, `eportfolios` |
+| Personal | `favorites`, `bookmarks`, `course-nicknames`, `planner`, `history` |
+| Admin | `accounts`, `admins`, `roles`, `analytics`, `sis-imports`, `external-tools`, `auth-providers`, `csp-settings`, `account-notifications`, `account-reports`, `enrollment-terms`, `developer-keys`, `audit` |
+| Utility | `api` (raw requests), `sync`, `context`, `alias`, `cache`, `doctor`, `mcp`, `repl`/`shell`, `webhook`, `jwts`, `progress` |
 
-Run `canvas --help` for the full list and `canvas <resource> --help` for the
-actions and flags of each one. A condensed cheatsheet ships alongside this
-skill in `references/canvas-commands.md`.
+The CLI has ~98 command groups covering most of the Canvas REST API. The table
+above is a guide, not the full list — **always discover the real surface with
+`canvas --help` and `canvas <resource> --help`** rather than assuming a command
+exists. Most resources that exist under a course also exist under a group or
+user context via `--group-id`/`--user-id` (e.g. discussions, pages, files,
+folders, content-migrations). A condensed cheatsheet ships in
+`references/canvas-commands.md`.
 
 ```bash
 # Courses

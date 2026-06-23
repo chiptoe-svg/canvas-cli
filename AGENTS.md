@@ -189,9 +189,45 @@ GitHub Actions automatically builds binaries and creates the release on tag push
 
 Single workflow `.github/workflows/ci.yml` runs:
 - Lint (gofmt, go vet, golangci-lint)
-- Security (govulncheck — blocking; gosec — report-only, see TECHNICAL_DEBT.md)
-- Test matrix (ubuntu/macos/windows, Go version from go.mod)
+- Security (govulncheck and gosec — both blocking)
+- Test matrix (ubuntu/macos/windows, Go version from go.mod) with a **total
+  coverage gate ≥80%** on ubuntu (`go tool cover -func` over `./...`)
+- Binary-level integration tests (`-tags integration`, ubuntu)
 - Build artifacts (GoReleaser snapshot)
+
+Run everything CI runs locally with `make check`.
+
+## API Spec Compliance & Coverage
+
+The CLI is validated against Canvas's **official API spec** (Swagger 1.2),
+committed at `testdata/spec/canvas_endpoints.json` (1086 endpoints) with
+response models at `testdata/spec/canvas_models.json`.
+
+- `internal/api/spec_contract_test.go` is a network-free test (runs in the
+  normal suite) that harvests every `/api/v1/...` path the service layer calls
+  and asserts each matches a documented Canvas endpoint. **A new endpoint with a
+  wrong path fails the build** — this is the regression guard that has already
+  caught several real path bugs.
+- `make spec-sync` regenerates the manifest by fetching the official Swagger
+  from a live Canvas host (`-host`/`CANVAS_SPEC_HOST`, default
+  `learn.canvas.net`; canvas.instructure.com IP-blocks datacenter requests).
+  Do NOT use the gitignored `.ai/canvas-lms-docs` mirror as the source — the
+  committed manifest is authoritative.
+- `make spec-coverage` prints documented-but-unimplemented endpoints (the
+  coverage gap), grouped by resource.
+
+When adding endpoints to maximize coverage:
+1. Take exact paths/verbs from the committed manifest (and field names from
+   `canvas_models.json`) — the contract test enforces the path.
+2. **Add proportional tests.** Every new command needs cmdtest coverage
+   (run function + options `Validate()`) or the 80% gate drops. The `commands`
+   and `commands/internal/options` packages are where coverage erodes fastest.
+3. If parallelizing across resources, **partition strictly by file** and
+   **declare each shared model type in exactly one file**. Multiple agents
+   independently declaring the same struct (e.g. `Feature`, `ContentExport`,
+   `GradingPeriod`) or the same dual-scoped resource (account vs course
+   `grading_standards`) causes redeclaration/merge collisions — the main
+   integration cost of fan-out work.
 
 ## Documentation
 
