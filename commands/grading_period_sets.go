@@ -266,8 +266,10 @@ func runGradingPeriodSetsCreate(ctx context.Context, client *api.Client, opts *o
 	service := api.NewGradingPeriodSetsService(client)
 
 	params := &api.GradingPeriodSetParams{
-		Title:                  opts.Title,
-		WeightedGradingPeriods: opts.WeightedGradingPeriods,
+		GradingPeriodSet: api.GradingPeriodSetFields{
+			Title:                  opts.Title,
+			WeightedGradingPeriods: boolPtr(opts.WeightedGradingPeriods),
+		},
 	}
 
 	set, err := service.Create(ctx, opts.AccountID, params)
@@ -291,7 +293,9 @@ func runGradingPeriodSetsUpdate(ctx context.Context, client *api.Client, opts *o
 	service := api.NewGradingPeriodSetsService(client)
 
 	params := &api.GradingPeriodSetParams{
-		Title: opts.Title,
+		GradingPeriodSet: api.GradingPeriodSetFields{
+			Title: opts.Title,
+		},
 	}
 
 	set, err := service.Update(ctx, opts.AccountID, opts.SetID, params)

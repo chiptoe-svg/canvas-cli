@@ -69,10 +69,12 @@ func TestAccountNotificationsService_Create(t *testing.T) {
 	svc := NewAccountNotificationsService(client)
 
 	params := &AccountNotificationParams{
-		Subject: "New Notification",
-		Message: "Created!",
-		StartAt: "2026-01-01T00:00:00Z",
-		EndAt:   "2026-12-31T23:59:59Z",
+		AccountNotification: AccountNotificationFields{
+			Subject: "New Notification",
+			Message: "Created!",
+			StartAt: "2026-01-01T00:00:00Z",
+			EndAt:   "2026-12-31T23:59:59Z",
+		},
 	}
 	notification, err := svc.Create(context.Background(), 1, params)
 	if err != nil {
@@ -140,10 +142,12 @@ func TestAccountNotificationsService_Update(t *testing.T) {
 	svc := NewAccountNotificationsService(client)
 
 	params := &AccountNotificationParams{
-		Subject: "Updated Notification",
-		Message: "Updated!",
-		StartAt: "2026-01-01T00:00:00Z",
-		EndAt:   "2026-12-31T23:59:59Z",
+		AccountNotification: AccountNotificationFields{
+			Subject: "Updated Notification",
+			Message: "Updated!",
+			StartAt: "2026-01-01T00:00:00Z",
+			EndAt:   "2026-12-31T23:59:59Z",
+		},
 	}
 	notification, err := svc.Update(context.Background(), 1, 5, params)
 	if err != nil {

@@ -69,7 +69,7 @@ func TestGradingPeriodSetsService_Create(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewGradingPeriodSetsService(client)
 
-	params := &GradingPeriodSetParams{Title: "New Set"}
+	params := &GradingPeriodSetParams{GradingPeriodSet: GradingPeriodSetFields{Title: "New Set"}}
 	set, err := service.Create(context.Background(), 1, params)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -126,7 +126,7 @@ func TestGradingPeriodSetsService_Update(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewGradingPeriodSetsService(client)
 
-	params := &GradingPeriodSetParams{Title: "Updated Set"}
+	params := &GradingPeriodSetParams{GradingPeriodSet: GradingPeriodSetFields{Title: "Updated Set"}}
 	set, err := service.Update(context.Background(), 1, 10, params)
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)

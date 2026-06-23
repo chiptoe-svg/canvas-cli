@@ -33,12 +33,18 @@ type DeveloperKey struct {
 	ClientCredentialsAudience string `json:"client_credentials_audience"`
 }
 
-// DeveloperKeyParams holds create parameters for a developer key.
+// DeveloperKeyFields holds the nested fields for a developer key.
+type DeveloperKeyFields struct {
+	Name        string `json:"name,omitempty"`
+	Email       string `json:"email,omitempty"`
+	RedirectURI string `json:"redirect_uri,omitempty"`
+	Notes       string `json:"notes,omitempty"`
+}
+
+// DeveloperKeyParams wraps the nested developer_key envelope Canvas expects.
+// Canvas expects {"developer_key": {...}} rather than flat bracket-style JSON keys.
 type DeveloperKeyParams struct {
-	Name        string `json:"developer_key[name],omitempty"`
-	Email       string `json:"developer_key[email],omitempty"`
-	RedirectURI string `json:"developer_key[redirect_uri],omitempty"`
-	Notes       string `json:"developer_key[notes],omitempty"`
+	DeveloperKey DeveloperKeyFields `json:"developer_key"`
 }
 
 // DeveloperKeyBinding represents a developer key account binding.
@@ -49,9 +55,15 @@ type DeveloperKeyBinding struct {
 	WorkflowState  string `json:"workflow_state"`
 }
 
-// DeveloperKeyBindingParams holds parameters for creating/updating a binding.
+// DeveloperKeyBindingFields holds the nested fields for a binding.
+type DeveloperKeyBindingFields struct {
+	WorkflowState string `json:"workflow_state"`
+}
+
+// DeveloperKeyBindingParams wraps the nested envelope Canvas expects for bindings.
+// Canvas expects {"developer_key_account_binding": {...}} rather than flat bracket keys.
 type DeveloperKeyBindingParams struct {
-	WorkflowState string `json:"developer_key_account_binding[workflow_state]"`
+	DeveloperKeyAccountBinding DeveloperKeyBindingFields `json:"developer_key_account_binding"`
 }
 
 // List retrieves all developer keys for an account.

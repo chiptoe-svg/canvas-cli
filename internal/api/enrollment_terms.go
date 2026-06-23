@@ -30,12 +30,18 @@ type EnrollmentTerm struct {
 	GradingPeriodGroupID int64  `json:"grading_period_group_id"`
 }
 
-// EnrollmentTermParams holds create/update parameters for an enrollment term.
+// EnrollmentTermFields holds the nested fields for creating/updating an enrollment term.
+type EnrollmentTermFields struct {
+	Name      string `json:"name,omitempty"`
+	StartAt   string `json:"start_at,omitempty"`
+	EndAt     string `json:"end_at,omitempty"`
+	SISTermID string `json:"sis_term_id,omitempty"`
+}
+
+// EnrollmentTermParams wraps the nested enrollment_term envelope Canvas expects.
+// Canvas expects {"enrollment_term": {...}} rather than flat bracket-style JSON keys.
 type EnrollmentTermParams struct {
-	Name      string `json:"enrollment_term[name],omitempty"`
-	StartAt   string `json:"enrollment_term[start_at],omitempty"`
-	EndAt     string `json:"enrollment_term[end_at],omitempty"`
-	SISTermID string `json:"enrollment_term[sis_term_id],omitempty"`
+	EnrollmentTerm EnrollmentTermFields `json:"enrollment_term"`
 }
 
 // EnrollmentTermsResponse is the wrapper Canvas uses for the list endpoint.

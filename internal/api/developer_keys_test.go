@@ -69,7 +69,7 @@ func TestDeveloperKeysService_Create(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewDeveloperKeysService(client)
 
-	params := &DeveloperKeyParams{Name: "New Key", Email: "new@example.com"}
+	params := &DeveloperKeyParams{DeveloperKey: DeveloperKeyFields{Name: "New Key", Email: "new@example.com"}}
 	key, err := service.Create(context.Background(), 1, params)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -105,7 +105,7 @@ func TestDeveloperKeysService_CreateBinding(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewDeveloperKeysService(client)
 
-	params := &DeveloperKeyBindingParams{WorkflowState: "on"}
+	params := &DeveloperKeyBindingParams{DeveloperKeyAccountBinding: DeveloperKeyBindingFields{WorkflowState: "on"}}
 	binding, err := service.CreateBinding(context.Background(), 1, 10, params)
 	if err != nil {
 		t.Fatalf("CreateBinding failed: %v", err)

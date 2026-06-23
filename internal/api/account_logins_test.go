@@ -105,7 +105,7 @@ func TestAccountLoginsService_Create(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewAccountLoginsService(client)
 
-	params := &LoginParams{UserID: 200, UniqueID: "charlie@example.com"}
+	params := &LoginParams{User: UserIDFields{ID: 200}, Login: LoginFields{UniqueID: "charlie@example.com"}}
 	login, err := service.Create(context.Background(), 1, params)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -139,7 +139,7 @@ func TestAccountLoginsService_Update(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewAccountLoginsService(client)
 
-	params := &LoginParams{UniqueID: "updated@example.com"}
+	params := &LoginParams{Login: LoginFields{UniqueID: "updated@example.com"}}
 	login, err := service.Update(context.Background(), 1, 10, params)
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)

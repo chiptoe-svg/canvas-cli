@@ -27,14 +27,25 @@ type Login struct {
 	AuthenticationProviderID   int64  `json:"authentication_provider_id"`
 }
 
-// LoginParams holds create/update parameters for a login.
+// UserIDFields holds the user id nested under "user" for login creation.
+type UserIDFields struct {
+	ID int64 `json:"id,omitempty"`
+}
+
+// LoginFields holds the nested login fields Canvas expects.
+type LoginFields struct {
+	UniqueID                   string `json:"unique_id,omitempty"`
+	Password                   string `json:"password,omitempty"`
+	SISUserID                  string `json:"sis_user_id,omitempty"`
+	AuthenticationProviderType string `json:"authentication_provider_type,omitempty"`
+	AuthenticationProviderID   int64  `json:"authentication_provider_id,omitempty"`
+}
+
+// LoginParams wraps the nested envelopes Canvas expects.
+// Canvas expects {"user": {"id": ...}, "login": {...}} rather than flat bracket-style JSON keys.
 type LoginParams struct {
-	UserID                     int64  `json:"user[id],omitempty"`
-	UniqueID                   string `json:"login[unique_id],omitempty"`
-	Password                   string `json:"login[password],omitempty"`
-	SISUserID                  string `json:"login[sis_user_id],omitempty"`
-	AuthenticationProviderType string `json:"login[authentication_provider_type],omitempty"`
-	AuthenticationProviderID   int64  `json:"login[authentication_provider_id],omitempty"`
+	User  UserIDFields `json:"user,omitempty"`
+	Login LoginFields  `json:"login"`
 }
 
 // List retrieves logins for an account. When userID is non-zero only that

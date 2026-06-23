@@ -28,14 +28,21 @@ type AccountNotification struct {
 	RoleIDs []int64  `json:"role_ids"`
 }
 
-// AccountNotificationParams holds parameters for creating or updating an account notification
+// AccountNotificationFields holds the nested fields for a notification.
+type AccountNotificationFields struct {
+	Subject string `json:"subject"`
+	Message string `json:"message"`
+	StartAt string `json:"start_at"`
+	EndAt   string `json:"end_at"`
+	Icon    string `json:"icon,omitempty"`
+}
+
+// AccountNotificationParams holds parameters for creating or updating an account notification.
+// Canvas expects {"account_notification": {...}, "account_notification_roles": [...]}
+// rather than flat bracket-style JSON keys.
 type AccountNotificationParams struct {
-	Subject string   `json:"account_notification[subject]"`
-	Message string   `json:"account_notification[message]"`
-	StartAt string   `json:"account_notification[start_at]"`
-	EndAt   string   `json:"account_notification[end_at]"`
-	Icon    string   `json:"account_notification[icon],omitempty"`
-	Roles   []string `json:"account_notification_roles,omitempty"`
+	AccountNotification AccountNotificationFields `json:"account_notification"`
+	Roles               []string                  `json:"account_notification_roles,omitempty"`
 }
 
 // List retrieves all account notifications for an account

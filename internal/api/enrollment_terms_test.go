@@ -101,7 +101,7 @@ func TestEnrollmentTermsService_Create(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewEnrollmentTermsService(client)
 
-	params := &EnrollmentTermParams{Name: "Summer 2025"}
+	params := &EnrollmentTermParams{EnrollmentTerm: EnrollmentTermFields{Name: "Summer 2025"}}
 	term, err := service.Create(context.Background(), 1, params)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -132,7 +132,7 @@ func TestEnrollmentTermsService_Update(t *testing.T) {
 	client := newTestClient(t, server.URL)
 	service := NewEnrollmentTermsService(client)
 
-	params := &EnrollmentTermParams{Name: "Updated Term"}
+	params := &EnrollmentTermParams{EnrollmentTerm: EnrollmentTermFields{Name: "Updated Term"}}
 	term, err := service.Update(context.Background(), 1, 42, params)
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)

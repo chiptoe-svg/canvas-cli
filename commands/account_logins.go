@@ -167,10 +167,12 @@ func runAccountLoginsCreate(ctx context.Context, client *api.Client, opts *optio
 	service := api.NewAccountLoginsService(client)
 
 	params := &api.LoginParams{
-		UserID:    opts.UserID,
-		UniqueID:  opts.UniqueID,
-		Password:  opts.Password,
-		SISUserID: opts.SISUserID,
+		User: api.UserIDFields{ID: opts.UserID},
+		Login: api.LoginFields{
+			UniqueID:  opts.UniqueID,
+			Password:  opts.Password,
+			SISUserID: opts.SISUserID,
+		},
 	}
 
 	login, err := service.Create(ctx, opts.AccountID, params)
@@ -194,8 +196,10 @@ func runAccountLoginsUpdate(ctx context.Context, client *api.Client, opts *optio
 	service := api.NewAccountLoginsService(client)
 
 	params := &api.LoginParams{
-		UniqueID: opts.UniqueID,
-		Password: opts.Password,
+		Login: api.LoginFields{
+			UniqueID: opts.UniqueID,
+			Password: opts.Password,
+		},
 	}
 
 	login, err := service.Update(ctx, opts.AccountID, opts.LoginID, params)

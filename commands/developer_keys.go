@@ -164,10 +164,12 @@ func runDeveloperKeysCreate(ctx context.Context, client *api.Client, opts *optio
 	service := api.NewDeveloperKeysService(client)
 
 	params := &api.DeveloperKeyParams{
-		Name:        opts.Name,
-		Email:       opts.Email,
-		RedirectURI: opts.RedirectURI,
-		Notes:       opts.Notes,
+		DeveloperKey: api.DeveloperKeyFields{
+			Name:        opts.Name,
+			Email:       opts.Email,
+			RedirectURI: opts.RedirectURI,
+			Notes:       opts.Notes,
+		},
 	}
 
 	key, err := service.Create(ctx, opts.AccountID, params)
@@ -192,7 +194,9 @@ func runDeveloperKeysBind(ctx context.Context, client *api.Client, opts *options
 	service := api.NewDeveloperKeysService(client)
 
 	params := &api.DeveloperKeyBindingParams{
-		WorkflowState: opts.WorkflowState,
+		DeveloperKeyAccountBinding: api.DeveloperKeyBindingFields{
+			WorkflowState: opts.WorkflowState,
+		},
 	}
 
 	binding, err := service.CreateBinding(ctx, opts.AccountID, opts.DeveloperKeyID, params)

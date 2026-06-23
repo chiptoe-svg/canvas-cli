@@ -25,10 +25,16 @@ type GradingPeriodSet struct {
 	GradingPeriods                    []GradingPeriod `json:"grading_periods,omitempty"`
 }
 
+// GradingPeriodSetFields holds the nested fields for a grading period set.
+type GradingPeriodSetFields struct {
+	Title                  string `json:"title,omitempty"`
+	WeightedGradingPeriods *bool  `json:"weighted_grading_periods,omitempty"`
+}
+
 // GradingPeriodSetParams holds create/update parameters for a grading period set.
+// Canvas expects a nested {"grading_period_set": {...}} envelope, not flat bracket keys.
 type GradingPeriodSetParams struct {
-	Title                  string `json:"grading_period_set[title]"`
-	WeightedGradingPeriods bool   `json:"grading_period_set[weighted_grading_periods],omitempty"`
+	GradingPeriodSet GradingPeriodSetFields `json:"grading_period_set"`
 }
 
 // List retrieves all grading period sets for an account.

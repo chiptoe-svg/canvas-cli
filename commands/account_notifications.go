@@ -282,12 +282,14 @@ func runAccountNotificationsCreate(ctx context.Context, client *api.Client, opts
 
 	svc := api.NewAccountNotificationsService(client)
 	params := &api.AccountNotificationParams{
-		Subject: opts.Subject,
-		Message: opts.Message,
-		StartAt: opts.StartAt,
-		EndAt:   opts.EndAt,
-		Icon:    opts.Icon,
-		Roles:   opts.Roles,
+		AccountNotification: api.AccountNotificationFields{
+			Subject: opts.Subject,
+			Message: opts.Message,
+			StartAt: opts.StartAt,
+			EndAt:   opts.EndAt,
+			Icon:    opts.Icon,
+		},
+		Roles: opts.Roles,
 	}
 
 	notification, err := svc.Create(ctx, opts.AccountID, params)
@@ -312,12 +314,14 @@ func runAccountNotificationsUpdate(ctx context.Context, client *api.Client, opts
 
 	svc := api.NewAccountNotificationsService(client)
 	params := &api.AccountNotificationParams{
-		Subject: opts.Subject,
-		Message: opts.Message,
-		StartAt: opts.StartAt,
-		EndAt:   opts.EndAt,
-		Icon:    opts.Icon,
-		Roles:   opts.Roles,
+		AccountNotification: api.AccountNotificationFields{
+			Subject: opts.Subject,
+			Message: opts.Message,
+			StartAt: opts.StartAt,
+			EndAt:   opts.EndAt,
+			Icon:    opts.Icon,
+		},
+		Roles: opts.Roles,
 	}
 
 	notification, err := svc.Update(ctx, opts.AccountID, opts.NotificationID, params)

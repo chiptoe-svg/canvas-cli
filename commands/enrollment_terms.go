@@ -261,10 +261,12 @@ func runEnrollmentTermsCreate(ctx context.Context, client *api.Client, opts *opt
 	service := api.NewEnrollmentTermsService(client)
 
 	params := &api.EnrollmentTermParams{
-		Name:      opts.Name,
-		StartAt:   opts.StartAt,
-		EndAt:     opts.EndAt,
-		SISTermID: opts.SISTermID,
+		EnrollmentTerm: api.EnrollmentTermFields{
+			Name:      opts.Name,
+			StartAt:   opts.StartAt,
+			EndAt:     opts.EndAt,
+			SISTermID: opts.SISTermID,
+		},
 	}
 
 	term, err := service.Create(ctx, opts.AccountID, params)
@@ -288,9 +290,11 @@ func runEnrollmentTermsUpdate(ctx context.Context, client *api.Client, opts *opt
 	service := api.NewEnrollmentTermsService(client)
 
 	params := &api.EnrollmentTermParams{
-		Name:    opts.Name,
-		StartAt: opts.StartAt,
-		EndAt:   opts.EndAt,
+		EnrollmentTerm: api.EnrollmentTermFields{
+			Name:    opts.Name,
+			StartAt: opts.StartAt,
+			EndAt:   opts.EndAt,
+		},
 	}
 
 	term, err := service.Update(ctx, opts.AccountID, opts.TermID, params)
