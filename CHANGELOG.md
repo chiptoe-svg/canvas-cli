@@ -15,6 +15,32 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.10.1] - 2026-07-02
+
+### Fixed
+
+- **Documentation audited against the shipped CLI**: repaired examples that no
+  longer ran — `submissions grade-batch` → `bulk-grade --csv-file` with the
+  correct `user_id,assignment_id,score,comment` CSV columns, `submissions
+  grade` flag usage (`--user-id`/`--score`/`--posted-grade`, no positional id),
+  `enrollments create --user-id`/`--type`, positional `sync course` and
+  `users search`, `assignments create --group-id`, and `config account
+  <instance> <account-id>`. Corrected stale numbers (93 command groups — the
+  v1.10.0 note below originally overcounted 46→93 as 52→98 — 530+ MCP tools,
+  the 80% CI coverage gate) and removed the nonexistent
+  `CANVAS_OUTPUT`/`CANVAS_NO_CACHE` env vars from docs and the bundled skill
+  (`CANVAS_CLI_MACHINE_ID` is documented instead).
+- **`canvas context` help text** no longer claims every command consumes the
+  stored context: only `assignments list`/`assignments get` read the course
+  context today. The user guide, best practices, and bundled agent skill now
+  document the same behavior.
+- **Agent-guard docs**: dropped `status` from the documented read allowlist to
+  match the code's `canvasReadVerbs`; the Agent Safety guide is now linked
+  from the docs landing pages.
+- **Contributor docs** reflect the current repo: no `pkg/` directory or VCR
+  cassettes, `make check` and the spec targets documented, architecture page
+  updated with the real package layout and the spec-compliance harness.
+
 ## [1.10.0] - 2026-06-23
 
 ### Added
