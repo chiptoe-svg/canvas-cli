@@ -1015,17 +1015,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#setting-multiple-values" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Setting Multiple Values
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1133,21 +1122,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#grading-workflow" class="md-nav__link">
+  <a href="#course-review-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grading Workflow
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#course-management-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Course Management Workflow
+        Course Review Workflow
       
     </span>
   </a>
@@ -1858,17 +1836,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#setting-multiple-values" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Setting Multiple Values
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1976,21 +1943,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#grading-workflow" class="md-nav__link">
+  <a href="#course-review-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grading Workflow
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#course-management-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Course Management Workflow
+        Course Review Workflow
       
     </span>
   </a>
@@ -2047,18 +2003,23 @@
 <h1 id="context-management">Context Management<a class="headerlink" href="#context-management" title="Permanent link">&para;</a></h1>
 <p>Set default values for common flags like <code>--course-id</code> so you don't have to type them repeatedly.</p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>When working with a specific course, you typically run many commands with the same <code>--course-id</code>. Context management lets you set this once and have it apply automatically:</p>
+<p>When working with a specific course, you typically run many commands with the same <code>--course-id</code>. Context management lets you set this once and have supported commands apply it automatically:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Without context - repetitive</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span><span class="w"> </span>--assignment-id<span class="w"> </span><span class="m">67890</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>canvas<span class="w"> </span>modules<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># With context - clean and simple</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list<span class="w"> </span>--assignment-id<span class="w"> </span><span class="m">67890</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>canvas<span class="w"> </span>modules<span class="w"> </span>list
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>get<span class="w"> </span><span class="m">67890</span><span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># With context - clean and simple</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>get<span class="w"> </span><span class="m">67890</span>
 </span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Which commands use context</p>
+<p>Context is currently applied by <code>canvas assignments list</code> and
+<code>canvas assignments get</code> (course context). Other commands still require
+their flags explicitly. The other context types (<code>assignment</code>, <code>user</code>,
+<code>account</code>) are stored for future use but not yet consumed by any command.</p>
+</div>
 <h2 id="setting-context">Setting Context<a class="headerlink" href="#setting-context" title="Permanent link">&para;</a></h2>
 <p>Use <code>canvas context set</code> to set default values:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;type&gt;<span class="w"> </span>&lt;id&gt;
@@ -2068,8 +2029,9 @@
 <thead>
 <tr>
 <th>Type</th>
-<th>Flag it replaces</th>
+<th>Related flag</th>
 <th>Example</th>
+<th>Used by</th>
 </tr>
 </thead>
 <tbody>
@@ -2077,112 +2039,94 @@
 <td><code>course</code></td>
 <td><code>--course-id</code></td>
 <td><code>canvas context set course 12345</code></td>
+<td><code>assignments list</code>, <code>assignments get</code></td>
 </tr>
 <tr>
 <td><code>assignment</code></td>
 <td><code>--assignment-id</code></td>
 <td><code>canvas context set assignment 67890</code></td>
+<td>(stored, not yet consumed)</td>
 </tr>
 <tr>
 <td><code>user</code></td>
 <td><code>--user-id</code></td>
 <td><code>canvas context set user 111</code></td>
+<td>(stored, not yet consumed)</td>
 </tr>
 <tr>
 <td><code>account</code></td>
 <td><code>--account-id</code></td>
 <td><code>canvas context set account 1</code></td>
+<td>(stored, not yet consumed)</td>
 </tr>
 </tbody>
 </table>
-<h3 id="setting-multiple-values">Setting Multiple Values<a class="headerlink" href="#setting-multiple-values" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>assignment<span class="w"> </span><span class="m">67890</span>
-</span></code></pre></div>
-<p>Now commands automatically use both:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Uses course 12345 and assignment 67890</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list
-</span></code></pre></div></p>
 <h2 id="viewing-context">Viewing Context<a class="headerlink" href="#viewing-context" title="Permanent link">&para;</a></h2>
 <p>See your current context settings:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>canvas<span class="w"> </span>context<span class="w"> </span>show
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>canvas<span class="w"> </span>context<span class="w"> </span>show
 </span></code></pre></div>
 <p>Output:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Current context:
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  course_id:     12345
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  assignment_id: 67890
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Current context:
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  course_id:     12345
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  assignment_id: 67890
 </span></code></pre></div></p>
 <h2 id="clearing-context">Clearing Context<a class="headerlink" href="#clearing-context" title="Permanent link">&para;</a></h2>
 <h3 id="clear-all-context">Clear All Context<a class="headerlink" href="#clear-all-context" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear
 </span></code></pre></div>
 <h3 id="clear-specific-value">Clear Specific Value<a class="headerlink" href="#clear-specific-value" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear<span class="w"> </span>course
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear<span class="w"> </span>assignment
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear<span class="w"> </span>course
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear<span class="w"> </span>assignment
 </span></code></pre></div>
 <h2 id="how-context-works">How Context Works<a class="headerlink" href="#how-context-works" title="Permanent link">&para;</a></h2>
 <ol>
-<li>When you run a command, Canvas CLI checks if required flags are provided</li>
-<li>If a flag is missing, it checks for a context value</li>
-<li>Context values are used as defaults when flags aren't specified</li>
+<li>When you run a supported command, Canvas CLI checks if the flag is provided</li>
+<li>If the flag is missing, it falls back to the stored context value</li>
 <li>Explicit flags always override context values</li>
 </ol>
 <h3 id="example-flow">Example Flow<a class="headerlink" href="#example-flow" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Set context</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># These are equivalent:</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w">                    </span><span class="c1"># Uses context (course 12345)</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span><span class="w">  </span><span class="c1"># Explicit flag</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># Override context with a different value</span>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">99999</span><span class="w">  </span><span class="c1"># Uses 99999, ignores context</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Set context</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># These are equivalent:</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w">                    </span><span class="c1"># Uses context (course 12345)</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span><span class="w">  </span><span class="c1"># Explicit flag</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="c1"># Override context with a different value</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">99999</span><span class="w">  </span><span class="c1"># Uses 99999, ignores context</span>
 </span></code></pre></div>
 <h2 id="storage">Storage<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h2>
 <p>Context is stored in your configuration file (<code>~/.canvas-cli/config.yaml</code>):</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">context</span><span class="p">:</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">course_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12345</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">assignment_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">67890</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">context</span><span class="p">:</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">course_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12345</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">assignment_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">67890</span>
 </span></code></pre></div>
 <h2 id="workflow-examples">Workflow Examples<a class="headerlink" href="#workflow-examples" title="Permanent link">&para;</a></h2>
-<h3 id="grading-workflow">Grading Workflow<a class="headerlink" href="#grading-workflow" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Set up context for grading session</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>assignment<span class="w"> </span><span class="m">67890</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># Now grade submissions efficiently</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span><span class="m">111</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">95</span><span class="w"> </span>--comment<span class="w"> </span><span class="s2">&quot;Great work!&quot;</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span><span class="m">222</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">88</span>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="c1"># Done grading, clear context</span>
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear
-</span></code></pre></div>
-<h3 id="course-management-workflow">Course Management Workflow<a class="headerlink" href="#course-management-workflow" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Working on a specific course</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Run multiple commands</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>canvas<span class="w"> </span>modules<span class="w"> </span>list
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>canvas<span class="w"> </span>users<span class="w"> </span>list<span class="w"> </span>--enrollment-type<span class="w"> </span>student
-</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>canvas<span class="w"> </span>announcements<span class="w"> </span>list
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
-</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="c1"># Switch to another course</span>
-</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">54321</span>
+<h3 id="course-review-workflow">Course Review Workflow<a class="headerlink" href="#course-review-workflow" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Working on a specific course</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Context fills in the course ID</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>get<span class="w"> </span><span class="m">67890</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># Commands without context support still take explicit flags</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>canvas<span class="w"> </span>modules<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>canvas<span class="w"> </span>users<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">12345</span><span class="w"> </span>--enrollment-type<span class="w"> </span>student
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="c1"># Switch to another course</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">54321</span>
 </span></code></pre></div>
 <h3 id="combined-with-aliases">Combined with Aliases<a class="headerlink" href="#combined-with-aliases" title="Permanent link">&para;</a></h3>
 <p>Context and <a href="../aliases/">aliases</a> work great together:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Set course context</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Create aliases that use context</span>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>hw<span class="w"> </span><span class="s2">&quot;assignments list&quot;</span>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>grades<span class="w"> </span><span class="s2">&quot;submissions list&quot;</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="c1"># Use them - context provides the course ID</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>canvas<span class="w"> </span>hw
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>canvas<span class="w"> </span>grades<span class="w"> </span>--assignment-id<span class="w"> </span><span class="m">67890</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Set course context</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Create an alias that benefits from context</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>hw<span class="w"> </span><span class="s2">&quot;assignments list&quot;</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># Use it - context provides the course ID</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>canvas<span class="w"> </span>hw
 </span></code></pre></div>
 <h2 id="tips">Tips<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2213,7 +2157,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="January 25, 2026 20:04:02 UTC"><span class="timeago" datetime="2026-01-25T20:04:02+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="January 25, 2026 20:04:02 UTC">2026-01-25</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="July 2, 2026 22:04:45 UTC"><span class="timeago" datetime="2026-07-02T22:04:45+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="July 2, 2026 22:04:45 UTC">2026-07-02</span>
   </span>
 
     

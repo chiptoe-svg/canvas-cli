@@ -1922,6 +1922,12 @@
 <p>Guidelines for contributing code, documentation, and bug reports</p>
 <p><a href="contributing/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Contributing</a></p>
 </li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.5 2.54l2.62 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95M12 19a7 7 0 0 1-7-7c0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95a10 10 0 0 0 10 10c3.3 0 6.23-1.61 8.05-4.09l-2.6-1.53A6.89 6.89 0 0 1 12 19"/></svg></span> <strong>API Coverage</strong></p>
+<hr />
+<p>How coverage is measured against the official Canvas API spec, and what's left</p>
+<p><a href="api-coverage/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> API Coverage</a></p>
+</li>
 </ul>
 </div>
 <h2 id="quick-start-for-contributors">Quick Start for Contributors<a class="headerlink" href="#quick-start-for-contributors" title="Permanent link">&para;</a></h2>
@@ -1988,12 +1994,32 @@
 <td>Run tests with coverage</td>
 </tr>
 <tr>
+<td><code>make check</code></td>
+<td>Run everything CI runs (lint, security, tests, spec checks)</td>
+</tr>
+<tr>
 <td><code>make lint</code></td>
 <td>Run golangci-lint</td>
 </tr>
 <tr>
 <td><code>make fmt</code></td>
 <td>Format code</td>
+</tr>
+<tr>
+<td><code>make setup-hooks</code></td>
+<td>Install git pre-commit hooks</td>
+</tr>
+<tr>
+<td><code>make spec-sync</code></td>
+<td>Refresh the committed Canvas API spec manifest</td>
+</tr>
+<tr>
+<td><code>make spec-coverage</code></td>
+<td>Report documented-but-unimplemented endpoints</td>
+</tr>
+<tr>
+<td><code>make docs-gen</code></td>
+<td>Regenerate CLI reference docs and sync the changelog</td>
 </tr>
 <tr>
 <td><code>make install</code></td>
@@ -2057,7 +2083,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="June 10, 2026 20:20:34 UTC"><span class="timeago" datetime="2026-06-10T20:20:34+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="June 10, 2026 20:20:34 UTC">2026-06-10</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="July 2, 2026 22:04:45 UTC"><span class="timeago" datetime="2026-07-02T22:04:45+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="July 2, 2026 22:04:45 UTC">2026-07-02</span>
   </span>
 
     

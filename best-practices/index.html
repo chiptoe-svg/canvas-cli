@@ -2875,8 +2875,8 @@
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>canvas<span class="w"> </span>courses<span class="w"> </span>list<span class="w"> </span>--instance<span class="w"> </span>staging
 </span></code></pre></div>
 <h3 id="set-default-account">Set Default Account<a class="headerlink" href="#set-default-account" title="Permanent link">&para;</a></h3>
-<p>For admin operations, set a default account ID:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>canvas<span class="w"> </span>config<span class="w"> </span>account<span class="w"> </span><span class="m">1</span>
+<p>For admin operations, set a default account ID for an instance:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>canvas<span class="w"> </span>config<span class="w"> </span>account<span class="w"> </span>production<span class="w"> </span><span class="m">1</span>
 </span></code></pre></div>
 <hr />
 <h2 id="productivity-features">Productivity Features<a class="headerlink" href="#productivity-features" title="Permanent link">&para;</a></h2>
@@ -2905,20 +2905,21 @@
 </ul>
 <h3 id="context-management">Context Management<a class="headerlink" href="#context-management" title="Permanent link">&para;</a></h3>
 <p>Set default values to avoid repetitive typing:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Set course context for a grading session</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Set course context for a work session</span>
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>assignment<span class="w"> </span><span class="m">67890</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># Now these commands use context automatically</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list<span class="w">          </span><span class="c1"># Uses course 12345, assignment 67890</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span><span class="m">111</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">95</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="c1"># View current context</span>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>canvas<span class="w"> </span>context<span class="w"> </span>show
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
-</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="c1"># Clear when switching tasks</span>
-</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Commands that support context use it automatically</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>list<span class="w">      </span><span class="c1"># Uses course 12345</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>get<span class="w"> </span><span class="m">456</span><span class="w">   </span><span class="c1"># Uses course 12345</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># View current context</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>canvas<span class="w"> </span>context<span class="w"> </span>show
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Clear when switching tasks</span>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear
 </span></code></pre></div>
+<p>Context is currently applied by <code>assignments list</code> and <code>assignments get</code>;
+other commands still require explicit flags (see <a href="../user-guide/context/">Context Management</a>).</p>
 <p><strong>Best Practices for Context:</strong></p>
 <ul>
 <li>Set context at the start of a focused work session</li>
@@ -2929,13 +2930,13 @@
 <h3 id="combine-aliases-with-context">Combine Aliases with Context<a class="headerlink" href="#combine-aliases-with-context" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Set up your workflow</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>subs<span class="w"> </span><span class="s2">&quot;submissions list&quot;</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>grade<span class="w"> </span><span class="s2">&quot;submissions grade&quot;</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>hw<span class="w"> </span><span class="s2">&quot;assignments list&quot;</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>canvas<span class="w"> </span><span class="nb">alias</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>grade<span class="w"> </span><span class="s2">&quot;submissions grade --course-id 12345 --assignment-id 456&quot;</span>
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="c1"># Super efficient grading</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>canvas<span class="w"> </span>subs<span class="w"> </span>--assignment-id<span class="w"> </span><span class="m">456</span>
-</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>canvas<span class="w"> </span>grade<span class="w"> </span><span class="m">111</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">95</span><span class="w"> </span>--comment<span class="w"> </span><span class="s2">&quot;Great work!&quot;</span>
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>canvas<span class="w"> </span>grade<span class="w"> </span><span class="m">222</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">88</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="c1"># Efficient grading</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>canvas<span class="w"> </span>hw<span class="w">                    </span><span class="c1"># context provides the course ID</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>canvas<span class="w"> </span>grade<span class="w"> </span>--user-id<span class="w"> </span><span class="m">111</span><span class="w"> </span>--score<span class="w"> </span><span class="m">95</span><span class="w"> </span>--comment<span class="w"> </span><span class="s2">&quot;Great work!&quot;</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>canvas<span class="w"> </span>grade<span class="w"> </span>--user-id<span class="w"> </span><span class="m">222</span><span class="w"> </span>--score<span class="w"> </span><span class="m">88</span>
 </span></code></pre></div>
 <hr />
 <h2 id="output-and-filtering">Output and Filtering<a class="headerlink" href="#output-and-filtering" title="Permanent link">&para;</a></h2>
@@ -3022,14 +3023,13 @@
 <h3 id="bulk-operations">Bulk Operations<a class="headerlink" href="#bulk-operations" title="Permanent link">&para;</a></h3>
 <p>Use CSV for bulk grading:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Prepare grades.csv:</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="c1"># student_id,grade,comment</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="c1"># 123,95,Great work!</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># 456,88,Good effort</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="c1"># user_id,assignment_id,score,comment</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="c1"># 123,456,95,Great work!</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># 124,456,88,Good effort</span>
 </span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
 </span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>bulk-grade<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">  </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span>--assignment-id<span class="w"> </span><span class="m">456</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span>--csv<span class="w"> </span>grades.csv
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span>--csv-file<span class="w"> </span>grades.csv
 </span></code></pre></div>
 <h3 id="error-handling-in-scripts">Error Handling in Scripts<a class="headerlink" href="#error-handling-in-scripts" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="ch">#!/bin/bash</span>
@@ -3047,22 +3047,21 @@
 <hr />
 <h2 id="common-workflows">Common Workflows<a class="headerlink" href="#common-workflows" title="Permanent link">&para;</a></h2>
 <h3 id="grading-workflow">Grading Workflow<a class="headerlink" href="#grading-workflow" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># 1. Set context for the grading session</span>
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>course<span class="w"> </span><span class="m">12345</span>
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>canvas<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>assignment<span class="w"> </span><span class="m">67890</span>
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
-</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="c1"># 2. List ungraded submissions</span>
-</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list<span class="w"> </span>--workflow-state<span class="w"> </span>submitted
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nv">COURSE</span><span class="o">=</span><span class="m">12345</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="nv">ASSIGNMENT</span><span class="o">=</span><span class="m">67890</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># 1. List ungraded submissions</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="nv">$COURSE</span><span class="w"> </span>--assignment-id<span class="w"> </span><span class="nv">$ASSIGNMENT</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">  </span>--workflow-state<span class="w"> </span>submitted
 </span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>
-</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="c1"># 3. Grade individual submissions</span>
-</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span><span class="m">111</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">95</span><span class="w"> </span>--comment<span class="w"> </span><span class="s2">&quot;Excellent!&quot;</span>
-</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span><span class="m">222</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">88</span>
-</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>
-</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="c1"># 4. Or bulk grade from CSV</span>
-</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>bulk-grade<span class="w"> </span>--csv<span class="w"> </span>grades.csv
-</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>
-</span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a><span class="c1"># 5. Clear context when done</span>
-</span><span id="__span-19-16"><a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>canvas<span class="w"> </span>context<span class="w"> </span>clear
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="c1"># 2. Grade individual submissions</span>
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span>--course-id<span class="w"> </span><span class="nv">$COURSE</span><span class="w"> </span>--assignment-id<span class="w"> </span><span class="nv">$ASSIGNMENT</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">  </span>--user-id<span class="w"> </span><span class="m">111</span><span class="w"> </span>--score<span class="w"> </span><span class="m">95</span><span class="w"> </span>--comment<span class="w"> </span><span class="s2">&quot;Excellent!&quot;</span>
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span>--course-id<span class="w"> </span><span class="nv">$COURSE</span><span class="w"> </span>--assignment-id<span class="w"> </span><span class="nv">$ASSIGNMENT</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="w">  </span>--user-id<span class="w"> </span><span class="m">222</span><span class="w"> </span>--score<span class="w"> </span><span class="m">88</span>
+</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>
+</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="c1"># 3. Or bulk grade from CSV (columns: user_id,assignment_id,score,comment)</span>
+</span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>bulk-grade<span class="w"> </span>--course-id<span class="w"> </span><span class="nv">$COURSE</span><span class="w"> </span>--csv-file<span class="w"> </span>grades.csv
 </span></code></pre></div>
 <h3 id="course-setup-workflow">Course Setup Workflow<a class="headerlink" href="#course-setup-workflow" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># 1. Create assignment groups</span>
@@ -3073,7 +3072,7 @@
 </span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="c1"># 2. Create assignments</span>
 </span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>canvas<span class="w"> </span>assignments<span class="w"> </span>create<span class="w"> </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;Homework 1&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span>--assignment-group-id<span class="w"> </span><span class="m">456</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span>--group-id<span class="w"> </span><span class="m">456</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">  </span>--points<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="w">  </span>--due-at<span class="w"> </span><span class="s2">&quot;2024-09-15T23:59:00Z&quot;</span>
 </span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
@@ -3086,20 +3085,16 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># List students in a course</span>
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>canvas<span class="w"> </span>users<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span>--enrollment-type<span class="w"> </span>student
 </span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
-</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="c1"># Search for a user</span>
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>canvas<span class="w"> </span>users<span class="w"> </span>search<span class="w"> </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span>--search-term<span class="w"> </span><span class="s2">&quot;john&quot;</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="c1"># Search for a user (account-wide)</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>canvas<span class="w"> </span>users<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;john&quot;</span>
 </span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
 </span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="c1"># Export to spreadsheet</span>
 </span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>canvas<span class="w"> </span>users<span class="w"> </span>list<span class="w"> </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span>-o<span class="w"> </span>csv<span class="w"> </span>&gt;<span class="w"> </span>students.csv
 </span></code></pre></div>
 <h3 id="course-migration-workflow">Course Migration Workflow<a class="headerlink" href="#course-migration-workflow" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Sync from source to destination</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>canvas<span class="w"> </span>sync<span class="w"> </span>course<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span>--source-instance<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span>--source-course<span class="w"> </span><span class="m">123</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">  </span>--dest-instance<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span>--dest-course<span class="w"> </span><span class="m">456</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">  </span>--interactive
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="c1"># canvas sync course &lt;source-instance&gt; &lt;source-course-id&gt; &lt;target-instance&gt; &lt;target-course-id&gt;</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>canvas<span class="w"> </span>sync<span class="w"> </span>course<span class="w"> </span>prod<span class="w"> </span><span class="m">123</span><span class="w"> </span>staging<span class="w"> </span><span class="m">456</span><span class="w"> </span>--interactive
 </span></code></pre></div>
 <hr />
 <h2 id="performance-tips">Performance Tips<a class="headerlink" href="#performance-tips" title="Permanent link">&para;</a></h2>
@@ -3125,11 +3120,12 @@
 <p>For multiple similar operations, use bulk commands when available:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Slow: Individual grade commands</span>
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="k">for</span><span class="w"> </span>id<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">5</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span><span class="nv">$id</span><span class="w"> </span>--grade<span class="w"> </span><span class="m">100</span>
-</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="k">done</span>
-</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>
-</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="c1"># Fast: Bulk grade from CSV</span>
-</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>bulk-grade<span class="w"> </span>--csv<span class="w"> </span>grades.csv
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span>canvas<span class="w"> </span>submissions<span class="w"> </span>grade<span class="w"> </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span>--assignment-id<span class="w"> </span><span class="m">456</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">      </span>--user-id<span class="w"> </span><span class="nv">$id</span><span class="w"> </span>--score<span class="w"> </span><span class="m">100</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="k">done</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="c1"># Fast: Bulk grade from CSV</span>
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>canvas<span class="w"> </span>submissions<span class="w"> </span>bulk-grade<span class="w"> </span>--course-id<span class="w"> </span><span class="m">123</span><span class="w"> </span>--csv-file<span class="w"> </span>grades.csv
 </span></code></pre></div>
 <hr />
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
@@ -3275,7 +3271,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="January 28, 2026 15:09:21 UTC"><span class="timeago" datetime="2026-01-28T15:09:21+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="January 28, 2026 15:09:21 UTC">2026-01-28</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="July 2, 2026 22:04:45 UTC"><span class="timeago" datetime="2026-07-02T22:04:45+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="July 2, 2026 22:04:45 UTC">2026-07-02</span>
   </span>
 
     
