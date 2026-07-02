@@ -23,7 +23,7 @@ already caught several real path bugs.
 
 The service layer implements **876 of 1086** documented endpoint patterns
 (**80%**), measured method-aware (the HTTP verb must match, not just the path).
-98 command groups expose the most-used workflows; the most recently added
+93 command groups expose the most-used workflows; the most recently added
 endpoints exist in the service layer (`internal/api`) and are progressively
 surfaced as commands. The remaining ~20% gap is mostly CLI-infeasible surface
 (LTI Advantage / IMS handshakes, multipart binary uploads, token/media-session

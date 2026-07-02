@@ -12,8 +12,8 @@ canvas courses list -o yaml
 canvas courses list -o csv           # spreadsheet import
 ```
 
-Always parse `-o json`; table layout may change between releases. Set a session
-default with `CANVAS_OUTPUT=json`.
+Always parse `-o json`; table layout may change between releases. There is no
+env var for output format — pass `-o json` on each call.
 
 ## Built-in filtering, columns, sorting
 

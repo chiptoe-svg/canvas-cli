@@ -4,20 +4,24 @@ Set default values for common flags like `--course-id` so you don't have to type
 
 ## Overview
 
-When working with a specific course, you typically run many commands with the same `--course-id`. Context management lets you set this once and have it apply automatically:
+When working with a specific course, you typically run many commands with the same `--course-id`. Context management lets you set this once and have supported commands apply it automatically:
 
 ```bash
 # Without context - repetitive
 canvas assignments list --course-id 12345
-canvas submissions list --course-id 12345 --assignment-id 67890
-canvas modules list --course-id 12345
+canvas assignments get 67890 --course-id 12345
 
 # With context - clean and simple
 canvas context set course 12345
 canvas assignments list
-canvas submissions list --assignment-id 67890
-canvas modules list
+canvas assignments get 67890
 ```
+
+!!! note "Which commands use context"
+    Context is currently applied by `canvas assignments list` and
+    `canvas assignments get` (course context). Other commands still require
+    their flags explicitly. The other context types (`assignment`, `user`,
+    `account`) are stored for future use but not yet consumed by any command.
 
 ## Setting Context
 
@@ -29,25 +33,12 @@ canvas context set <type> <id>
 
 ### Available Context Types
 
-| Type | Flag it replaces | Example |
-|------|------------------|---------|
-| `course` | `--course-id` | `canvas context set course 12345` |
-| `assignment` | `--assignment-id` | `canvas context set assignment 67890` |
-| `user` | `--user-id` | `canvas context set user 111` |
-| `account` | `--account-id` | `canvas context set account 1` |
-
-### Setting Multiple Values
-
-```bash
-canvas context set course 12345
-canvas context set assignment 67890
-```
-
-Now commands automatically use both:
-```bash
-# Uses course 12345 and assignment 67890
-canvas submissions list
-```
+| Type | Related flag | Example | Used by |
+|------|--------------|---------|---------|
+| `course` | `--course-id` | `canvas context set course 12345` | `assignments list`, `assignments get` |
+| `assignment` | `--assignment-id` | `canvas context set assignment 67890` | (stored, not yet consumed) |
+| `user` | `--user-id` | `canvas context set user 111` | (stored, not yet consumed) |
+| `account` | `--account-id` | `canvas context set account 1` | (stored, not yet consumed) |
 
 ## Viewing Context
 
@@ -81,10 +72,9 @@ canvas context clear assignment
 
 ## How Context Works
 
-1. When you run a command, Canvas CLI checks if required flags are provided
-2. If a flag is missing, it checks for a context value
-3. Context values are used as defaults when flags aren't specified
-4. Explicit flags always override context values
+1. When you run a supported command, Canvas CLI checks if the flag is provided
+2. If the flag is missing, it falls back to the stored context value
+3. Explicit flags always override context values
 
 ### Example Flow
 
@@ -112,33 +102,19 @@ context:
 
 ## Workflow Examples
 
-### Grading Workflow
-
-```bash
-# Set up context for grading session
-canvas context set course 12345
-canvas context set assignment 67890
-
-# Now grade submissions efficiently
-canvas submissions list
-canvas submissions grade 111 --grade 95 --comment "Great work!"
-canvas submissions grade 222 --grade 88
-
-# Done grading, clear context
-canvas context clear
-```
-
-### Course Management Workflow
+### Course Review Workflow
 
 ```bash
 # Working on a specific course
 canvas context set course 12345
 
-# Run multiple commands
+# Context fills in the course ID
 canvas assignments list
-canvas modules list
-canvas users list --enrollment-type student
-canvas announcements list
+canvas assignments get 67890
+
+# Commands without context support still take explicit flags
+canvas modules list --course-id 12345
+canvas users list --course-id 12345 --enrollment-type student
 
 # Switch to another course
 canvas context set course 54321
@@ -152,13 +128,11 @@ Context and [aliases](aliases.md) work great together:
 # Set course context
 canvas context set course 12345
 
-# Create aliases that use context
+# Create an alias that benefits from context
 canvas alias set hw "assignments list"
-canvas alias set grades "submissions list"
 
-# Use them - context provides the course ID
+# Use it - context provides the course ID
 canvas hw
-canvas grades --assignment-id 67890
 ```
 
 ## Tips

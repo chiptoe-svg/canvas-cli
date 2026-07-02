@@ -49,8 +49,9 @@ Details on multi-instance setup and precedence:
 5. **Confirm destructive actions** (`delete`, `conclude`) with the user before
    running them, and prefer `--dry-run` first.
 6. **Set context for a working session.** `canvas context set course 12345`
-   makes `--course-id` implicit for subsequent commands; explicit flags always
-   override it. Check what's active with `canvas context show`.
+   makes `--course-id` implicit for `assignments list`/`assignments get` (other
+   commands still need explicit flags); explicit flags always override it.
+   Check what's active with `canvas context show`.
 7. **Mind the instance.** With multiple configured instances, verify which one
    is active (`canvas config list`) before writing; switch with
    `canvas config use <name>` or per-command `--instance`.
@@ -85,7 +86,7 @@ canvas assignments list --course-id 123 --filter "Quiz 1"                       
 | Admin | `accounts`, `admins`, `roles`, `analytics`, `sis-imports`, `external-tools`, `auth-providers`, `csp-settings`, `account-notifications`, `account-reports`, `enrollment-terms`, `developer-keys`, `audit` |
 | Utility | `api` (raw requests), `sync`, `context`, `alias`, `cache`, `doctor`, `mcp`, `repl`/`shell`, `webhook`, `jwts`, `progress` |
 
-The CLI has ~98 command groups covering most of the Canvas REST API. The table
+The CLI has ~93 command groups covering most of the Canvas REST API. The table
 above is a guide, not the full list — **always discover the real surface with
 `canvas --help` and `canvas <resource> --help`** rather than assuming a command
 exists. Most resources that exist under a course also exist under a group or
@@ -152,8 +153,8 @@ canvas submissions get --course-id 123 --assignment-id 456 --user-id 789 -o json
 CSV columns: `user_id,assignment_id,score,comment`.
 
 ```bash
-canvas submissions bulk-grade --course-id 123 --csv grades.csv --dry-run   # preview every change
-canvas submissions bulk-grade --course-id 123 --csv grades.csv             # apply (concurrent)
+canvas submissions bulk-grade --course-id 123 --csv-file grades.csv --dry-run   # preview every change
+canvas submissions bulk-grade --course-id 123 --csv-file grades.csv             # apply (concurrent)
 canvas grades history --course-id 123                                      # audit afterwards
 ```
 

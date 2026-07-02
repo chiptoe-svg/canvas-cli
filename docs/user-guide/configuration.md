@@ -68,6 +68,19 @@ canvas config use sandbox
 canvas config remove sandbox
 ```
 
+### Set a Default Account
+
+Set (or auto-detect) the default account ID used when a command needs an
+account ID and none is given:
+
+```bash
+# Set manually
+canvas config account production 1
+
+# Auto-detect from the API
+canvas config account production
+```
+
 ### Show Current Configuration
 
 ```bash
@@ -94,6 +107,8 @@ canvas courses list
 
 !!! tip "Priority"
     Environment variables take precedence over the config file.
+
+See the [Environment Variables reference](../reference/environment-variables.md) for the full list and details.
 
 ## Command-Line Overrides
 

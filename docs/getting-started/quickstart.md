@@ -91,7 +91,7 @@ Canvas CLI supports multiple output formats:
 | List courses | `canvas courses list` |
 | Get course details | `canvas courses get 123` |
 | List assignments | `canvas assignments list --course-id 123` |
-| Grade submission | `canvas submissions grade 456 --course-id 123 --score 95` |
+| Grade submission | `canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 --score 95` |
 | List users | `canvas users list --course-id 123` |
 | Upload file | `canvas files upload ./file.pdf --course-id 123` |
 

@@ -12,7 +12,7 @@
 
 ## Features
 
-- **Comprehensive API Coverage** - Access courses, assignments, submissions, users, modules, pages, and more
+- **80% API Coverage** - 876 of Canvas's 1086 documented endpoints, spec-verified in CI against the official Canvas API spec
 - **Multiple Output Formats** - Table, JSON, YAML, and CSV output
 - **Bulk Operations** - Grade submissions in bulk from CSV files
 - **Course Synchronization** - Sync content between Canvas instances
@@ -20,6 +20,7 @@
 - **Secure Authentication** - OAuth 2.0 with PKCE flow, tokens stored in your system keyring
 - **MCP Integration** - Use Canvas CLI as an MCP server for AI coding assistants
 - **AI Agent Skill** - Bundled skill that teaches Claude Code, Cursor, and other agents how to drive the CLI
+- **Agent Safety** - `canvas agent guard` generates safety config so AI agents can read freely but need approval to write
 - **Docker Image** - Distroless image on GHCR for containerized and CI usage
 - **Signed Releases** - cosign-signed checksums and SBOMs on every release
 
@@ -65,7 +66,7 @@ canvas courses list
 canvas assignments list --course-id 123
 
 # Grade a submission
-canvas submissions grade 456 --course-id 123 --score 95
+canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 --score 95
 
 # Bulk grade from CSV
 canvas submissions bulk-grade --course-id 123 --csv-file grades.csv
@@ -117,6 +118,14 @@ canvas users list --course-id 123 --output json
     Teach Claude Code, Cursor, and other AI agents to drive Canvas CLI
 
     [:octicons-arrow-right-24: Agent Skill](user-guide/agent-skill.md)
+
+-   :material-shield-check:{ .lg .middle } **Agent Safety**
+
+    ---
+
+    Generate guardrails so AI agents can read Canvas freely but need approval to write
+
+    [:octicons-arrow-right-24: Agent Safety](user-guide/agent-safety.md)
 
 </div>
 

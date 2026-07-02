@@ -27,7 +27,7 @@ By default the guard generates two tiers of protection:
 |------|-------|--------------|
 | **Hard-block** | `delete`, `remove`, `conclude`, `crosslist`, `uncrosslist`, `deactivate`, `unpublish`, `unlink`, `clear`, `abort`, `reset`, `void`, `cancel`, `close`, `merge`, `split` | The PreToolUse hook (or permission rule) denies the tool call immediately, before execution. The agent sees an error and cannot proceed. |
 | **Ask / approval** | `create`, `update`, `publish`, `grade`, `upload`, `add`, `sync`, … | The agent must receive explicit human approval before the tool call executes. |
-| **Read — allowed** | `list`, `get`, `show`, `search`, `me`, `status`, `quota`, `revisions`, `entries`, `results`, … | No gate — the agent can read freely. |
+| **Read — allowed** | `list`, `get`, `show`, `search`, `me`, `quota`, `revisions`, `entries`, `results`, … | No gate — the agent can read freely. |
 
 Pass `--all-writes` to fold the approval tier into the hard-block set, leaving only reads ungated.
 

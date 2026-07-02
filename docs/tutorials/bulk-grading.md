@@ -61,18 +61,17 @@ user_id,user_name,submission_type,submitted_at,score,grade,comment
 Create a grades file with the required columns:
 
 ```csv
-user_id,score,comment
-1001,85,Good work!
-1002,92,Excellent analysis
+user_id,assignment_id,score,comment
+1001,456,85,Good work!
+1002,456,92,Excellent analysis
 ```
 
 Import the grades:
 
 ```bash
-canvas submissions grade-batch \
+canvas submissions bulk-grade \
   --course-id 123 \
-  --assignment-id 456 \
-  --file grades.csv
+  --csv-file grades.csv
 ```
 
 ## Step 5: Verify Grades
@@ -85,11 +84,19 @@ canvas submissions list --course-id 123 --assignment-id 456
 
 ## Advanced: Grading with Rubrics
 
-If your assignment uses a rubric, you can include rubric scores:
+Rubric scores can't be set through the bulk-grade CSV. To review rubric
+assessments alongside grades, include them when fetching a submission:
 
-```csv
-user_id,score,rubric_assessment
-1001,85,{"criterion_1":{"points":20},"criterion_2":{"points":15}}
+```bash
+canvas submissions get --course-id 123 --assignment-id 456 --user-id 1001 \
+  --include rubric_assessment
+```
+
+To set rubric scores, use the raw API command:
+
+```bash
+canvas api PUT /courses/123/assignments/456/submissions/1001 \
+  -d '{"rubric_assessment":{"criterion_1":{"points":20},"criterion_2":{"points":15}}}'
 ```
 
 ## Tips
@@ -101,11 +108,19 @@ user_id,score,rubric_assessment
     Importing grades will overwrite existing grades. Export current grades first as a backup.
 
 !!! tip "Dry Run"
-    Test your CSV format by grading a single submission first:
+    Preview the import without applying anything using `--dry-run`:
     ```bash
-    canvas submissions grade 1001 \
+    canvas submissions bulk-grade \
+      --course-id 123 \
+      --csv-file grades.csv \
+      --dry-run
+    ```
+    Or test by grading a single submission first:
+    ```bash
+    canvas submissions grade \
       --course-id 123 \
       --assignment-id 456 \
+      --user-id 1001 \
       --score 85 \
       --comment "Good work!"
     ```
@@ -126,11 +141,10 @@ canvas submissions list \
 echo "Edit submissions.csv and add grades, then press Enter"
 read
 
-# Import grades
-canvas submissions grade-batch \
+# Import grades (CSV columns: user_id,assignment_id,score,comment)
+canvas submissions bulk-grade \
   --course-id $COURSE_ID \
-  --assignment-id $ASSIGNMENT_ID \
-  --file grades.csv
+  --csv-file grades.csv
 
 echo "Grades imported successfully!"
 ```

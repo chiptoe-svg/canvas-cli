@@ -54,8 +54,18 @@ internal/
   config/       → Viper-based configuration management
   cache/        → Response caching with TTL
   batch/        → Concurrent batch operations (worker pool)
+  diagnostics/  → canvas doctor checks
+  dryrun/       → --dry-run curl rendering
   output/       → Formatters (table, JSON, YAML, CSV)
+  progress/     → Progress indicators
   repl/         → Interactive shell
+  shellparse/   → Shell-style argument parsing
+  telemetry/    → Opt-in usage telemetry
+  terminal/     → Terminal capabilities
+  update/       → Self-update checks
+  webhook/      → Webhook listener
+testdata/spec/  → Committed Canvas API spec manifest
+tools/          → Code generators (gendocs, speccheck)
 .ai/            → Canvas LMS API documentation (gitignored)
 ```
 
@@ -307,7 +317,7 @@ The formula is at: https://github.com/jjuanrivvera/homebrew-canvas-cli
 
 ## Technical Debt & Remediation
 
-See [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) for tracked technical debt items, including the in-progress migration away from package-level flag variables.
+See [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) for tracked technical debt items. The migration away from package-level flag variables is complete; the remaining globals in `commands/root.go` are an accepted design choice documented there.
 
 ### Adding New Commands
 
