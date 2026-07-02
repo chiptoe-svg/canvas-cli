@@ -21,20 +21,20 @@ func newContextCmd() *cobra.Command {
 		Short: "Manage working context (course, assignment, user IDs)",
 		Long: `Manage the current working context for Canvas CLI.
 
-Context allows you to set default values for course_id, assignment_id, user_id,
-and account_id that will be used automatically when those flags are not provided.
+Context allows you to store default values for course_id, assignment_id,
+user_id, and account_id. Commands that support context use the stored value
+when the corresponding flag is not provided.
+
+Currently 'canvas assignments list' and 'canvas assignments get' use the
+course context; other commands still require explicit flags.
 
 Examples:
   # Set the current course
   canvas context set course 123
 
-  # Set multiple context values
-  canvas context set course 123
-  canvas context set assignment 456
-
-  # Now commands automatically use context
-  canvas assignments list  # uses course_id 123
-  canvas submissions list  # uses course_id 123 and assignment_id 456
+  # Commands that support context pick it up automatically
+  canvas assignments list      # uses course_id 123
+  canvas assignments get 456   # uses course_id 123
 
   # Show current context
   canvas context show

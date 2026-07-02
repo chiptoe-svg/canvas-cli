@@ -32,7 +32,7 @@
 - **Smart Rate Limiting** - Adaptive throttling based on API quotas
 - **Multiple Outputs** - Table, JSON, YAML, and CSV formats
 - **Interactive Mode** - REPL shell with command history and completion
-- **80% API Coverage** - 876 of Canvas's 1086 documented endpoints implemented in the service layer, exposed through 98 command groups
+- **80% API Coverage** - 876 of Canvas's 1086 documented endpoints implemented in the service layer, exposed through 93 command groups
 - **Spec-Verified** - Every endpoint path validated against Canvas's official API spec in CI ([details](#api-spec-compliance))
 - **MCP Server** - Use as an AI agent tool via Model Context Protocol
 - **AI Agent Skill** - Bundled skill for Claude Code, Cursor, and other agents (`canvas skills install`)
@@ -97,20 +97,20 @@ canvas repl
 |----------|----------|
 | **Auth** | `login`, `logout`, `status` |
 | **Courses** | `list`, `get`, `create`, `update`, `delete` |
-| **Assignments** | `list`, `get`, `create`, `update`, `delete`, `bulk-update` |
+| **Assignments** | `list`, `get`, `create`, `update`, `delete` |
 | **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments` |
 | **Users** | `me`, `list`, `get`, `create`, `update` |
-| **Enrollments** | `list`, `get`, `create`, `update`, `delete`, `accept` |
+| **Enrollments** | `list`, `get`, `create`, `conclude`, `reactivate`, `accept`, `reject` |
 | **Modules** | `list`, `get`, `create`, `update`, `delete`, `publish`, `items` |
 | **Pages** | `list`, `get`, `create`, `update`, `delete`, `front`, `revisions` |
 | **Discussions** | `list`, `get`, `create`, `entries`, `post`, `reply`, `subscribe` |
 | **Announcements** | `list`, `get`, `create`, `update`, `delete` |
 | **Quizzes** | `list`, `get`, `create`, `update`, `delete`, `questions`, `submissions` |
-| **Grades** | `summary`, `history`, `bulk-update`, `final`, `current` |
+| **Grades** | `history`, `feed`, `columns` |
 | **Groups** | `list`, `get`, `create`, `update`, `delete`, `users`, `categories` |
-| **Outcomes** | `list`, `get`, `create`, `update`, `delete`, `groups`, `results` |
+| **Outcomes** | `list`, `get`, `create`, `update`, `link`, `unlink`, `groups`, `results` |
 | **Rubrics** | `list`, `get`, `create`, `update`, `delete`, `associate` |
-| **Conversations** | `list`, `get`, `create`, `reply`, `archive`, `star`, `batch-update` |
+| **Conversations** | `list`, `get`, `create`, `reply`, `archive`, `star`, `mark-read` |
 | **Calendar** | `list`, `get`, `create`, `update`, `delete`, `reserve` |
 | **Files** | `list`, `get`, `upload`, `download`, `delete` |
 | **Sections** | `list`, `get`, `create`, `update`, `delete`, `crosslist` |
@@ -124,10 +124,10 @@ canvas repl
 | **Admin** | `admins`, `roles`, `analytics`, `sis-imports`, `appointment-groups` |
 | **Utilities** | `repl`, `doctor`, `webhook`, `api`, `version` |
 
-This is a sample — the CLI has **98 command groups**, and its service layer
+This is a sample — the CLI has **93 command groups**, and its service layer
 implements **80%** of Canvas's official API. See the
 [full command reference](https://jjuanrivvera.github.io/canvas-cli/commands/)
-for all 600+ commands and their flags.
+for all 540+ commands and their flags.
 
 ## API Spec Compliance
 

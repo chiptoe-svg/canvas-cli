@@ -7,7 +7,7 @@ Canvas CLI exposes each command as an MCP tool (for example `canvas_courses_list
 ## What You Get
 
 - One MCP server with the same behavior as the normal CLI
-- 250+ typed tools generated from command flags and args
+- 530+ typed tools generated from command flags and args
 - Support for local stdio clients and HTTP streaming mode
 - Built-in editor helpers for Claude Desktop, Cursor, and VS Code
 
@@ -30,7 +30,7 @@ canvas version
 
 ## Requirements
 
-- Canvas CLI `v1.8.0+` recommended
+- Canvas CLI `v1.10.0+` recommended
 - If installed with `go install`, use Go `1.25+`
 - Valid Canvas auth using either:
   - `canvas auth login` (OAuth), or
@@ -81,6 +81,7 @@ Auto-configure with built-in helper:
 ```bash
 canvas mcp claude enable
 canvas mcp claude list
+canvas mcp claude disable   # remove the server entry
 ```
 
 Optional overrides:
@@ -105,6 +106,7 @@ User-level setup:
 ```bash
 canvas mcp cursor enable
 canvas mcp cursor list
+canvas mcp cursor disable   # remove the server entry
 ```
 
 Workspace setup (recommended per project):
@@ -122,6 +124,7 @@ User-level setup:
 
 ```bash
 canvas mcp vscode enable
+canvas mcp vscode disable   # remove the server entry
 ```
 
 Workspace setup:

@@ -48,7 +48,7 @@ sync by `make docs-gen` and the documentation workflow.
   Canvas host; `make spec-coverage` reports the gap. See
   [API Coverage](https://jjuanrivvera.github.io/canvas-cli/development/api-coverage/).
 - **Major API coverage expansion**: 31% → 67% of Canvas's documented endpoints
-  (52 → 98 command groups). New command groups include `polls`,
+  (46 → 93 command groups). New command groups include `polls`,
   `appointment-groups`, `folders`, `favorites`, `bookmarks`, `course-nicknames`,
   `observees`, `comm-channels`, `content-shares`, `audit`, `media`,
   `conferences`, `collaborations`, `eportfolios`, `brand`, `jwts`, `progress`,

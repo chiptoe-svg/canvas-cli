@@ -9,18 +9,12 @@ Canvas CLI can be configured using environment variables.
 | `CANVAS_URL` | Canvas instance URL (env auth mode) | From config |
 | `CANVAS_TOKEN` | API access token | From config/keyring |
 | `CANVAS_REQUESTS_PER_SEC` | Request rate limit for env auth mode | `5.0` |
-| `CANVAS_OUTPUT` | Default output format | `table` |
-| `CANVAS_NO_CACHE` | Disable response caching | `false` |
+| `CANVAS_CLI_MACHINE_ID` | Override the machine ID used to derive the encryption key for file-based token storage | Auto-detected |
+
+Output format and caching are controlled by the `--output` and `--no-cache`
+flags (or the config file), not by environment variables.
 
 ## Usage
-
-### Temporary Override
-
-Set for a single command:
-
-```bash
-CANVAS_OUTPUT=json canvas courses list
-```
 
 ### Session Override
 
@@ -40,7 +34,6 @@ Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
 # Canvas CLI configuration
 export CANVAS_URL=https://canvas.example.com
 export CANVAS_TOKEN=your-api-token
-export CANVAS_OUTPUT=json
 ```
 
 ## Variable Details
@@ -76,31 +69,16 @@ export CANVAS_REQUESTS_PER_SEC=10.0
 !!! warning "Security"
     Avoid setting tokens in shared environments. Consider using the config file or keyring instead.
 
-### CANVAS_OUTPUT
+### CANVAS_CLI_MACHINE_ID
 
-Default output format for commands.
-
-| Value | Description |
-|-------|-------------|
-| `table` | Human-readable table (default) |
-| `json` | JSON format |
-| `yaml` | YAML format |
-| `csv` | CSV format |
+Advanced. When tokens are stored in the encrypted file fallback (no system
+keyring available), the encryption key is derived from a machine identifier.
+Set this to pin that identifier — for example in containers where the
+auto-detected machine ID changes between runs.
 
 ```bash
-export CANVAS_OUTPUT=json
+export CANVAS_CLI_MACHINE_ID=my-stable-id
 ```
-
-### CANVAS_NO_CACHE
-
-Disable API response caching.
-
-```bash
-export CANVAS_NO_CACHE=true
-```
-
-!!! tip "When to Disable"
-    Disable caching when you need real-time data or are debugging.
 
 ## Precedence Order
 
@@ -123,7 +101,6 @@ Configuration is applied in this order (highest precedence first):
 # Use sandbox instance
 export CANVAS_URL=https://canvas-sandbox.example.com
 export CANVAS_TOKEN=sandbox-token
-export CANVAS_NO_CACHE=true
 ```
 
 ### CI/CD Pipeline
@@ -133,8 +110,9 @@ export CANVAS_NO_CACHE=true
 env:
   CANVAS_URL: ${{ secrets.CANVAS_URL }}
   CANVAS_TOKEN: ${{ secrets.CANVAS_TOKEN }}
-  CANVAS_OUTPUT: json
 ```
+
+For JSON output in scripts, pass the flag: `canvas courses list -o json`.
 
 ### Multi-Instance Setup
 

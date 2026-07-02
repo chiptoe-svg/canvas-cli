@@ -77,9 +77,9 @@ canvas update check | status
 
 ## Common ID-scoping flags
 
-Most course-scoped commands take `--course-id` (or inherit it from
-`canvas context set course N`). Submission commands additionally take
-`--assignment-id` and `--user-id`. Admin commands take `--account-id`.
+Most course-scoped commands take `--course-id`; only `assignments list`/`get`
+inherit it from `canvas context set course N`. Submission commands additionally
+take `--assignment-id` and `--user-id`. Admin commands take `--account-id`.
 
 ## Body input (create/update)
 

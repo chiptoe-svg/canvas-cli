@@ -54,6 +54,22 @@ Learn how to configure and use Canvas CLI effectively.
 
     [:octicons-arrow-right-24: Context](context.md)
 
+-   :material-robot:{ .lg .middle } **AI Agent Skill**
+
+    ---
+
+    Install the bundled skill that teaches AI agents how to drive Canvas CLI
+
+    [:octicons-arrow-right-24: Agent Skill](agent-skill.md)
+
+-   :material-shield-check:{ .lg .middle } **Agent Safety**
+
+    ---
+
+    Generate guardrails with `canvas agent guard` so agents read freely but need approval to write
+
+    [:octicons-arrow-right-24: Agent Safety](agent-safety.md)
+
 </div>
 
 ## Key Concepts

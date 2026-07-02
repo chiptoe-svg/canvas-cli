@@ -114,6 +114,9 @@ make test-coverage
 
 # Run specific package tests
 go test -v ./internal/api/...
+
+# Run everything CI runs (lint, security, tests, coverage gate, spec checks)
+make check
 ```
 
 ### Code Style
@@ -195,14 +198,12 @@ canvas-cli/
 │   ├── batch/           # Batch operations
 │   ├── output/          # Output formatters
 │   └── ...
-├── pkg/                 # Public packages (reusable by other projects)
 └── test/                # Test fixtures and integration tests
 ```
 
 ### Package Guidelines
 
 - **internal/**: Private packages that shouldn't be imported by external projects
-- **pkg/**: Public, reusable packages
 - **commands/**: CLI command implementations
 - Each package should have a clear, single responsibility
 
@@ -250,7 +251,7 @@ canvas-cli/
 - Test file names should match source files with `_test.go` suffix
 - Use table-driven tests when appropriate
 - Mock external dependencies
-- Aim for 90%+ code coverage
+- CI enforces a total coverage gate of ≥80% — keep coverage comfortably above it
 
 Example:
 ```go
@@ -284,7 +285,7 @@ func TestNewClient(t *testing.T) {
 
 ### Integration Tests
 
-- Use VCR cassettes to record/replay HTTP interactions
+- Use `httptest` mock servers to simulate the Canvas API
 - Never commit real credentials or PII
 - Use synthetic test data
 
@@ -369,7 +370,7 @@ When the tag is pushed, GitHub Actions will:
 
 ## Getting Help
 
-- 📖 Read the [README](README.md) and [SPECIFICATION](SPECIFICATION.md)
+- 📖 Read the [README](README.md)
 - 💬 Ask questions in GitHub Discussions
 - 🐛 Report bugs in GitHub Issues
 - 📧 Contact maintainers

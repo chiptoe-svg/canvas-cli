@@ -119,10 +119,10 @@ canvas courses list --instance staging
 
 ### Set Default Account
 
-For admin operations, set a default account ID:
+For admin operations, set a default account ID for an instance:
 
 ```bash
-canvas config account 1
+canvas config account production 1
 ```
 
 ---
@@ -161,13 +161,12 @@ canvas alias delete hw
 Set default values to avoid repetitive typing:
 
 ```bash
-# Set course context for a grading session
+# Set course context for a work session
 canvas context set course 12345
-canvas context set assignment 67890
 
-# Now these commands use context automatically
-canvas submissions list          # Uses course 12345, assignment 67890
-canvas submissions grade 111 --grade 95
+# Commands that support context use it automatically
+canvas assignments list      # Uses course 12345
+canvas assignments get 456   # Uses course 12345
 
 # View current context
 canvas context show
@@ -175,6 +174,9 @@ canvas context show
 # Clear when switching tasks
 canvas context clear
 ```
+
+Context is currently applied by `assignments list` and `assignments get`;
+other commands still require explicit flags (see [Context Management](user-guide/context.md)).
 
 **Best Practices for Context:**
 
@@ -188,13 +190,13 @@ canvas context clear
 ```bash
 # Set up your workflow
 canvas context set course 12345
-canvas alias set subs "submissions list"
-canvas alias set grade "submissions grade"
+canvas alias set hw "assignments list"
+canvas alias set grade "submissions grade --course-id 12345 --assignment-id 456"
 
-# Super efficient grading
-canvas subs --assignment-id 456
-canvas grade 111 --grade 95 --comment "Great work!"
-canvas grade 222 --grade 88
+# Efficient grading
+canvas hw                    # context provides the course ID
+canvas grade --user-id 111 --score 95 --comment "Great work!"
+canvas grade --user-id 222 --score 88
 ```
 
 ---
@@ -287,14 +289,13 @@ Use CSV for bulk grading:
 
 ```bash
 # Prepare grades.csv:
-# student_id,grade,comment
-# 123,95,Great work!
-# 456,88,Good effort
+# user_id,assignment_id,score,comment
+# 123,456,95,Great work!
+# 124,456,88,Good effort
 
 canvas submissions bulk-grade \
   --course-id 123 \
-  --assignment-id 456 \
-  --csv grades.csv
+  --csv-file grades.csv
 ```
 
 ### Error Handling in Scripts
@@ -320,22 +321,21 @@ canvas courses list -o json
 ### Grading Workflow
 
 ```bash
-# 1. Set context for the grading session
-canvas context set course 12345
-canvas context set assignment 67890
+COURSE=12345
+ASSIGNMENT=67890
 
-# 2. List ungraded submissions
-canvas submissions list --workflow-state submitted
+# 1. List ungraded submissions
+canvas submissions list --course-id $COURSE --assignment-id $ASSIGNMENT \
+  --workflow-state submitted
 
-# 3. Grade individual submissions
-canvas submissions grade 111 --grade 95 --comment "Excellent!"
-canvas submissions grade 222 --grade 88
+# 2. Grade individual submissions
+canvas submissions grade --course-id $COURSE --assignment-id $ASSIGNMENT \
+  --user-id 111 --score 95 --comment "Excellent!"
+canvas submissions grade --course-id $COURSE --assignment-id $ASSIGNMENT \
+  --user-id 222 --score 88
 
-# 4. Or bulk grade from CSV
-canvas submissions bulk-grade --csv grades.csv
-
-# 5. Clear context when done
-canvas context clear
+# 3. Or bulk grade from CSV (columns: user_id,assignment_id,score,comment)
+canvas submissions bulk-grade --course-id $COURSE --csv-file grades.csv
 ```
 
 ### Course Setup Workflow
@@ -349,7 +349,7 @@ canvas assignment-groups create --course-id 123 --name "Projects" --weight 20
 # 2. Create assignments
 canvas assignments create --course-id 123 \
   --name "Homework 1" \
-  --assignment-group-id 456 \
+  --group-id 456 \
   --points 100 \
   --due-at "2024-09-15T23:59:00Z"
 
@@ -365,8 +365,8 @@ canvas modules items create --course-id 123 --module-id 789 \
 # List students in a course
 canvas users list --course-id 123 --enrollment-type student
 
-# Search for a user
-canvas users search --course-id 123 --search-term "john"
+# Search for a user (account-wide)
+canvas users search "john"
 
 # Export to spreadsheet
 canvas users list --course-id 123 -o csv > students.csv
@@ -376,12 +376,8 @@ canvas users list --course-id 123 -o csv > students.csv
 
 ```bash
 # Sync from source to destination
-canvas sync course \
-  --source-instance prod \
-  --source-course 123 \
-  --dest-instance staging \
-  --dest-course 456 \
-  --interactive
+# canvas sync course <source-instance> <source-course-id> <target-instance> <target-course-id>
+canvas sync course prod 123 staging 456 --interactive
 ```
 
 ---
@@ -420,11 +416,12 @@ For multiple similar operations, use bulk commands when available:
 ```bash
 # Slow: Individual grade commands
 for id in 1 2 3 4 5; do
-    canvas submissions grade $id --grade 100
+    canvas submissions grade --course-id 123 --assignment-id 456 \
+      --user-id $id --score 100
 done
 
 # Fast: Bulk grade from CSV
-canvas submissions bulk-grade --csv grades.csv
+canvas submissions bulk-grade --course-id 123 --csv-file grades.csv
 ```
 
 ---

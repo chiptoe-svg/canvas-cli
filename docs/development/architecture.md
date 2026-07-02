@@ -8,17 +8,30 @@ This document describes the internal architecture of Canvas CLI.
 canvas-cli/
 ├── cmd/canvas/           # Application entry point
 ├── commands/             # CLI command definitions (Cobra)
+│   └── internal/
+│       ├── options/     # Option structs for commands
+│       ├── logging/     # Structured command logging
+│       └── testing/     # Command test helpers
 ├── internal/
 │   ├── api/             # Canvas API client and services
 │   ├── auth/            # OAuth 2.0 + PKCE authentication
 │   ├── config/          # Configuration management
 │   ├── cache/           # Response caching
 │   ├── batch/           # Concurrent batch operations
+│   ├── diagnostics/     # canvas doctor checks
+│   ├── dryrun/          # --dry-run curl rendering
+│   ├── output/          # Output formatters
+│   ├── progress/        # Progress indicators
 │   ├── repl/            # Interactive shell
-│   └── output/          # Output formatters
-├── pkg/                 # Public packages
+│   ├── shellparse/      # Shell-style argument parsing
+│   ├── telemetry/       # Opt-in usage telemetry
+│   ├── terminal/        # Terminal capabilities
+│   ├── update/          # Self-update checks
+│   └── webhook/         # Webhook listener
+├── testdata/spec/       # Committed Canvas API spec manifest
+├── tools/               # Code generators (docs, spec sync)
 ├── docs/                # Documentation
-└── test/                # Test fixtures
+└── test/                # Test fixtures and integration tests
 ```
 
 ## Component Overview
@@ -55,7 +68,9 @@ graph LR
 
 ### API Client
 
-The API client (`internal/api/`) provides a type-safe interface to the Canvas REST API.
+The API client (`internal/api/`) provides a type-safe interface to the Canvas
+REST API. Each Canvas resource has its own service struct wrapping the shared
+client — ~95 services covering 80% of Canvas's documented endpoints.
 
 ```mermaid
 classDiagram
@@ -74,12 +89,12 @@ classDiagram
 
     Client <|-- CoursesService
     Client <|-- AssignmentsService
+    Client <|-- SubmissionsService
     Client <|-- UsersService
     Client <|-- ModulesService
-    Client <|-- PagesService
     Client <|-- DiscussionsService
-    Client <|-- CalendarService
-    Client <|-- PlannerService
+    Client <|-- PollsService
+    Client <|-- OthersService : ~90 more
 ```
 
 **Key features:**
@@ -199,9 +214,20 @@ type CanvasError struct {
 }
 ```
 
+## Spec Compliance
+
+Every `/api/v1/...` path the service layer calls is validated against Canvas's
+official API spec (Swagger 1.2), committed under `testdata/spec/`. A
+network-free contract test (`internal/api/spec_contract_test.go`) harvests the
+called paths and fails the build on any endpoint Canvas doesn't document.
+`make spec-sync` refreshes the manifest from a live Canvas host and
+`make spec-coverage` reports the unimplemented gap. See
+[API Coverage](api-coverage.md) for details.
+
 ## Testing Strategy
 
 - Unit tests for all services
 - Integration tests with mock HTTP server
-- 90% code coverage target
+- Total coverage gate of ≥80% enforced in CI
 - Race condition detection enabled
+- Spec contract test guards endpoint paths

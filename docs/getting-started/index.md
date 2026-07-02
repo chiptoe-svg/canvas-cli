@@ -12,6 +12,7 @@ Canvas CLI is a command-line interface for interacting with Canvas LMS. It provi
 - Module and page management
 - File operations
 - Calendar and planner integration
+- AI agent integration — an [MCP server](../user-guide/mcp.md), a bundled [agent skill](../user-guide/agent-skill.md), and [safety guardrails](../user-guide/agent-safety.md) via `canvas agent guard`
 
 ## Quick Setup
 

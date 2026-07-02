@@ -105,7 +105,7 @@ shasum -a 256 --check --ignore-missing checksums.txt
 ### Method 4: Docker
 
 Images are published to GHCR for every release: `:latest`, `:v1` (major), and
-exact versions like `:1.9.0`.
+exact versions like `:1.10.0`.
 
 ```bash
 # Run Canvas CLI in Docker

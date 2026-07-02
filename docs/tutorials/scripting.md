@@ -93,13 +93,14 @@ if [ -z "$COURSE_ID" ] || [ -z "$CSV_FILE" ]; then
   exit 1
 fi
 
+# CSV columns: user_id,type (e.g. 42,StudentEnrollment)
 # Skip header and process each line
-tail -n +2 "$CSV_FILE" | while IFS=, read -r email role; do
-  echo "Enrolling $email as $role..."
+tail -n +2 "$CSV_FILE" | while IFS=, read -r user_id type; do
+  echo "Enrolling user $user_id as $type..."
   canvas enrollments create \
     --course-id $COURSE_ID \
-    --user-email "$email" \
-    --role "$role"
+    --user-id "$user_id" \
+    --type "$type"
 done
 ```
 
@@ -255,7 +256,7 @@ canvas --dry-run courses list
 #   -H 'Authorization: Bearer [REDACTED]' \
 #   -H 'Content-Type: application/json' \
 #   -H 'Accept: application/json' \
-#   -H 'User-Agent: canvas-cli/1.5.2'
+#   -H 'User-Agent: canvas-cli/1.10.0'
 ```
 
 ### Show Token for Testing
@@ -288,7 +289,7 @@ canvas --dry-run --as-user 12345 courses list
 
 ```bash
 # See how submissions are graded
-canvas --dry-run submissions grade --course-id 123 --assignment-id 456 --user-id 789 --grade "A"
+canvas --dry-run submissions grade --course-id 123 --assignment-id 456 --user-id 789 --posted-grade "A"
 ```
 
 **Building Scripts**: Generate curl commands for use in other tools:

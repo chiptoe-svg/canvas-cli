@@ -30,6 +30,14 @@ Canvas CLI is built with:
 
     [:octicons-arrow-right-24: Contributing](contributing.md)
 
+-   :material-chart-donut:{ .lg .middle } **API Coverage**
+
+    ---
+
+    How coverage is measured against the official Canvas API spec, and what's left
+
+    [:octicons-arrow-right-24: API Coverage](api-coverage.md)
+
 </div>
 
 ## Quick Start for Contributors
@@ -82,8 +90,13 @@ git push origin feature/my-feature
 | `make test` | Run all tests |
 | `make test-integration` | Run binary-level integration tests |
 | `make test-coverage` | Run tests with coverage |
+| `make check` | Run everything CI runs (lint, security, tests, spec checks) |
 | `make lint` | Run golangci-lint |
 | `make fmt` | Format code |
+| `make setup-hooks` | Install git pre-commit hooks |
+| `make spec-sync` | Refresh the committed Canvas API spec manifest |
+| `make spec-coverage` | Report documented-but-unimplemented endpoints |
+| `make docs-gen` | Regenerate CLI reference docs and sync the changelog |
 | `make install` | Install to `/usr/local/bin` |
 
 ## Project Structure

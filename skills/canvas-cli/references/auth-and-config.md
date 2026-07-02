@@ -28,8 +28,9 @@ Integrations → + New Access Token** (shown only once).
 | `CANVAS_URL` | Canvas instance URL (enables env-auth with token) | from config |
 | `CANVAS_TOKEN` | API access token | from config/keyring |
 | `CANVAS_REQUESTS_PER_SEC` | Rate limit in env-auth mode | `5.0` |
-| `CANVAS_OUTPUT` | Default output format | `table` |
-| `CANVAS_NO_CACHE` | Disable response caching | `false` |
+
+Output format and caching are flag-controlled (`-o`, `--no-cache`) — there are
+no `CANVAS_OUTPUT`/`CANVAS_NO_CACHE` env vars.
 
 CI example (GitHub Actions):
 
@@ -68,19 +69,21 @@ context:
 
 ## Context (default IDs)
 
-Avoid repeating `--course-id` etc. during a working session:
+Store default IDs for a working session:
 
 ```bash
-canvas context set course 12345      # fills --course-id when omitted
-canvas context set assignment 67890  # fills --assignment-id
-canvas context set user 111          # fills --user-id
-canvas context set account 1         # fills --account-id
+canvas context set course 12345      # fills --course-id for assignments list/get
+canvas context set assignment 67890  # stored, not yet consumed by commands
+canvas context set user 111          # stored, not yet consumed by commands
+canvas context set account 1         # stored, not yet consumed by commands
 canvas context show
 canvas context clear [course|assignment|user|account]
 ```
 
-Explicit flags always beat context. Before acting on the user's behalf, run
-`canvas context show` — a stale context can silently target the wrong course.
+Only `assignments list`/`assignments get` read the course context today; pass
+explicit flags everywhere else. Explicit flags always beat context. Before
+acting on the user's behalf, run `canvas context show` — a stale context can
+silently target the wrong course.
 
 ## Headless / remote auth
 

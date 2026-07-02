@@ -83,7 +83,7 @@ canvas alias delete hw
 
 ```bash
 # Alias with a search term containing spaces
-canvas alias set find-john 'users search --query "John Smith"'
+canvas alias set find-john 'users search "John Smith"'
 ```
 
 ## Storage
