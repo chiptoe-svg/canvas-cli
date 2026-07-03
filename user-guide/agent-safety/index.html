@@ -1957,7 +1957,7 @@
 </ul>
 <p>However, these patterns are best-effort. Variable indirection (<code>M=DELETE; canvas api $M /api/v1/...</code>) and shell aliases can bypass them. For a hard guarantee on the <code>api</code> command, use MCP-only mode or a read-only sandbox.</p>
 <h2 id="obfuscation-caveats">Obfuscation caveats<a class="headerlink" href="#obfuscation-caveats" title="Permanent link">&para;</a></h2>
-<p>The Bash hook defeats trivial quote/backslash obfuscation (<code>canvas courses de""lete 1</code>, <code>canvas courses delete\ 1</code>) by stripping those characters before pattern matching. It does <strong>not</strong> defeat:</p>
+<p>The Bash hook defeats trivial quote/backslash obfuscation (<code>canvas courses de""lete 1</code>, <code>canvas courses delete\ 1</code>) by stripping those characters before pattern matching, and matches path-invoked binaries (<code>./bin/canvas courses delete 1</code>, <code>/usr/local/bin/canvas courses delete 1</code>) as well as the bare <code>canvas</code> name. It does <strong>not</strong> defeat:</p>
 <ul>
 <li><strong>Variable indirection</strong>: <code>v=delete; canvas courses $v 1</code></li>
 <li><strong>Shell aliases</strong>: <code>alias rm='canvas courses delete'</code></li>
@@ -2038,7 +2038,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="July 2, 2026 22:04:45 UTC"><span class="timeago" datetime="2026-07-02T22:04:45+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="July 2, 2026 22:04:45 UTC">2026-07-02</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="July 3, 2026 02:14:12 UTC"><span class="timeago" datetime="2026-07-03T02:14:12+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="July 3, 2026 02:14:12 UTC">2026-07-03</span>
   </span>
 
     
