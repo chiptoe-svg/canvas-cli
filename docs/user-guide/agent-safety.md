@@ -58,7 +58,7 @@ However, these patterns are best-effort. Variable indirection (`M=DELETE; canvas
 
 ## Obfuscation caveats
 
-The Bash hook defeats trivial quote/backslash obfuscation (`canvas courses de""lete 1`, `canvas courses delete\ 1`) by stripping those characters before pattern matching. It does **not** defeat:
+The Bash hook defeats trivial quote/backslash obfuscation (`canvas courses de""lete 1`, `canvas courses delete\ 1`) by stripping those characters before pattern matching, and matches path-invoked binaries (`./bin/canvas courses delete 1`, `/usr/local/bin/canvas courses delete 1`) as well as the bare `canvas` name. It does **not** defeat:
 
 - **Variable indirection**: `v=delete; canvas courses $v 1`
 - **Shell aliases**: `alias rm='canvas courses delete'`

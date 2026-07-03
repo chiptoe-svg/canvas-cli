@@ -158,6 +158,42 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 			wantDenied:  true,
 			description: "canvas submissions delete-comment must be denied (compound path with delete token)",
 		},
+		{
+			name:        "bash_relative_path_binary_denied",
+			payload:     bashPayload("./bin/canvas courses delete 5"),
+			wantDenied:  true,
+			description: "path-invoked binary ./bin/canvas courses delete must be denied",
+		},
+		{
+			name:        "bash_absolute_path_binary_denied",
+			payload:     bashPayload("/usr/local/bin/canvas courses delete 5"),
+			wantDenied:  true,
+			description: "path-invoked binary /usr/local/bin/canvas courses delete must be denied",
+		},
+		{
+			name:        "bash_absolute_path_api_delete_denied",
+			payload:     bashPayload("/usr/local/bin/canvas api DELETE /api/v1/courses/5"),
+			wantDenied:  true,
+			description: "path-invoked canvas api DELETE must be denied",
+		},
+		{
+			name:        "bash_other_binary_named_like_canvas_allowed",
+			payload:     bashPayload("mycanvas courses delete 5"),
+			wantDenied:  false,
+			description: "a different binary whose name merely ends in 'canvas' must NOT be denied",
+		},
+		{
+			name:        "bash_glued_separator_denied",
+			payload:     bashPayload("canvas favorites courses reset;true"),
+			wantDenied:  true,
+			description: "no-arg irreversible command with a shell separator glued to the verb must be denied",
+		},
+		{
+			name:        "bash_glued_pipe_denied",
+			payload:     bashPayload("canvas course-nicknames delete-all|cat"),
+			wantDenied:  true,
+			description: "irreversible command with a pipe glued to the verb must be denied",
+		},
 	}
 
 	for _, tc := range cases {
@@ -197,10 +233,22 @@ func TestCanvasHookScript_BashExecutionNoJq(t *testing.T) {
 		t.Fatalf("write hook: %v", err)
 	}
 
-	// Create an empty directory to shadow jq so it's "unavailable".
-	emptyPath := filepath.Join(tmpDir, "empty")
-	if err := os.Mkdir(emptyPath, 0o750); err != nil {
-		t.Fatalf("mkdir emptyPath: %v", err)
+	// Build a strict PATH containing ONLY the tools the hook needs, minus jq.
+	// (Merely prepending an empty dir does NOT hide jq — it stays reachable
+	// later in PATH and the no-jq branch never runs; that flaw previously
+	// masked a fail-open bug in this branch.)
+	strictPath := filepath.Join(tmpDir, "strictbin")
+	if err := os.Mkdir(strictPath, 0o750); err != nil {
+		t.Fatalf("mkdir strictPath: %v", err)
+	}
+	for _, tool := range []string{"cat", "tr", "grep", "sed", "printf"} {
+		p, err := exec.LookPath(tool)
+		if err != nil {
+			t.Skipf("required tool %s not found: %v", tool, err)
+		}
+		if err := os.Symlink(p, filepath.Join(strictPath, tool)); err != nil {
+			t.Fatalf("symlink %s: %v", tool, err)
+		}
 	}
 
 	bashPayload := func(command string) string {
@@ -213,12 +261,7 @@ func TestCanvasHookScript_BashExecutionNoJq(t *testing.T) {
 		return string(b)
 	}
 
-	// Build a PATH that keeps system tools (grep, sed, tr, etc.) but omits
-	// jq specifically by placing a wrapper dir that has no jq first.
-	// We keep the original PATH for all the POSIX utilities the hook uses.
-	origPath := os.Getenv("PATH")
-	// emptyPath prepended — jq not present there, but grep/sed/tr found later.
-	noJqPath := emptyPath + ":" + origPath
+	noJqPath := strictPath
 
 	runHookNoJq := func(t *testing.T, payload string) string {
 		t.Helper()
@@ -276,6 +319,15 @@ func TestCanvasHookScript_BashExecutionNoJq(t *testing.T) {
 		{
 			name:       "nojq_api_delete_denied",
 			payload:    bashPayload("canvas api DELETE /api/v1/courses/5"),
+			wantDenied: true,
+		},
+		{
+			// Regression: the compact JSON payload glues the command to its
+			// key ("command":"canvas ...). Without JSON-punctuation
+			// flattening the anchor can never match and the branch is
+			// silently fail-open.
+			name:       "nojq_glued_json_key_denied",
+			payload:    bashPayload("canvas users merge 1 2"),
 			wantDenied: true,
 		},
 	}

@@ -271,7 +271,7 @@ func (f *TableFormatter) Format(data interface{}) (string, error) {
 // filterKeyFields filters headers to only include key fields for the given item type
 func (f *TableFormatter) filterKeyFields(item interface{}, allHeaders []string) []string {
 	v := reflect.ValueOf(item)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 
@@ -337,7 +337,7 @@ func getHeaders(item interface{}) []string {
 	v := reflect.ValueOf(item)
 
 	// Handle pointers
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 
@@ -377,7 +377,7 @@ func getRow(item interface{}, headers []string) []string {
 	v := reflect.ValueOf(item)
 
 	// Handle pointers
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 
@@ -458,7 +458,7 @@ func formatValue(v interface{}) string {
 	val := reflect.ValueOf(v)
 
 	// Handle nil pointers
-	if val.Kind() == reflect.Ptr && val.IsNil() {
+	if val.Kind() == reflect.Pointer && val.IsNil() {
 		return ""
 	}
 
@@ -501,7 +501,7 @@ func formatValue(v interface{}) string {
 	case reflect.Struct:
 		// For structs, try to find a name/title/id field to display
 		return formatStructCompact(val)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		// Handle pointers to structs
 		if !val.IsNil() && val.Elem().Kind() == reflect.Struct {
 			return formatStructCompact(val.Elem())

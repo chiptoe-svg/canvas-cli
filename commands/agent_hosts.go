@@ -168,8 +168,11 @@ func canvasHookScript(blocked []canvasGuardCmd) string {
 #
 # For each blocked cli-path P, we check whether the CLEANED command string
 # matches the anchored ERE:
-#   (^|[;&|(]+)[[:space:]]*canvas[[:space:]]+<P>([[:space:]]|$)
-# which ensures canvas+P appears at a command position.
+#   (^|[;&|([:space:]]+)([^[:space:]]*/)?canvas[[:space:]]+<P>([[:space:];&|)]|$)
+# which ensures canvas+P appears at a command position. The optional
+# ([^[:space:]]*/)? prefix also catches path-invoked binaries like
+# ./bin/canvas or /usr/local/bin/canvas; the trailing class accepts shell
+# separators so a glued "reset;true" still matches.
 #
 # The MCP branch is an exact set-membership check — no glob or regex.
 # The "canvas api" escape hatch is caught by method-position matching:
@@ -212,7 +215,9 @@ bash_is_blocked() {
     # only spaces need escaping to [[:space:]]+).
     local pat
     pat=$(printf '%s' "$p" | sed 's/ /[[:space:]]+/g')
-    if printf '%s' "$cleaned" | grep -qiE "(^|[;&|([:space:]]+)canvas[[:space:]]+${pat}([[:space:]]|\$)"; then
+    # Trailing boundary accepts separators too: "canvas favorites courses
+    # reset;true" glues ";" to the verb and must still match.
+    if printf '%s' "$cleaned" | grep -qiE "(^|[;&|([:space:]]+)([^[:space:]]*/)?canvas[[:space:]]+${pat}([[:space:];&|)]|\$)"; then
       return 0
     fi
   done
@@ -224,7 +229,7 @@ bash_is_blocked() {
 # a GET whose PATH contains "delete" or "posts" is NOT blocked.
 api_is_blocked() {
   local cleaned="$1"
-  printf '%s' "$cleaned" | grep -qiE "(^|[;&|([:space:]]+)canvas[[:space:]]+api[[:space:]]+(DELETE|PUT|POST|PATCH)[[:space:]/]"
+  printf '%s' "$cleaned" | grep -qiE "(^|[;&|([:space:]]+)([^[:space:]]*/)?canvas[[:space:]]+api[[:space:]]+(DELETE|PUT|POST|PATCH)[[:space:]/]"
 }
 
 # Without jq we cannot isolate the tool_name/command fields. Fail safe: apply
@@ -232,7 +237,11 @@ api_is_blocked() {
 # than a loose canvas.*verb scan that would flag any Bash line mentioning
 # canvas+verb (e.g. "cat courses_delete.go").
 if ! command -v jq >/dev/null 2>&1; then
-  flat=$(printf '%s' "$input" | tr '\n' ' ')
+  # Flatten JSON punctuation to spaces BEFORE matching: in the raw compact
+  # payload the command value is glued to its key ("command":"canvas ...),
+  # and without this the anchored pattern can never match — the branch would
+  # silently fail OPEN, not safe.
+  flat=$(printf '%s' "$input" | tr '\n{}:,' '     ')
   cleaned=$(deobfuscate "$flat")
   if bash_is_blocked "$cleaned"; then
     deny_raw "canvas agent guard: irreversible operation blocked (jq unavailable; raw match)."

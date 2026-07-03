@@ -841,7 +841,7 @@ func (c *Client) GetAllPages(ctx context.Context, path string, result interface{
 	// Use reflection to directly append results to the slice
 	// This avoids unnecessary marshal/unmarshal round-trip
 	resultValue := reflect.ValueOf(result)
-	if resultValue.Kind() != reflect.Ptr || resultValue.Elem().Kind() != reflect.Slice {
+	if resultValue.Kind() != reflect.Pointer || resultValue.Elem().Kind() != reflect.Slice {
 		return fmt.Errorf("result must be a pointer to a slice")
 	}
 

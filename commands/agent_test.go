@@ -265,6 +265,23 @@ func TestClassifyCanvasCommands_BulkDestructivePaths(t *testing.T) {
 	assertContainsPath(t, "read", read, "sis-imports list")
 }
 
+// TestClassifyCanvasCommands_WriteOverridePaths verifies that paths whose leaf
+// name collides with a read verb but actually write (e.g. "sync assignments",
+// which shares its leaf with the "analytics assignments" read) are forced into
+// the write bucket by canvasWriteOverridePaths.
+func TestClassifyCanvasCommands_WriteOverridePaths(t *testing.T) {
+	read, writes, _ := classifyCanvasCommands(rootCmd)
+
+	// "sync assignments" copies assignments INTO a target course — must ask.
+	assertContainsPath(t, "write (override)", writes, "sync assignments")
+	assertNotContainsPath(t, "read (must not)", read, "sync assignments")
+
+	// The genuine read that shares the leaf name is unaffected.
+	assertContainsPath(t, "read", read, "analytics assignments")
+	// The sibling sync command stays a write via the fail-safe default.
+	assertContainsPath(t, "write", writes, "sync course")
+}
+
 // --- guardPlan ---
 
 func TestGuardPlan_BlockedAndAsked(t *testing.T) {
