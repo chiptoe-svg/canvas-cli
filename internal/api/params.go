@@ -45,7 +45,7 @@ func (b *ParamsBuilder) Set(key string, value interface{}) *ParamsBuilder {
 
 	// Dereference pointer if needed
 	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.Ptr && !v.IsNil() {
+	if v.Kind() == reflect.Pointer && !v.IsNil() {
 		value = v.Elem().Interface()
 	}
 
@@ -64,7 +64,7 @@ func (b *ParamsBuilder) SetBool(key string, value interface{}) *ParamsBuilder {
 	v := reflect.ValueOf(value)
 
 	// Handle pointer to bool
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return b
 		}
@@ -126,7 +126,7 @@ func (b *ParamsBuilder) isZeroValue(value interface{}) bool {
 	v := reflect.ValueOf(value)
 
 	switch v.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return v.IsNil()
 	case reflect.String:
 		return v.String() == ""

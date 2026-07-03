@@ -492,13 +492,13 @@ func runCoverage() error {
 
 	var sb strings.Builder
 	sb.WriteString("# Canvas CLI Official Spec Coverage Gap Report\n\n")
-	sb.WriteString(fmt.Sprintf("**%s**\n\n", summary))
+	fmt.Fprintf(&sb, "**%s**\n\n", summary)
 	sb.WriteString("Source: official Canvas Swagger 1.2 (refresh with `make spec-sync`)\n\n")
 	sb.WriteString("| Resource | Implemented | Documented | Gap |\n")
 	sb.WriteString("|----------|------------|------------|-----|\n")
 	for _, r := range resources {
 		rg := byResource[r]
-		sb.WriteString(fmt.Sprintf("| %s | %d | %d | %d |\n", r, rg.implemented, rg.total, len(rg.missing)))
+		fmt.Fprintf(&sb, "| %s | %d | %d | %d |\n", r, rg.implemented, rg.total, len(rg.missing))
 	}
 	sb.WriteString("\n## Missing Endpoints (official Canvas spec but not implemented by CLI)\n\n")
 	for _, r := range resources {
@@ -506,9 +506,9 @@ func runCoverage() error {
 		if len(rg.missing) == 0 {
 			continue
 		}
-		sb.WriteString(fmt.Sprintf("### %s\n\n", r))
+		fmt.Fprintf(&sb, "### %s\n\n", r)
 		for _, m := range rg.missing {
-			sb.WriteString(fmt.Sprintf("- `%s`\n", m))
+			fmt.Fprintf(&sb, "- `%s`\n", m)
 		}
 		sb.WriteString("\n")
 	}
