@@ -103,6 +103,15 @@ var canvasBulkDestructivePaths = map[string]bool{
 	"sis-imports create": true,
 }
 
+// canvasWriteOverridePaths lists full CLI paths whose leaf name collides with
+// a read verb but which actually write. "sync assignments" ends in
+// "assignments" (a read verb via "analytics assignments") yet copies
+// assignments INTO the target course. Checked before the read allowlist so
+// the collision cannot silently allow a write.
+var canvasWriteOverridePaths = map[string]bool{
+	"sync assignments": true,
+}
+
 // canvasGuardCmd represents one classified Canvas operation.
 type canvasGuardCmd struct {
 	cli  string // CLI path without root, e.g. "courses delete"
@@ -300,6 +309,8 @@ func classifyCanvasCommands(root *cobra.Command) (read, writes, irreversible []c
 			switch {
 			case isCanvasIrreversibleVerb(sub.Name()):
 				irreversible = append(irreversible, gc)
+			case canvasWriteOverridePaths[cliPath]:
+				writes = append(writes, gc)
 			case isCanvasReadVerb(sub.Name()):
 				read = append(read, gc)
 			default:
