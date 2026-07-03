@@ -15,6 +15,22 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.10.2] - 2026-07-02
+
+### Fixed
+
+- **`agent guard` hook hardening.** The generated PreToolUse hook missed several
+  bypasses: path-invoked binaries (`./bin/canvas`, `/usr/local/bin/canvas`) were
+  not matched; a shell separator glued to a no-arg irreversible verb
+  (`canvas favorites courses reset;true`) slipped the trailing boundary; and the
+  no-jq fallback could fail open because the compact JSON payload glues the
+  command to its key. All three are fixed, and `sync assignments` (whose leaf
+  collides with the `analytics assignments` read verb) is now correctly gated as
+  a write. A different binary that merely ends in `canvas` is still not matched.
+- Cleared pre-existing lint debt surfaced by the current golangci-lint
+  (`reflect.Ptr` → `reflect.Pointer`; `WriteString(fmt.Sprintf(...))` →
+  `fmt.Fprintf(...)` in speccheck). No behavior change.
+
 ## [1.10.1] - 2026-07-02
 
 ### Fixed
