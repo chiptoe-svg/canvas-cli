@@ -1,7 +1,10 @@
 package terminal
 
 import (
+	"bufio"
+	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/term"
 )
@@ -33,6 +36,28 @@ func SupportsColor() bool {
 		return false
 	}
 	return IsStdoutTerminal()
+}
+
+// ReadSecret prints prompt to stderr and reads one line WITHOUT echoing when stdin is a
+// terminal, so a pasted token/secret never lands in scrollback. On a pipe it falls back to a
+// normal line read so scripts still work. It reads a full line (long API tokens / OAuth codes
+// are fine) and trims surrounding whitespace — unlike fmt.Scanln, which echoes the input and
+// stalls on long terminal pastes.
+func ReadSecret(prompt string) (string, error) {
+	fmt.Fprint(os.Stderr, prompt)
+	if IsStdinTerminal() {
+		b, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Fprintln(os.Stderr)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(string(b)), nil
+	}
+	line, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && line == "" {
+		return "", err
+	}
+	return strings.TrimSpace(line), nil
 }
 
 // Width returns the width of the terminal connected to stdout.

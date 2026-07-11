@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+
+	"github.com/jjuanrivvera/canvas-cli/internal/terminal"
 )
 
 // generateSecureState generates a cryptographically secure random state parameter
@@ -246,11 +248,12 @@ func (f *OAuthFlow) startOOBFlow(ctx context.Context) (*oauth2.Token, error) {
 	fmt.Printf("1. Visit this URL in your browser:\n%s\n\n", authURL)
 	fmt.Printf("2. Authorize the application\n")
 	fmt.Printf("3. Copy the authorization code from the page\n")
-	fmt.Printf("4. Paste the code here: ")
-
-	// Read authorization code from stdin
-	var code string
-	fmt.Scanln(&code) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
+	// Read the authorization code hidden: it's single-use credential material that shouldn't
+	// echo to scrollback, and reading a full line avoids fmt.Scanln stalling on a long paste.
+	code, err := terminal.ReadSecret("4. Paste the code here: ")
+	if err != nil {
+		return nil, fmt.Errorf("read authorization code: %w", err)
+	}
 
 	if code == "" {
 		return nil, fmt.Errorf("authorization code is required")

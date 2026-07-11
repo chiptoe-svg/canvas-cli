@@ -10,6 +10,7 @@ import (
 	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	"github.com/jjuanrivvera/canvas-cli/internal/auth"
 	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	"github.com/jjuanrivvera/canvas-cli/internal/terminal"
 )
 
 // authCmd represents the auth command group
@@ -297,8 +298,11 @@ func runAuthLogin(ctx context.Context, opts *options.AuthLoginOptions) error {
 
 	// If client ID is provided, also require client secret for OAuth
 	if opts.ClientID != "" && opts.ClientSecret == "" {
-		fmt.Print("Enter OAuth Client Secret: ")
-		fmt.Scanln(&opts.ClientSecret) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
+		secret, err := terminal.ReadSecret("Enter OAuth Client Secret: ")
+		if err != nil {
+			return fmt.Errorf("read client secret: %w", err)
+		}
+		opts.ClientSecret = secret
 		if opts.ClientSecret == "" {
 			return fmt.Errorf("client secret is required when using OAuth with a client ID")
 		}
@@ -569,8 +573,11 @@ func runAuthTokenSet(ctx context.Context, opts *options.AuthTokenSetOptions) err
 	// Get token (from flag or prompt)
 	apiToken := opts.Token
 	if apiToken == "" {
-		fmt.Print("Enter API Access Token: ")
-		fmt.Scanln(&apiToken) // #nosec G104 -- Scanln EOF on Enter is expected; empty input is caught by the check below
+		token, err := terminal.ReadSecret("Enter API Access Token: ")
+		if err != nil {
+			return fmt.Errorf("read API token: %w", err)
+		}
+		apiToken = token
 		if apiToken == "" {
 			return fmt.Errorf("API token is required")
 		}

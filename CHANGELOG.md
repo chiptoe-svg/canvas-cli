@@ -15,6 +15,15 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.10.5] - 2026-07-11
+
+### Security
+
+- `auth login` now reads secrets with a **hidden** prompt instead of `fmt.Scanln` — the API
+  access token, the OAuth client secret, and the OAuth authorization code. Previously they were
+  echoed to the terminal in plaintext (landing in scrollback) and `fmt.Scanln` could stall on a
+  long pasted token. Non-secret inputs (client ID, y/n confirmations) are unchanged.
+
 ## [1.10.4] - 2026-07-11
 
 ### Added
