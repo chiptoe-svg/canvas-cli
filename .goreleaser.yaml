@@ -167,3 +167,18 @@ brews:
       system "#{bin}/canvas", "version"
     install: |
       bin.install "canvas"
+
+scoops:
+  # The bucket repo (scoop-canvas-cli) must already exist; GoReleaser pushes the manifest
+  # to it with the cross-repo token but won't create it.
+  - repository:
+      owner: jjuanrivvera
+      name: scoop-canvas-cli
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/jjuanrivvera/canvas-cli"
+    description: "A powerful command-line interface for Canvas LMS"
+    license: MIT
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com

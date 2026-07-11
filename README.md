@@ -47,6 +47,12 @@ brew tap jjuanrivvera/canvas-cli
 brew install canvas-cli
 ```
 
+### Scoop (Windows)
+
+```powershell
+scoop install https://raw.githubusercontent.com/jjuanrivvera/scoop-canvas-cli/main/canvas-cli.json
+```
+
 ### Go Install
 
 Requires Go 1.25+ (or Go 1.24+ with automatic toolchain download).
