@@ -15,6 +15,13 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.10.3] - 2026-07-10
+
+### Added
+
+- Scoop (Windows) packaging via `jjuanrivvera/scoop-canvas-cli`, documented in the
+  README alongside Homebrew, Go, Docker, and binary installs.
+
 ## [1.10.2] - 2026-07-02
 
 ### Fixed
