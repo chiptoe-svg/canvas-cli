@@ -15,6 +15,18 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.10.4] - 2026-07-11
+
+### Added
+
+- One-line install script for macOS/Linux (checksum-verified):
+  `curl -fsSL https://raw.githubusercontent.com/jjuanrivvera/canvas-cli/main/install.sh | sh`.
+
+### Security
+
+- Build with Go 1.25.12 to clear GO-2026-5856 (privacy leak in `crypto/tls`
+  Encrypted Client Hello).
+
 ## [1.10.3] - 2026-07-10
 
 ### Added
