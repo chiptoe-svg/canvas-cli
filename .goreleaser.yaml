@@ -156,27 +156,25 @@ release:
   extra_files:
     - glob: ./install.sh
 
-brews:
+# homebrew_casks (not the deprecated `brews`): casks are the modern GoReleaser path for a
+# pre-built binary and match the rest of the fleet. NOTE: this switches the tap artifact from a
+# Formula to a Cask — delete the stale Formula/canvas-cli.rb from homebrew-canvas-cli after the
+# first cask release, or brew sees a formula+cask name collision.
+homebrew_casks:
   - name: canvas-cli
-    ids:
-      - default
+    binaries: [canvas]
     repository:
       owner: jjuanrivvera
       name: homebrew-canvas-cli
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
     homepage: "https://github.com/jjuanrivvera/canvas-cli"
     description: "A powerful command-line interface for Canvas LMS"
-    license: "MIT"
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-    test: |
-      system "#{bin}/canvas", "version"
-    install: |
-      bin.install "canvas"
+    # Strip the macOS quarantine xattr so the unsigned CLI binary runs without a Gatekeeper prompt.
+    hooks:
+      post:
+        install: |
+          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/canvas"]
 
 scoops:
   # The bucket repo (scoop-canvas-cli) must already exist; GoReleaser pushes the manifest
