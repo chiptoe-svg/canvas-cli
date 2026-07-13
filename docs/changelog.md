@@ -10,6 +10,13 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Planned
+
+- Canvas Studio integration
+- GraphQL API support
+
+## [1.11.0] - 2026-07-13
+
 ### Added
 
 - `auth login --public-client`: secret-less OAuth for Canvas developer keys provisioned with
@@ -20,10 +27,11 @@ sync by `make docs-gen` and the documentation workflow.
   in `config.yaml`. ([#48](https://github.com/jjuanrivvera/canvas-cli/issues/48),
   [#51](https://github.com/jjuanrivvera/canvas-cli/issues/51))
 
-### Planned
+### Documentation
 
-- Canvas Studio integration
-- GraphQL API support
+- Authentication guide: new "Public Clients (PKCE Only, No Secret)" section, and corrected the
+  OAuth setup instructions — the CLI never shipped embedded OAuth credentials; a developer key
+  is required.
 
 ## [1.10.5] - 2026-07-11
 
