@@ -25,9 +25,6 @@ func TestGetGlobalOptions_Defaults(t *testing.T) {
 	outputFormat = "table"
 
 	opts := GetGlobalOptions()
-	if opts == nil {
-		t.Fatal("GetGlobalOptions returned nil")
-	}
 	if opts.Verbose != false {
 		t.Errorf("expected Verbose=false, got %v", opts.Verbose)
 	}

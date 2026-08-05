@@ -257,68 +257,107 @@ func topLevelGroup(c *cobra.Command) string {
 	return cur.Name()
 }
 
-// classifyCanvasCommands walks the command tree and buckets every runnable
-// leaf command into read, write, or irreversible. Commands under local/utility
-// top-level groups (auth, config, cache, agent, etc.) are excluded entirely —
-// they never call the Canvas API.
+// canvasClass buckets a single command for both "canvas agent guard" and the
+// MCP tool annotations emitted by applyMCPAnnotations.
+type canvasClass int
+
+const (
+	// canvasClassSkip marks commands that are neither gated nor annotated:
+	// non-runnable parents, hidden/help commands, and the "canvas api"
+	// raw-escape hatch, which can issue any HTTP verb and so must never
+	// advertise readOnlyHint.
+	canvasClassSkip canvasClass = iota
+	// canvasClassLocal marks commands under local/utility top-level groups
+	// (auth, config, cache, …) that never call the Canvas API. The guard does
+	// not gate them; annotations handle them via canvasLocalReadPaths.
+	canvasClassLocal
+	canvasClassRead
+	canvasClassWrite
+	canvasClassIrreversible
+)
+
+// classifyCanvasCommand buckets one command. It is the single source of truth
+// shared by "canvas agent guard" and the MCP readOnlyHint annotations, so a
+// command can never be gated as a write by the guard while simultaneously
+// advertising itself as read-only to an MCP client.
 //
-// Unlike alegra-cli, canvas-cli does not set openWorldHint/readOnlyHint cobra
-// annotations, so classification is purely by verb (leaf command name).
-func classifyCanvasCommands(root *cobra.Command) (read, writes, irreversible []canvasGuardCmd) {
+// Classification is purely by verb (leaf command name) — the cobra annotations
+// flow the other way, derived from this function rather than feeding it.
+func classifyCanvasCommand(root, sub *cobra.Command) (canvasClass, canvasGuardCmd) {
+	if !sub.Runnable() || sub.Hidden || sub.Name() == "help" {
+		return canvasClassSkip, canvasGuardCmd{}
+	}
+
+	gc := canvasGuardCmd{
+		cli:  strings.TrimPrefix(sub.CommandPath(), root.Name()+" "),
+		tool: strings.ReplaceAll(sub.CommandPath(), " ", "_"),
+		verb: sub.Name(),
+	}
+
+	group := topLevelGroup(sub)
+
+	// The "api" raw-escape command is documented separately in the hook script
+	// header and cannot be safely classified by verb.
+	if group == "api" || sub.Name() == "api" {
+		return canvasClassSkip, gc
+	}
+
+	// Local/utility groups never hit the Canvas API.
+	if canvasLocalGroups[group] {
+		return canvasClassLocal, gc
+	}
+
+	// Fail-safe ordering: hard-block bulk-destructive paths and irreversible
+	// verbs, allow only explicit reads, and treat everything else — known
+	// writes AND any verb the guard doesn't recognize — as a write.
+	switch {
+	case canvasBulkDestructivePaths[gc.cli]:
+		// Bulk-destructive full-path override: always hard-block regardless of
+		// verb classification (e.g. "sis-imports create" batches a full
+		// institutional import that can't be safely rolled back).
+		return canvasClassIrreversible, gc
+	case isCanvasIrreversibleVerb(sub.Name()):
+		return canvasClassIrreversible, gc
+	case canvasWriteOverridePaths[gc.cli]:
+		return canvasClassWrite, gc
+	case isCanvasReadVerb(sub.Name()):
+		return canvasClassRead, gc
+	default:
+		return canvasClassWrite, gc
+	}
+}
+
+// walkCanvasCommands visits every command below root, leaves first.
+func walkCanvasCommands(root *cobra.Command, visit func(*cobra.Command)) {
 	var walk func(c *cobra.Command)
 	walk = func(c *cobra.Command) {
 		for _, sub := range c.Commands() {
 			// Recurse first so we always visit leaves.
 			walk(sub)
-
-			if !sub.Runnable() || sub.Hidden || sub.Name() == "help" {
-				continue
-			}
-
-			group := topLevelGroup(sub)
-
-			// Skip the "api" raw-escape command — it is documented separately
-			// in the hook script header and cannot be safely classified by verb.
-			if group == "api" || sub.Name() == "api" {
-				continue
-			}
-
-			// Skip local/utility groups that never hit the Canvas API.
-			if canvasLocalGroups[group] {
-				continue
-			}
-
-			cliPath := strings.TrimPrefix(sub.CommandPath(), root.Name()+" ")
-			gc := canvasGuardCmd{
-				cli:  cliPath,
-				tool: strings.ReplaceAll(sub.CommandPath(), " ", "_"),
-				verb: sub.Name(),
-			}
-
-			// Bulk-destructive full-path override: always hard-block regardless
-			// of verb classification (e.g. "sis-imports create" batches a
-			// full institutional import that can't be safely rolled back).
-			if canvasBulkDestructivePaths[cliPath] {
-				irreversible = append(irreversible, gc)
-				continue
-			}
-
-			// Fail-safe ordering: hard-block irreversible verbs, allow only
-			// explicit reads, and treat everything else — known writes AND any
-			// verb the guard doesn't recognize — as a write requiring approval.
-			switch {
-			case isCanvasIrreversibleVerb(sub.Name()):
-				irreversible = append(irreversible, gc)
-			case canvasWriteOverridePaths[cliPath]:
-				writes = append(writes, gc)
-			case isCanvasReadVerb(sub.Name()):
-				read = append(read, gc)
-			default:
-				writes = append(writes, gc)
-			}
+			visit(sub)
 		}
 	}
 	walk(root)
+}
+
+// classifyCanvasCommands walks the command tree and buckets every runnable
+// leaf command into read, write, or irreversible. Commands under local/utility
+// top-level groups (auth, config, cache, agent, etc.) are excluded entirely —
+// they never call the Canvas API.
+func classifyCanvasCommands(root *cobra.Command) (read, writes, irreversible []canvasGuardCmd) {
+	walkCanvasCommands(root, func(sub *cobra.Command) {
+		class, gc := classifyCanvasCommand(root, sub)
+		switch class {
+		case canvasClassRead:
+			read = append(read, gc)
+		case canvasClassWrite:
+			writes = append(writes, gc)
+		case canvasClassIrreversible:
+			irreversible = append(irreversible, gc)
+		case canvasClassSkip, canvasClassLocal:
+			// Not gated by the guard.
+		}
+	})
 	sortCanvasGuard(read)
 	sortCanvasGuard(writes)
 	sortCanvasGuard(irreversible)
