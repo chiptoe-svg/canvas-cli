@@ -10,6 +10,13 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Planned
+
+- Canvas Studio integration
+- GraphQL API support
+
+## [1.12.0] - 2026-08-05
+
 ### Added
 
 - MCP tools now emit per-tool annotations (`readOnlyHint`, `destructiveHint`,
@@ -23,11 +30,6 @@ sync by `make docs-gen` and the documentation workflow.
   write. `canvas api` and local commands that mutate state (`auth login`,
   `config account`, `cache clear`, …) are deliberately left unannotated and are
   therefore dropped by read-only clients.
-
-### Planned
-
-- Canvas Studio integration
-- GraphQL API support
 
 ## [1.11.2] - 2026-08-04
 

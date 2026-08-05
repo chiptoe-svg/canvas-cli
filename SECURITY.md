@@ -6,8 +6,8 @@ Only the latest minor release line receives security fixes.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.11.x  | :white_check_mark: |
-| < 1.11  | :x:                |
+| 1.12.x  | :white_check_mark: |
+| < 1.12  | :x:                |
 
 ## Reporting a Vulnerability
 
