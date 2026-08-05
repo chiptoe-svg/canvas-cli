@@ -51,9 +51,6 @@ func TestWebhookListenCmd_ValidationError(t *testing.T) {
 	// The WebhookListenOptions.Validate passes with default values (no required fields).
 	// We just verify the command structure is correct and can be built.
 	cmd := newWebhookListenCmd()
-	if cmd == nil {
-		t.Fatal("expected non-nil webhook listen command")
-	}
 	if cmd.Use != "listen" {
 		t.Errorf("expected Use='listen', got: %q", cmd.Use)
 	}
@@ -61,9 +58,6 @@ func TestWebhookListenCmd_ValidationError(t *testing.T) {
 
 func TestWebhookEventsCmd_Structure(t *testing.T) {
 	cmd := newWebhookEventsCmd()
-	if cmd == nil {
-		t.Fatal("expected non-nil webhook events command")
-	}
 	if cmd.Use != "events" {
 		t.Errorf("expected Use='events', got: %q", cmd.Use)
 	}

@@ -421,9 +421,6 @@ func TestTelemetryClearCmd_ViaConstructor(t *testing.T) {
 
 func TestSkillsPathCmd_ViaConstructor(t *testing.T) {
 	cmd := newSkillsPathCmd()
-	if cmd == nil {
-		t.Fatal("expected non-nil command")
-	}
 	// RunE just calls runSkillsPath which prints the path — just verify it exists
 	if cmd.RunE == nil && cmd.Run == nil {
 		t.Error("expected RunE or Run to be set")

@@ -7,9 +7,6 @@ import (
 
 func TestGetRootCmd_NotNil(t *testing.T) {
 	cmd := GetRootCmd()
-	if cmd == nil {
-		t.Fatal("GetRootCmd returned nil")
-	}
 	if cmd.Use != "canvas" {
 		t.Errorf("expected Use=canvas, got %q", cmd.Use)
 	}
