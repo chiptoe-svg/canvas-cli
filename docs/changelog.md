@@ -10,6 +10,20 @@ sync by `make docs-gen` and the documentation workflow.
 
 ## [Unreleased]
 
+### Added
+
+- MCP tools now emit per-tool annotations (`readOnlyHint`, `destructiveHint`,
+  `openWorldHint`). Clients that enforce a read-only session allow a tool only
+  when `readOnlyHint` is strictly `true` and treat a missing annotation as a
+  write, so previously every tool was filtered out and the whole server was
+  dropped. 247 of 533 tools are now marked read-only. ([#58](https://github.com/jjuanrivvera/canvas-cli/issues/58))
+
+  The hints are derived from the same classification `canvas agent guard` uses,
+  so a tool cannot advertise itself as read-only while the guard gates it as a
+  write. `canvas api` and local commands that mutate state (`auth login`,
+  `config account`, `cache clear`, …) are deliberately left unannotated and are
+  therefore dropped by read-only clients.
+
 ### Planned
 
 - Canvas Studio integration

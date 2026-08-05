@@ -210,6 +210,41 @@ For safety, inherited flags below are excluded from MCP exposure:
 - `--show-token`
 - `--config`
 
+## Tool Annotations and Read-Only Clients
+
+Every tool carries MCP annotations describing what it does, so clients can
+decide what to auto-approve:
+
+| Annotation | Meaning |
+|---|---|
+| `readOnlyHint: true` | Reads only — `list`, `get`, `show`, … |
+| `readOnlyHint: false` | Writes — `create`, `update`, `grade`, … |
+| `destructiveHint: true` | Cannot be undone — `delete`, `conclude`, `crosslist`, … |
+
+The hints are derived from the same classification `canvas agent guard` uses, so
+a tool can never advertise itself as read-only while the guard gates it as a
+write. See [Agent Safety](agent-safety.md).
+
+Some clients run their MCP session in read-only mode and only allow a tool when
+`readOnlyHint` is strictly `true`. A tool with no annotation counts as a write,
+not as unknown. In those clients the write and destructive tools are filtered
+out and the read tools remain usable.
+
+Two kinds of tool are deliberately left unannotated, so read-only clients drop
+them entirely:
+
+- **`canvas api`** — the raw escape hatch can issue any HTTP verb, so no
+  read-only claim can be made about it.
+- **Local commands that mutate state** — `auth login`, `config set`,
+  `config account`, `cache clear`, `skills install`, `update`, and similar.
+
+To inspect what your client will see:
+
+```bash
+canvas mcp tools   # writes mcp-tools.json in the current directory
+jq '[.[] | select(.annotations.readOnlyHint == true)] | length' mcp-tools.json
+```
+
 ## `--instance` in MCP Calls
 
 Use the same flag name under MCP `flags` as in CLI:
@@ -248,6 +283,20 @@ canvas mcp tools
 - Restart the client after adding MCP server
 - Confirm command path is absolute (for example `/opt/homebrew/bin/canvas`)
 - Run `canvas mcp tools` to verify server-side tool discovery
+
+### Server dropped by a read-only client
+
+The client reports that the server has no available tools after filtering, and
+drops it. This means it is enforcing read-only mode and found no tool with
+`readOnlyHint: true`. Check what your build emits:
+
+```bash
+canvas mcp tools
+jq '[.[] | select(.annotations.readOnlyHint == true)] | length' mcp-tools.json
+```
+
+A count of `0` means the build predates tool annotations — upgrade. Anything
+above zero means the server will survive filtering.
 
 ### Using wrong Canvas environment
 
