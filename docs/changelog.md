@@ -15,6 +15,25 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.11.2] - 2026-08-04
+
+### Fixed
+
+- `external-tools list`: account-level tools whose placements carry
+  `required_permissions` as a comma-separated string (instead of an array) no
+  longer crash the whole list. A new `CommaSeparatedList` type accepts both the
+  array and comma-separated-string shapes. Additionally, a single element that
+  fails to decode is now logged and skipped rather than discarding the entire
+  page. ([#55](https://github.com/jjuanrivvera/canvas-cli/issues/55))
+- `enrollments create` (and every other command that decodes a single object
+  from a create/update) no longer fails when Canvas wraps the response in an
+  array — some deployments return `[]` or `[obj]` instead of `obj`. Response
+  decoding now tolerates an array-wrapped single object across all resources
+  (uses the first element; an empty array on success is treated as success).
+  ([#56](https://github.com/jjuanrivvera/canvas-cli/issues/56))
+
+## [1.11.1] - 2026-07-30
+
 ### Changed
 
 - `canvas doctor`: the command now resolves its diagnostics runner through an
