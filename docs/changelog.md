@@ -15,6 +15,22 @@ sync by `make docs-gen` and the documentation workflow.
 - Canvas Studio integration
 - GraphQL API support
 
+## [1.13.0] - 2026-08-05
+
+### Added
+
+- `canvas api get <PATH>`: a GET-only sibling of `canvas api`, exported to MCP as
+  the `canvas_api_get` tool with `readOnlyHint: true`. It gives broad Canvas read
+  coverage from a single tool schema, so read-only MCP clients no longer need to
+  allowlist hundreds of individual read tools. The general `canvas api` escape
+  hatch (any HTTP verb) stays unannotated and is still filtered out by read-only
+  clients. ([#60](https://github.com/jjuanrivvera/canvas-cli/issues/60))
+- `canvas mcp start --readonly`: serve only read-only tools. The flag exposes the
+  commands annotated `readOnlyHint: true` and drops the rest (writes and the
+  general `api` tool), so `canvas_api_get` is served in place of `canvas_api`.
+  This moves the read-only boundary into the binary, holding even for MCP clients
+  that do not filter by annotation themselves. ([#60](https://github.com/jjuanrivvera/canvas-cli/issues/60))
+
 ## [1.12.0] - 2026-08-05
 
 ### Added
