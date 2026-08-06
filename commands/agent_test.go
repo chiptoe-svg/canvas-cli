@@ -748,8 +748,13 @@ func TestClassifyCanvasCommands_RealTree_SanityCheck(t *testing.T) {
 		}
 	}
 
-	// Verify "api" command is excluded.
+	// Verify the raw "api" escape hatch is excluded — except the GET-only
+	// "api get" sibling, which is a genuine read and must classify as one (#60).
+	assertContainsPath(t, "read", read, "api get")
 	for _, gc := range append(append(read, writes...), irreversible...) {
+		if gc.cli == "api get" {
+			continue
+		}
 		if strings.HasPrefix(gc.cli, "api ") || gc.cli == "api" {
 			t.Errorf("raw api command leaked through: %q", gc.cli)
 		}
@@ -785,5 +790,29 @@ func assertNotContainsPath(t *testing.T, bucket string, cs []canvasGuardCmd, pat
 			t.Errorf("%s bucket: expected %q to be excluded, but it was present", bucket, path)
 			return
 		}
+	}
+}
+
+// TestClassifyCanvasCommand_APIGetIsRead pins the #60 exception: the GET-only
+// "api get" sibling classifies as a read (so it can advertise readOnlyHint and
+// survive read-only MCP clients), while the general "api" escape hatch stays
+// skipped/unannotated.
+func TestClassifyCanvasCommand_APIGetIsRead(t *testing.T) {
+	root := rootCmd
+
+	apiCmd := findCmd(root, "api")
+	if apiCmd == nil {
+		t.Fatal(`"canvas api" not found`)
+	}
+	if class, _ := classifyCanvasCommand(root, apiCmd); class != canvasClassSkip {
+		t.Errorf(`"canvas api" must be canvasClassSkip, got %v`, class)
+	}
+
+	apiGet := findCmd(root, "api get")
+	if apiGet == nil {
+		t.Fatal(`"canvas api get" not found`)
+	}
+	if class, _ := classifyCanvasCommand(root, apiGet); class != canvasClassRead {
+		t.Errorf(`"canvas api get" must be canvasClassRead, got %v`, class)
 	}
 }
