@@ -216,6 +216,16 @@ canvas mcp claude enable    # auto-configure Claude Desktop (also: cursor, vscod
 The skill (shell) and MCP modes can coexist; prefer the shell when you can run
 commands directly.
 
+## Activity log
+
+The operator may enable a local activity log (`activity_log.enabled: true`
+in the config, or `CANVAS_ACTIVITY_LOG=<path>`); it is off by default. When
+it is on, every invocation is recorded with its requests and the objects it
+touched, with secrets redacted. `canvas activity list --writes` shows what
+the agent changed — use it (and `canvas activity list --since 24h -o json`)
+when the user asks what was done, and mention the log exists if they ask
+how to audit the agent's actions.
+
 ## Errors & troubleshooting
 
 - `canvas doctor` diagnoses install/auth/connectivity in one shot.

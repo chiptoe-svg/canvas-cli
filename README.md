@@ -168,6 +168,37 @@ settings:
 
 See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-started/authentication/) for detailed setup.
 
+## Activity Log
+
+An optional local log of what the CLI did: one JSON line per invocation with
+the command, its arguments (secrets redacted), every HTTP request with its
+status, the Canvas objects touched, the exit code and the duration. It is
+**off by default** and never contains tokens.
+
+Enable it in `~/.canvas-cli/config.yaml`:
+
+```yaml
+activity_log:
+  enabled: true
+  path: ~/.canvas-cli/activity.jsonl   # optional (default)
+  writes_only: false                   # optional: only log invocations that wrote
+  max_size_mb: 10                      # optional: archive before exceeding
+```
+
+or with `CANVAS_ACTIVITY_LOG=/path/to/activity.jsonl`, which enables the log
+and sets its path (takes precedence over the config file).
+
+```bash
+canvas activity path                     # resolved path and whether logging is enabled
+canvas activity list --since 7d          # what ran in the last week
+canvas activity list --writes -o json    # every invocation that changed something, in full
+canvas activity archive                  # rename to activity-<UTC timestamp>.jsonl
+canvas activity clear --force            # truncate (refuses without --force)
+```
+
+When the file grows past `max_size_mb` it is archived automatically before
+the next write. A failure to write the log never fails the command.
+
 ## MCP Server Mode
 
 Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing nearly all of its commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot). Only the `canvas mcp` management commands themselves are excluded.

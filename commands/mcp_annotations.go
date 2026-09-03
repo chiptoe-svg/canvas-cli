@@ -18,6 +18,8 @@ import (
 // Misses are safe: an unlisted command emits no annotations and is therefore
 // dropped by read-only MCP clients, never silently exposed as a read.
 var canvasLocalReadPaths = map[string]bool{
+	"activity list":    false,
+	"activity path":    false,
 	"alias list":       false,
 	"auth status":      false,
 	"cache stats":      false,

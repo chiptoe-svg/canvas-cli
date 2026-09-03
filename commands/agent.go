@@ -74,6 +74,7 @@ var canvasReadVerbs = map[string]bool{
 // canvasLocalGroups are top-level command groups that never call the Canvas
 // API — they perform local operations only and must never be gated.
 var canvasLocalGroups = map[string]bool{
+	"activity":   true,
 	"auth":       true,
 	"config":     true,
 	"context":    true,

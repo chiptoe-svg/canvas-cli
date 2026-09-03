@@ -59,6 +59,29 @@ type HTTPClient interface {
 	GetVersion() *CanvasVersion
 }
 
+// RequestObserver, when set, is told about every request the client sends:
+// the method, the request path (query string already dropped) and the
+// response status, or 0 when no response was received (dry run, transport
+// failure). The CLI's activity log installs it; it must not block.
+var RequestObserver func(method, path string, status int)
+
+func observeRequest(method, fullURL string, resp *http.Response) {
+	if RequestObserver == nil {
+		return
+	}
+	path := fullURL
+	if u, err := url.Parse(fullURL); err == nil {
+		path = u.Path
+	} else if i := strings.IndexByte(path, '?'); i >= 0 {
+		path = path[:i]
+	}
+	status := 0
+	if resp != nil {
+		status = resp.StatusCode
+	}
+	RequestObserver(method, path, status)
+}
+
 // Client is the Canvas API client
 type Client struct {
 	httpClient     *http.Client
@@ -313,6 +336,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 
 	// Handle dry-run mode: print curl command and return mock response
 	if c.dryRun {
+		observeRequest(method, fullURL, nil)
 		return c.handleDryRun(method, fullURL, token, body)
 	}
 
@@ -334,7 +358,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	}
 
 	// Execute with retry
-	return c.retryPolicy.ExecuteWithRetry(ctx, func() (*http.Response, error) {
+	resp, err := c.retryPolicy.ExecuteWithRetry(ctx, func() (*http.Response, error) {
 		var reqBody io.Reader
 		if bodyBytes != nil {
 			reqBody = bytes.NewReader(bodyBytes)
@@ -369,6 +393,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 
 		return resp, nil
 	})
+	observeRequest(method, fullURL, resp)
+	return resp, err
 }
 
 // handleDryRun prints the curl command and returns a mock response
