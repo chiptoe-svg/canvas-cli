@@ -112,7 +112,7 @@ canvas repl
 | **Auth** | `login`, `logout`, `status` |
 | **Courses** | `list`, `get`, `create`, `update`, `delete` |
 | **Assignments** | `list`, `get`, `create`, `update`, `delete` |
-| **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments` |
+| **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments`, `missing` (who is missing work, read-only) |
 | **Users** | `me`, `list`, `get`, `create`, `update` |
 | **Enrollments** | `list`, `get`, `create`, `conclude`, `reactivate`, `accept`, `reject` |
 | **Modules** | `list`, `get`, `create`, `update`, `delete`, `publish`, `items` |

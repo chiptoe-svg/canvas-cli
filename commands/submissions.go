@@ -34,6 +34,7 @@ func init() {
 	submissionsCmd.AddCommand(newSubmissionsCommentsCmd())
 	submissionsCmd.AddCommand(newSubmissionsAddCommentCmd())
 	submissionsCmd.AddCommand(newSubmissionsDeleteCommentCmd())
+	submissionsCmd.AddCommand(newSubmissionsMissingCmd())
 }
 
 func newSubmissionsListCmd() *cobra.Command {
