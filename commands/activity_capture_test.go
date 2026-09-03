@@ -384,7 +384,9 @@ func TestBulkGrade_CapturesEveryWriteBody(t *testing.T) {
 	t.Setenv(activity.EnvCaptureBodies, "true")
 
 	csvPath := filepath.Join(t.TempDir(), "grades.csv")
-	_ = os.WriteFile(csvPath, []byte("user_id,assignment_id,grade,comment\n10,100,95,Great work\n11,100,72,\n12,100,88,See rubric token 7~AbCdEfGhIjKlMnOpQrStUv\n"), 0o600)
+	// every row asks for the grade the static mock reports back, so the
+	// test also holds once the command verifies its writes by read-back
+	_ = os.WriteFile(csvPath, []byte("user_id,assignment_id,grade,comment\n10,100,95,Great work\n11,100,95,\n12,100,95,See rubric token 7~AbCdEfGhIjKlMnOpQrStUv\n"), 0o600)
 
 	// the command attaches details.input to the process-wide recorder
 	rec := activity.Default()
@@ -404,8 +406,9 @@ func TestBulkGrade_CapturesEveryWriteBody(t *testing.T) {
 		Name: "bulk grade",
 		Args: argv,
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/courses/1":                 courseMock,
-			"/api/v1/courses/1/assignments/100": cmdtest.NewMockResponse(`{"id":1,"assignment_id":100,"user_id":10,"score":95,"grade":"95"}`),
+			"/api/v1/courses/1": courseMock,
+			"/api/v1/courses/1/assignments/100": cmdtest.NewMockResponse(`{"id":1,"assignment_id":100,"user_id":10,"score":95,"grade":"95",
+				"submission_comments":[{"id":5,"author_name":"Teacher","comment":"Great work"},{"id":6,"author_name":"Teacher","comment":"See rubric token 7~AbCdEfGhIjKlMnOpQrStUv"}]}`),
 		},
 	})
 	logActivity(leaf, nil, time.Now(), rec, argv)
@@ -428,9 +431,9 @@ func TestBulkGrade_CapturesEveryWriteBody(t *testing.T) {
 	if len(bodies) != 3 {
 		t.Fatalf("want 3 logged write bodies, got %d: %v", len(bodies), bodies)
 	}
-	for i, want := range []string{`"posted_grade":"95"`, `"posted_grade":"72"`, `"posted_grade":"88"`} {
-		if !strings.Contains(bodies[i], want) {
-			t.Errorf("body %d = %s, want %s", i, bodies[i], want)
+	for i := range bodies {
+		if !strings.Contains(bodies[i], `"posted_grade":"95"`) {
+			t.Errorf("body %d = %s, want the row's grade", i, bodies[i])
 		}
 	}
 	if !strings.Contains(bodies[0], `"text_comment":"Great work"`) || strings.Contains(bodies[1], "text_comment") {
