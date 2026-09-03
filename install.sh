@@ -12,7 +12,7 @@
 set -eu
 
 # --- per-tool configuration (the only lines cliwright templates per CLI) ---
-REPO="jjuanrivvera/canvas-cli"
+REPO="chiptoe-svg/canvas-cli"
 BINARY="canvas"
 VERSION="${CANVAS_VERSION:-}"
 

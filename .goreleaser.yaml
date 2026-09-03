@@ -49,24 +49,6 @@ archives:
       - README.md
       - LICENSE
 
-dockers:
-  - id: canvas
-    ids:
-      - canvas
-    goos: linux
-    goarch: amd64
-    dockerfile: Dockerfile.goreleaser
-    image_templates:
-      - "ghcr.io/jjuanrivvera/canvas-cli:{{ .Version }}"
-      - "ghcr.io/jjuanrivvera/canvas-cli:v{{ .Major }}"
-      - "ghcr.io/jjuanrivvera/canvas-cli:latest"
-    build_flag_templates:
-      - "--label=org.opencontainers.image.title=canvas-cli"
-      - "--label=org.opencontainers.image.description=A powerful command-line interface for Canvas LMS"
-      - "--label=org.opencontainers.image.source=https://github.com/jjuanrivvera/canvas-cli"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.licenses=MIT"
-
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
@@ -79,7 +61,7 @@ sboms:
 #   cosign verify-blob --certificate checksums.txt.pem \
 #     --signature checksums.txt.sig \
 #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-#     --certificate-identity-regexp 'https://github.com/jjuanrivvera/canvas-cli.*' \
+#     --certificate-identity-regexp 'https://github.com/chiptoe-svg/canvas-cli.*' \
 #     checksums.txt
 signs:
   - cmd: cosign
@@ -122,7 +104,7 @@ changelog:
 
 release:
   github:
-    owner: jjuanrivvera
+    owner: chiptoe-svg
     name: canvas-cli
   draft: false
   prerelease: auto
@@ -160,33 +142,3 @@ release:
 # pre-built binary and match the rest of the fleet. NOTE: this switches the tap artifact from a
 # Formula to a Cask — delete the stale Formula/canvas-cli.rb from homebrew-canvas-cli after the
 # first cask release, or brew sees a formula+cask name collision.
-homebrew_casks:
-  - name: canvas-cli
-    binaries: [canvas]
-    repository:
-      owner: jjuanrivvera
-      name: homebrew-canvas-cli
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/jjuanrivvera/canvas-cli"
-    description: "A powerful command-line interface for Canvas LMS"
-    # Strip the macOS quarantine xattr so the unsigned CLI binary runs without a Gatekeeper prompt.
-    hooks:
-      post:
-        install: |
-          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/canvas"]
-
-scoops:
-  # The bucket repo (scoop-canvas-cli) must already exist; GoReleaser pushes the manifest
-  # to it with the cross-repo token but won't create it.
-  - repository:
-      owner: jjuanrivvera
-      name: scoop-canvas-cli
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/jjuanrivvera/canvas-cli"
-    description: "A powerful command-line interface for Canvas LMS"
-    license: MIT
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
