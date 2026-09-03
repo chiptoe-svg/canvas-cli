@@ -103,9 +103,9 @@ Examples:
 
 // scheduleDates are the three Canvas timestamps; nil means not set.
 type scheduleDates struct {
-	UnlockAt *time.Time `json:"unlock_at"`
-	DueAt    *time.Time `json:"due_at"`
-	LockAt   *time.Time `json:"lock_at"`
+	UnlockAt *time.Time `json:"unlock_at" yaml:"unlock_at"`
+	DueAt    *time.Time `json:"due_at" yaml:"due_at"`
+	LockAt   *time.Time `json:"lock_at" yaml:"lock_at"`
 }
 
 // scheduleFields lists the fields in display order with their flag names.
@@ -140,19 +140,19 @@ func (d *scheduleDates) set(field string, t *time.Time) {
 // scheduleItem is one quiz or assignment in the plan and, after the write,
 // its evidence.
 type scheduleItem struct {
-	Kind         string         `json:"type"` // quiz | assignment
-	ID           int64          `json:"id"`   // quiz id or assignment id
-	AssignmentID int64          `json:"assignment_id,omitempty"`
-	Title        string         `json:"title"`
-	HasOverrides bool           `json:"has_overrides,omitempty"`
-	Before       scheduleDates  `json:"before"`
-	After        scheduleDates  `json:"after"`
-	ReadBack     *scheduleDates `json:"read_back,omitempty"`
-	Changed      bool           `json:"changed"`
-	Written      bool           `json:"written"`
-	Verified     string         `json:"verified"` // yes | no | -
-	Mismatches   []string       `json:"mismatches,omitempty"`
-	Error        string         `json:"error,omitempty"`
+	Kind         string         `json:"type" yaml:"type"` // quiz | assignment
+	ID           int64          `json:"id" yaml:"id"`     // quiz id or assignment id
+	AssignmentID int64          `json:"assignment_id,omitempty" yaml:"assignment_id,omitempty"`
+	Title        string         `json:"title" yaml:"title"`
+	HasOverrides bool           `json:"has_overrides,omitempty" yaml:"has_overrides,omitempty"`
+	Before       scheduleDates  `json:"before" yaml:"before"`
+	After        scheduleDates  `json:"after" yaml:"after"`
+	ReadBack     *scheduleDates `json:"read_back,omitempty" yaml:"read_back,omitempty"`
+	Changed      bool           `json:"changed" yaml:"changed"`
+	Written      bool           `json:"written" yaml:"written"`
+	Verified     string         `json:"verified" yaml:"verified"` // yes | no | -
+	Mismatches   []string       `json:"mismatches,omitempty" yaml:"mismatches,omitempty"`
+	Error        string         `json:"error,omitempty" yaml:"error,omitempty"`
 }
 
 func (it *scheduleItem) label() string {
@@ -185,20 +185,20 @@ func (it *scheduleItem) wrapper() string {
 }
 
 type scheduleSummary struct {
-	Matched    int `json:"matched"`
-	Changed    int `json:"changed"`
-	Written    int `json:"written"`
-	Verified   int `json:"verified"`
-	Mismatched int `json:"mismatched"`
-	Failed     int `json:"failed"`
+	Matched    int `json:"matched" yaml:"matched"`
+	Changed    int `json:"changed" yaml:"changed"`
+	Written    int `json:"written" yaml:"written"`
+	Verified   int `json:"verified" yaml:"verified"`
+	Mismatched int `json:"mismatched" yaml:"mismatched"`
+	Failed     int `json:"failed" yaml:"failed"`
 }
 
 type scheduleResult struct {
-	CourseID int64           `json:"course_id"`
-	Timezone string          `json:"timezone"`
-	DryRun   bool            `json:"dry_run"`
-	Items    []scheduleItem  `json:"items"`
-	Summary  scheduleSummary `json:"summary"`
+	CourseID int64           `json:"course_id" yaml:"course_id"`
+	Timezone string          `json:"timezone" yaml:"timezone"`
+	DryRun   bool            `json:"dry_run" yaml:"dry_run"`
+	Items    []scheduleItem  `json:"items" yaml:"items"`
+	Summary  scheduleSummary `json:"summary" yaml:"summary"`
 	loc      *time.Location  // for rendering
 }
 
