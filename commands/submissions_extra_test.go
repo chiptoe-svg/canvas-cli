@@ -62,7 +62,8 @@ func TestSubmissionsGradeCmd_WithComment(t *testing.T) {
 				"assignment_id": 100,
 				"user_id": 10,
 				"score": 85,
-				"grade": "85.00"
+				"grade": "85.00",
+				"submission_comments": [{"id": 7, "author_name": "Teacher", "comment": "Good work"}]
 			}`),
 		},
 		ExpectError: false,

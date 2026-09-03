@@ -143,10 +143,14 @@ canvas submissions list --course-id 123 --assignment-id 456 --workflow-state sub
 # Grade one submission (score, letter grade, or excuse)
 canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 \
   --score 95 --comment "Great work"
-
-# Verify
-canvas submissions get --course-id 123 --assignment-id 456 --user-id 789 -o json
 ```
+
+`grade`, `add-comment` and `bulk-grade` read the submission back after the
+write and print the evidence: `grade: 88 → 95`, the new comment's id, author
+and text, and `verified: yes|no`. "Done" means `verified: yes`; a mismatch
+prints `verified: no — <reason>` and exits non-zero — report that to the
+user, never say "graded". `-o json` carries `{before, after, requested,
+verified, mismatches}`. `--dry-run` prints the curl and reads nothing back.
 
 ## Workflow: bulk grading from CSV
 
@@ -154,9 +158,13 @@ CSV columns: `user_id,assignment_id,score,comment`.
 
 ```bash
 canvas submissions bulk-grade --course-id 123 --csv-file grades.csv --dry-run   # preview every change
-canvas submissions bulk-grade --course-id 123 --csv-file grades.csv             # apply (concurrent)
+canvas submissions bulk-grade --course-id 123 --csv-file grades.csv             # apply, one row at a time, each read back
 canvas grades history --course-id 123                                      # audit afterwards
 ```
+
+Each row prints `<before> → <after>, verified` (or `NOT verified: <reason>`)
+and the run ends with `N graded, N verified, N mismatched`; any mismatch or
+error makes the command exit non-zero. Report the summary line to the user.
 
 ## Workflow: regrade a quiz question
 

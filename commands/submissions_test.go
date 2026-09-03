@@ -193,7 +193,8 @@ func TestSubmissionsAddCommentCmd(t *testing.T) {
 				"/api/v1/courses/1/assignments/100/submissions/10": cmdtest.NewMockResponse(`{
 					"id": 1,
 					"assignment_id": 100,
-					"user_id": 10
+					"user_id": 10,
+					"submission_comments": [{"id": 7, "author_name": "Teacher", "comment": "Well done!"}]
 				}`),
 			},
 			ExpectError: false,
