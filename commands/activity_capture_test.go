@@ -554,3 +554,43 @@ func TestActivityConfigure_ThenLogs(t *testing.T) {
 		t.Fatalf("after configure --enable the default log must receive the entry, got %d", len(got))
 	}
 }
+
+func TestLogActivity_EnrichesTouchedFromResponse(t *testing.T) {
+	useTempHome(t)
+	path := useTempActivityLog(t)
+
+	root := &cobra.Command{Use: "canvas"}
+	sub := &cobra.Command{Use: "submissions"}
+	grade := &cobra.Command{Use: "grade", RunE: func(*cobra.Command, []string) error { return nil }}
+	grade.Flags().Int64("course-id", 0, "")
+	grade.Flags().Int64("assignment-id", 0, "")
+	grade.Flags().Int64("user-id", 0, "")
+	grade.Flags().String("comment", "", "")
+	sub.AddCommand(grade)
+	root.AddCommand(sub)
+	argv := []string{"submissions", "grade", "--course-id", "1", "--assignment-id", "100", "--user-id", "10", "--comment", "Well done"}
+	root.SetArgs(argv)
+	cmd, err := root.ExecuteContextC(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := activity.NewRecorder()
+	rec.Observe(activity.Observation{Method: "GET", Path: "/api/v1/courses/1", Status: 200, ResponseBody: []byte(`{"id":1}`)})
+	rec.Observe(activity.Observation{Method: "PUT", Path: "/api/v1/courses/1/assignments/100/submissions/10", Status: 200,
+		RequestBody:  []byte(`{"submission":{"posted_grade":"9"},"comment":{"text_comment":"Well done"}}`),
+		ResponseBody: []byte(`{"id":4242,"submission_comments":[{"id":77,"comment":"Well done"}]}`)})
+	logActivity(cmd, nil, time.Now(), rec, argv)
+
+	entries := readEntries(t, path)
+	if len(entries) != 1 {
+		t.Fatalf("entries = %d", len(entries))
+	}
+	var got []string
+	for _, x := range entries[0].Touched {
+		got = append(got, x.Type+":"+strconv.FormatInt(x.ID, 10))
+	}
+	if want := "assignment:100 course:1 submission:4242 submission-comment:77 user:10"; strings.Join(got, " ") != want {
+		t.Errorf("touched = %q, want %q", strings.Join(got, " "), want)
+	}
+}
