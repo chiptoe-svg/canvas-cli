@@ -14,9 +14,12 @@ assignment — available from (unlock_at), due (due_at) and closed (lock_at)
 your local time zone.
 
 Times are read in the local zone (see --timezone) and shown in both local
-time and UTC. Time-only values such as "4:50pm" fall on --date (default
-today); a date-only --due or --closed means 11:59 PM of that day and a
-date-only --available means 12:00 AM.
+time and UTC. A time-only value such as "4:50pm" applies to each matched
+item's OWN existing date for that field (falling back to its due date,
+then available date, then closed date, and refusing an item with no date
+at all) unless --date is given, which moves every matched item to that
+one day instead; a date-only --due or --closed means 11:59 PM of that day
+and a date-only --available means 12:00 AM.
 
 Quizzes are updated through the quiz endpoint, plain assignments through
 the assignment endpoint. A quiz-backed assignment is always updated through
@@ -31,11 +34,14 @@ the full plan and the requests it would send and writes nothing.
 Examples:
 
 ```bash
-# One quiz: available at 4:00, due and closed at 4:50 today
+# One quiz: available at 4:00, due and closed at 4:50, on its own date
 canvas schedule --course-id 123 --id 456 --type quiz --available 4:00pm --due 4:50pm --closed 4:50pm
 
-# Every attendance quiz, on a given day, preview first
-canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --dry-run
+# Every attendance quiz gets these times, each on its own existing date
+canvas schedule --course-id 123 --match attendance --type quiz --available 4pm --due 4:50pm --closed 4:50pm --dry-run
+canvas schedule --course-id 123 --match attendance --type quiz --available 4pm --due 4:50pm --closed 4:50pm --force
+
+# Move every attendance quiz to one specific day instead
 canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --force
 
 # An assignment due on a date (11:59 PM), in a specific zone
@@ -56,7 +62,7 @@ canvas schedule [flags]
       --clear strings      Clear a date: available, due or closed (repeatable)
       --closed string      Close time (lock_at), local
       --course-id int      Course ID (required)
-      --date string        Calendar day for time-only values (2026-09-09, 9/9/26, today, this sunday; default today)
+      --date string        Move every matched item's time-only values to this day instead of each item's own date (2026-09-09, 9/9/26, today, this sunday)
       --due string         Due time (due_at), local
       --force              Skip the confirmation prompt shown for --match
   -h, --help               help for schedule

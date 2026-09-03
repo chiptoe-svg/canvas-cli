@@ -67,7 +67,39 @@ func newScheduleCanvas(t *testing.T) *scheduleCanvas {
 			5:   {id: 5, title: "Five assignment"},
 		},
 	}
-	sc.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	sc.Server = httptest.NewServer(sc.handler(t))
+	return sc
+}
+
+// newPerItemScheduleCanvas fixtures quizzes with distinct existing dates —
+// some weeks apart, one with no dates at all, one across the DST boundary —
+// for the per-item date-merge tests: a time-only --available/--due/--closed
+// with no --date must combine with each item's OWN date, not one shared day.
+func newPerItemScheduleCanvas(t *testing.T) *scheduleCanvas {
+	t.Helper()
+	sc := &scheduleCanvas{
+		quizzes: map[int64]*fakeSchedItem{
+			501: {id: 501, title: "Attendance Week 1", assignmentID: 901, due: str("2026-09-09T15:00:00Z")},
+			502: {id: 502, title: "Attendance Week 2", assignmentID: 902, due: str("2026-09-16T15:00:00Z")},
+			503: {id: 503, title: "Attendance Week 3", assignmentID: 903, due: str("2026-09-23T15:00:00Z")},
+			504: {id: 504, title: "Attendance No Date", assignmentID: 904},
+			505: {id: 505, title: "Attendance November", assignmentID: 905, due: str("2026-11-11T15:00:00Z")},
+		},
+		assigns: map[int64]*fakeSchedItem{
+			901: {id: 901, title: "Attendance Week 1", quizID: 501, quizAssignment: true, due: str("2026-09-09T15:00:00Z")},
+			902: {id: 902, title: "Attendance Week 2", quizID: 502, quizAssignment: true, due: str("2026-09-16T15:00:00Z")},
+			903: {id: 903, title: "Attendance Week 3", quizID: 503, quizAssignment: true, due: str("2026-09-23T15:00:00Z")},
+			904: {id: 904, title: "Attendance No Date", quizID: 504, quizAssignment: true},
+			905: {id: 905, title: "Attendance November", quizID: 505, quizAssignment: true, due: str("2026-11-11T15:00:00Z")},
+		},
+	}
+	sc.Server = httptest.NewServer(sc.handler(t))
+	return sc
+}
+
+// handler serves sc's fixed course (id 1) of quizzes and assignments.
+func (sc *scheduleCanvas) handler(t *testing.T) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {
 			_, _ = w.Write([]byte(`[]`))
 			return
@@ -129,8 +161,7 @@ func newScheduleCanvas(t *testing.T) *scheduleCanvas {
 			t.Errorf("unexpected request %s %s", r.Method, r.URL.RequestURI())
 			http.NotFound(w, r)
 		}
-	}))
-	return sc
+	})
 }
 
 func (sc *scheduleCanvas) list(m map[int64]*fakeSchedItem, render func(*fakeSchedItem) string) string {
@@ -395,7 +426,10 @@ func TestSchedule_ByIDAmbiguousAndMissing(t *testing.T) {
 		t.Errorf("writes = %v", sc.puts())
 	}
 
-	raw, _, err := runScheduleCmd(t, sc, "json", true, "", "--id", "5", "--type", "assignment", "--due", "4pm")
+	// Assignment 5 has no existing dates, so a time-only --due needs --date
+	// (see TestSchedule_TimeOnlyRefusesItemWithNoDate); this test is only
+	// about --type disambiguation.
+	raw, _, err := runScheduleCmd(t, sc, "json", true, "", "--id", "5", "--type", "assignment", "--date", "2026-09-09", "--due", "4pm")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -658,5 +692,166 @@ func TestSchedule_UnitHelpers(t *testing.T) {
 	}
 	if scheduleKindWord("quiz") != "quiz" || scheduleKindWord("assignment") != "assignment" || scheduleKindWord("all") != "quiz or assignment" {
 		t.Error("scheduleKindWord")
+	}
+}
+
+func findScheduleItem(t *testing.T, res scheduleResult, id int64) *scheduleItem {
+	t.Helper()
+	for i := range res.Items {
+		if res.Items[i].ID == id {
+			return &res.Items[i]
+		}
+	}
+	t.Fatalf("no item with id %d in %v", id, itemKeys(res))
+	return nil
+}
+
+// TestSchedule_TimeOnlyKeepsEachItemsOwnDate is the faculty-workflows bug:
+// "make every attendance quiz have these times" must land on EACH quiz's
+// own existing date, not move every matched item onto one shared day.
+// Three quizzes, three different pre-existing due dates, no --date: only
+// the clock times change; each item's own calendar day survives.
+func TestSchedule_TimeOnlyKeepsEachItemsOwnDate(t *testing.T) {
+	sc := newPerItemScheduleCanvas(t)
+	defer sc.Close()
+
+	raw, _, err := runScheduleCmd(t, sc, "json", true, "", "--match", "/^Attendance Week/", "--type", "quiz",
+		"--available", "4:00pm", "--due", "4:50pm", "--closed", "4:50pm")
+	if err != nil {
+		t.Fatalf("unexpected error: %v\n%s", err, raw)
+	}
+	res := decodeSchedule(t, raw)
+	if res.Summary.Matched != 3 || res.Summary.Changed != 3 || res.Summary.Refused != 0 {
+		t.Fatalf("summary = %+v", res.Summary)
+	}
+
+	want := map[int64]string{501: "2026-09-09", 502: "2026-09-16", 503: "2026-09-23"}
+	for id, day := range want {
+		it := findScheduleItem(t, res, id)
+		for _, got := range []*time.Time{it.After.UnlockAt, it.After.DueAt, it.After.LockAt} {
+			if got == nil {
+				t.Fatalf("item %d: missing after date: %+v", id, it.After)
+			}
+			if got.Format("2006-01-02") != day {
+				t.Errorf("item %d: date moved to %s, want %s (%s)", id, got.Format("2006-01-02"), day, got.Format(time.RFC3339))
+			}
+		}
+		if it.After.DueAt.Format(time.RFC3339) != day+"T20:50:00Z" {
+			t.Errorf("item %d due = %s, want %sT20:50:00Z", id, it.After.DueAt.Format(time.RFC3339), day)
+		}
+	}
+	if len(sc.puts()) != 0 {
+		t.Errorf("dry run sent writes: %v", sc.puts())
+	}
+
+	// Table output shows the plan without a "Moving" warning (no --date)
+	// and each item's own day survives in both the OLD and NEW columns.
+	out, _, err := runScheduleCmd(t, sc, "table", true, "", "--match", "/^Attendance Week/", "--type", "quiz",
+		"--available", "4:00pm", "--due", "4:50pm", "--closed", "4:50pm")
+	if err != nil {
+		t.Fatalf("unexpected error: %v\n%s", err, out)
+	}
+	if strings.Contains(out, "Moving ") {
+		t.Errorf("unexpected 'Moving' warning without --date:\n%s", out)
+	}
+	for _, want := range []string{
+		"Wed 2026-09-09 4:50 PM EDT",
+		"Wed 2026-09-16 4:50 PM EDT",
+		"Wed 2026-09-23 4:50 PM EDT",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q:\n%s", want, out)
+		}
+	}
+}
+
+// TestSchedule_DateMovesEveryItemAndWarns covers the OTHER half of the
+// same flags: --date still moves every matched item onto one shared day
+// (existing behavior), and now prints a "Moving N items" warning when it
+// would move more than one.
+func TestSchedule_DateMovesEveryItemAndWarns(t *testing.T) {
+	sc := newPerItemScheduleCanvas(t)
+	defer sc.Close()
+
+	out, _, err := runScheduleCmd(t, sc, "table", true, "", "--match", "/^Attendance Week/", "--type", "quiz", "--date", "2026-09-30",
+		"--available", "4:00pm", "--due", "4:50pm", "--closed", "4:50pm")
+	if err != nil {
+		t.Fatalf("unexpected error: %v\n%s", err, out)
+	}
+	if !strings.Contains(out, "Moving 3 items to 2026-09-30") {
+		t.Errorf("output lacks the moving warning:\n%s", out)
+	}
+
+	raw, _, err := runScheduleCmd(t, sc, "json", true, "", "--match", "/^Attendance Week/", "--type", "quiz", "--date", "2026-09-30",
+		"--available", "4:00pm", "--due", "4:50pm", "--closed", "4:50pm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := decodeSchedule(t, raw)
+	for _, id := range []int64{501, 502, 503} {
+		it := findScheduleItem(t, res, id)
+		if it.After.DueAt == nil || it.After.DueAt.Format(time.RFC3339) != "2026-09-30T20:50:00Z" {
+			t.Errorf("item %d due = %v, want 2026-09-30T20:50:00Z", id, it.After.DueAt)
+		}
+	}
+}
+
+// TestSchedule_TimeOnlyRefusesItemWithNoDate: an item with no existing
+// date at all cannot take a time-only value; it is refused with a clear
+// message, and the OTHER matched items are still planned.
+func TestSchedule_TimeOnlyRefusesItemWithNoDate(t *testing.T) {
+	sc := newPerItemScheduleCanvas(t)
+	defer sc.Close()
+
+	out, _, err := runScheduleCmd(t, sc, "table", true, "", "--match", "attendance", "--type", "quiz", "--due", "4:00pm")
+	if err == nil || !strings.Contains(err.Error(), "1 of 5 matched items could not be planned") {
+		t.Errorf("err = %v", err)
+	}
+	if !strings.Contains(out, "Attendance No Date: no existing date to apply a time to; pass --date") {
+		t.Errorf("output lacks the refusal message:\n%s", out)
+	}
+	if len(sc.puts()) != 0 {
+		t.Errorf("a refused plan was written: %v", sc.puts())
+	}
+
+	raw, _, err := runScheduleCmd(t, sc, "json", true, "", "--match", "attendance", "--type", "quiz", "--due", "4:00pm")
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	res := decodeSchedule(t, raw)
+	if res.Summary.Matched != 5 || res.Summary.Refused != 1 || res.Summary.Changed != 4 {
+		t.Fatalf("summary = %+v", res.Summary)
+	}
+	noDate := findScheduleItem(t, res, 504)
+	if noDate.Changed || noDate.Error != "Attendance No Date: no existing date to apply a time to; pass --date" {
+		t.Errorf("no-date item = %+v", noDate)
+	}
+	// The other matched items, including the dated ones, are still planned.
+	for id, wantDue := range map[int64]string{501: "2026-09-09T20:00:00Z", 502: "2026-09-16T20:00:00Z", 503: "2026-09-23T20:00:00Z"} {
+		it := findScheduleItem(t, res, id)
+		if it.Error != "" || it.After.DueAt == nil || it.After.DueAt.Format(time.RFC3339) != wantDue {
+			t.Errorf("item %d = %+v, want due %s", id, it, wantDue)
+		}
+	}
+}
+
+// TestSchedule_TimeOnlyKeepsDSTOffset: an item whose own date falls in
+// November (EST) must resolve a time-only value in EST, not silently in
+// whatever offset the fixture clock (September, EDT) happens to be in.
+func TestSchedule_TimeOnlyKeepsDSTOffset(t *testing.T) {
+	sc := newPerItemScheduleCanvas(t)
+	defer sc.Close()
+
+	raw, _, err := runScheduleCmd(t, sc, "json", true, "", "--id", "505", "--type", "quiz", "--due", "4:00pm")
+	if err != nil {
+		t.Fatalf("unexpected error: %v\n%s", err, raw)
+	}
+	res := decodeSchedule(t, raw)
+	if len(res.Items) != 1 {
+		t.Fatalf("items = %v", res.Items)
+	}
+	it := res.Items[0]
+	if it.After.DueAt == nil || it.After.DueAt.Format(time.RFC3339) != "2026-11-11T21:00:00Z" {
+		t.Errorf("November due = %v, want 2026-11-11T21:00:00Z (4pm EST)", it.After.DueAt)
 	}
 }

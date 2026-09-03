@@ -39,9 +39,12 @@ assignment — available from (unlock_at), due (due_at) and closed (lock_at)
 your local time zone.
 
 Times are read in the local zone (see --timezone) and shown in both local
-time and UTC. Time-only values such as "4:50pm" fall on --date (default
-today); a date-only --due or --closed means 11:59 PM of that day and a
-date-only --available means 12:00 AM.
+time and UTC. A time-only value such as "4:50pm" applies to each matched
+item's OWN existing date for that field (falling back to its due date,
+then available date, then closed date, and refusing an item with no date
+at all) unless --date is given, which moves every matched item to that
+one day instead; a date-only --due or --closed means 11:59 PM of that day
+and a date-only --available means 12:00 AM.
 
 Quizzes are updated through the quiz endpoint, plain assignments through
 the assignment endpoint. A quiz-backed assignment is always updated through
@@ -54,11 +57,14 @@ command exits non-zero if any read-back does not match. --dry-run prints
 the full plan and the requests it would send and writes nothing.
 
 Examples:
-  # One quiz: available at 4:00, due and closed at 4:50 today
+  # One quiz: available at 4:00, due and closed at 4:50, on its own date
   canvas schedule --course-id 123 --id 456 --type quiz --available 4:00pm --due 4:50pm --closed 4:50pm
 
-  # Every attendance quiz, on a given day, preview first
-  canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --dry-run
+  # Every attendance quiz gets these times, each on its own existing date
+  canvas schedule --course-id 123 --match attendance --type quiz --available 4pm --due 4:50pm --closed 4:50pm --dry-run
+  canvas schedule --course-id 123 --match attendance --type quiz --available 4pm --due 4:50pm --closed 4:50pm --force
+
+  # Move every attendance quiz to one specific day instead
   canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --force
 
   # An assignment due on a date (11:59 PM), in a specific zone
@@ -92,7 +98,7 @@ Examples:
 	cmd.Flags().StringVar(&opts.Available, "available", "", "Available-from time (unlock_at), local")
 	cmd.Flags().StringVar(&opts.Due, "due", "", "Due time (due_at), local")
 	cmd.Flags().StringVar(&opts.Closed, "closed", "", "Close time (lock_at), local")
-	cmd.Flags().StringVar(&opts.Date, "date", "", "Calendar day for time-only values (2026-09-09, 9/9/26, today, this sunday; default today)")
+	cmd.Flags().StringVar(&opts.Date, "date", "", "Move every matched item's time-only values to this day instead of each item's own date (2026-09-09, 9/9/26, today, this sunday)")
 	cmd.Flags().StringSliceVar(&opts.Clear, "clear", nil, "Clear a date: available, due or closed (repeatable)")
 	addTimezoneFlag(cmd, &opts.Timezone)
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip the confirmation prompt shown for --match")
@@ -186,6 +192,7 @@ func (it *scheduleItem) wrapper() string {
 
 type scheduleSummary struct {
 	Matched    int `json:"matched" yaml:"matched"`
+	Refused    int `json:"refused" yaml:"refused"`
 	Changed    int `json:"changed" yaml:"changed"`
 	Written    int `json:"written" yaml:"written"`
 	Verified   int `json:"verified" yaml:"verified"`
@@ -200,12 +207,25 @@ type scheduleResult struct {
 	Items    []scheduleItem  `json:"items" yaml:"items"`
 	Summary  scheduleSummary `json:"summary" yaml:"summary"`
 	loc      *time.Location  // for rendering
+	// movedCount/movedDate report a uniform --date move, for the plan
+	// header warning; movedCount is 0 unless --date was given.
+	movedCount int
+	movedDate  string
 }
 
-// scheduleRequest is what the flags asked for, resolved to instants.
+// scheduleRequest is what the flags asked for. Fields with an own date
+// (from --date, or a value that names its own date) resolve to a concrete
+// instant in set, applied to every item alike. A pure time-only value
+// (e.g. "4:50pm") with no --date is deferred: perItemRaw holds the raw
+// text, keyed by Canvas field name, and mergeScheduleDatesForItem combines
+// it with each item's own existing date.
 type scheduleRequest struct {
-	set   scheduleDates
-	clear map[string]bool
+	set        scheduleDates
+	clear      map[string]bool
+	perItemRaw map[string]string
+	// hasDate/dateCtx record a --date, for the plan's "moving N items" warning.
+	hasDate bool
+	dateCtx time.Time
 }
 
 func runSchedule(ctx context.Context, client *api.Client, opts *options.ScheduleOptions, out, errOut io.Writer, in io.Reader) error {
@@ -250,9 +270,21 @@ func runSchedule(ctx context.Context, client *api.Client, opts *options.Schedule
 	var violations []string
 	for i := range result.Items {
 		it := &result.Items[i]
-		it.After = mergeScheduleDates(it.Before, req)
-		it.Changed = !sameDates(it.Before, it.After)
 		it.Verified = "-"
+		after, mergeErr := mergeScheduleDatesForItem(it.Before, req, tzName, now, it.Title)
+		if mergeErr != nil {
+			// This item has nothing to combine a time-only value with; it
+			// is refused on its own and does not block the rest of the
+			// plan (unlike an order violation, which does).
+			it.Error = mergeErr.Error()
+			it.Mismatches = []string{it.Error}
+			it.Verified = "no"
+			it.After = it.Before
+			result.Summary.Refused++
+			continue
+		}
+		it.After = after
+		it.Changed = !sameDates(it.Before, it.After)
 		if it.Changed {
 			result.Summary.Changed++
 		}
@@ -264,13 +296,26 @@ func runSchedule(ctx context.Context, client *api.Client, opts *options.Schedule
 		return fmt.Errorf("refusing the plan: the order available ≤ due ≤ closed would not hold after the change; nothing was written\n  %s",
 			strings.Join(violations, "\n  "))
 	}
+	if req.hasDate {
+		result.movedCount = scheduleDateMoveCount(result.Items, req, loc)
+		result.movedDate = req.dateCtx.Format("2006-01-02")
+	}
 
 	if opts.DryRun {
-		return printScheduleResult(out, result)
+		if err := printScheduleResult(out, result); err != nil {
+			return err
+		}
+		if result.Summary.Refused > 0 {
+			return fmt.Errorf("%d of %d matched items could not be planned; see above", result.Summary.Refused, result.Summary.Matched)
+		}
+		return nil
 	}
 	if result.Summary.Changed == 0 {
 		if err := printScheduleResult(out, result); err != nil {
 			return err
+		}
+		if result.Summary.Refused > 0 {
+			return fmt.Errorf("%d of %d matched items could not be planned; see above", result.Summary.Refused, result.Summary.Matched)
 		}
 		fmt.Fprintln(out, "Nothing to change: every matched item already has the requested times.")
 		return nil
@@ -300,18 +345,25 @@ func runSchedule(ctx context.Context, client *api.Client, opts *options.Schedule
 		return fmt.Errorf("%d of %d items did not read back as requested (%d write failures)",
 			result.Summary.Mismatched+result.Summary.Failed, result.Summary.Changed, result.Summary.Failed)
 	}
+	if result.Summary.Refused > 0 {
+		return fmt.Errorf("%d of %d matched items could not be planned; see above", result.Summary.Refused, result.Summary.Matched)
+	}
 	return nil
 }
 
-// resolveScheduleRequest turns the time flags into instants.
+// resolveScheduleRequest turns the time flags into instants where the
+// value carries its own date (--date, or a value that names one, such as
+// "2026-09-09 4:50pm" or "tomorrow"). A pure time-only value with no
+// --date (e.g. "4:50pm") cannot be resolved yet — it depends on each
+// matched item's own existing date — so it is deferred into perItemRaw for
+// mergeScheduleDatesForItem to combine per item.
 func resolveScheduleRequest(opts *options.ScheduleOptions, tzName string, now time.Time) (*scheduleRequest, error) {
-	req := &scheduleRequest{}
+	req := &scheduleRequest{perItemRaw: map[string]string{}}
 	var err error
 	if req.clear, err = opts.ClearSet(); err != nil {
 		return nil, err
 	}
 
-	var dateCtx time.Time
 	if opts.Date != "" {
 		p, err := localtime.Parse(opts.Date, localtime.Options{Timezone: tzName, Now: now})
 		if err != nil {
@@ -320,7 +372,8 @@ func resolveScheduleRequest(opts *options.ScheduleOptions, tzName string, now ti
 		if !p.HasDate || p.HasTime {
 			return nil, fmt.Errorf("invalid --date %q: give a calendar day only (2026-09-09, 9/9/26, today, this sunday)", opts.Date)
 		}
-		dateCtx = p.Local
+		req.hasDate = true
+		req.dateCtx = p.Local
 	}
 
 	for _, f := range []struct{ flag, canvas, value string }{
@@ -331,9 +384,17 @@ func resolveScheduleRequest(opts *options.ScheduleOptions, tzName string, now ti
 		if f.value == "" {
 			continue
 		}
-		p, err := localtime.Parse(f.value, localtime.Options{Timezone: tzName, Now: now, DateContext: dateCtx})
+		// Classify first: does the value name its own date, or is it a
+		// pure time? Without --date, DateContext is left zero so Parse
+		// defaults it to today — only p.HasDate is used from this call
+		// when deferring; the instant itself is recomputed per item.
+		p, err := localtime.Parse(f.value, localtime.Options{Timezone: tzName, Now: now, DateContext: req.dateCtx})
 		if err != nil {
 			return nil, fmt.Errorf("invalid --%s: %w", f.flag, err)
+		}
+		if !req.hasDate && !p.HasDate {
+			req.perItemRaw[f.canvas] = f.value
+			continue
 		}
 		// A date-only due/close means the end of that day, as in the Canvas UI.
 		if !p.HasTime && f.canvas != api.DateFieldUnlockAt {
@@ -351,6 +412,8 @@ func printScheduleRequest(out io.Writer, req *scheduleRequest, loc *time.Locatio
 			fmt.Fprintf(out, "%-10s %s\n", f.flag+":", localtime.Describe(*t, loc))
 		} else if req.clear[f.flag] {
 			fmt.Fprintf(out, "%-10s (clear)\n", f.flag+":")
+		} else if raw, ok := req.perItemRaw[f.canvas]; ok {
+			fmt.Fprintf(out, "%-10s %s (each item's own date)\n", f.flag+":", raw)
 		}
 	}
 }
@@ -573,18 +636,85 @@ func sameDates(a, b scheduleDates) bool {
 	return sameInstant(a.UnlockAt, b.UnlockAt) && sameInstant(a.DueAt, b.DueAt) && sameInstant(a.LockAt, b.LockAt)
 }
 
-// mergeScheduleDates applies the request on top of the item's current
-// dates: set fields replace, cleared fields become nil, others stay.
-func mergeScheduleDates(before scheduleDates, req *scheduleRequest) scheduleDates {
-	after := before
-	for _, f := range scheduleFields {
-		if req.clear[f.flag] {
-			after.set(f.canvas, nil)
-		} else if t := req.set.get(f.canvas); t != nil {
-			after.set(f.canvas, copyTime(t))
+// fallbackDateSource picks the calendar day a per-item time-only value
+// combines with: the field's own current value, else the item's due date,
+// then its available date, then its closed date. nil means the item has
+// no date at all to apply a time to.
+func fallbackDateSource(before scheduleDates, field string) *time.Time {
+	for _, f := range []string{field, api.DateFieldDueAt, api.DateFieldUnlockAt, api.DateFieldLockAt} {
+		if t := before.get(f); t != nil {
+			return t
 		}
 	}
-	return after
+	return nil
+}
+
+// mergeScheduleDatesForItem applies req on top of before: cleared fields
+// become nil, concrete (--date or own-dated) values replace directly, and
+// a deferred time-only value combines with the item's own existing date
+// via fallbackDateSource — returning an error naming title when the item
+// has no date at all for that field.
+func mergeScheduleDatesForItem(before scheduleDates, req *scheduleRequest, tzName string, now time.Time, title string) (scheduleDates, error) {
+	after := before
+	for _, f := range scheduleFields {
+		switch {
+		case req.clear[f.flag]:
+			after.set(f.canvas, nil)
+		case req.set.get(f.canvas) != nil:
+			after.set(f.canvas, copyTime(req.set.get(f.canvas)))
+		default:
+			raw, ok := req.perItemRaw[f.canvas]
+			if !ok {
+				continue
+			}
+			dateSrc := fallbackDateSource(before, f.canvas)
+			if dateSrc == nil {
+				return before, fmt.Errorf("%s: no existing date to apply a time to; pass --date", title)
+			}
+			p, err := localtime.Parse(raw, localtime.Options{Timezone: tzName, Now: now, DateContext: *dateSrc})
+			if err != nil {
+				return before, fmt.Errorf("invalid --%s: %w", f.flag, err)
+			}
+			t := p.Time
+			after.set(f.canvas, &t)
+		}
+	}
+	return after, nil
+}
+
+// scheduleDateMoveCount counts matched items where a --date move actually
+// changes the calendar day of a field the item previously had set (a
+// newly-created date on a previously-unset field is not a "move").
+func scheduleDateMoveCount(items []scheduleItem, req *scheduleRequest, loc *time.Location) int {
+	if !req.hasDate {
+		return 0
+	}
+	count := 0
+	for i := range items {
+		it := &items[i]
+		moved := false
+		for _, f := range scheduleFields {
+			if req.set.get(f.canvas) == nil {
+				continue
+			}
+			before := it.Before.get(f.canvas)
+			after := it.After.get(f.canvas)
+			if before != nil && after != nil && !sameLocalDate(*before, *after, loc) {
+				moved = true
+				break
+			}
+		}
+		if moved {
+			count++
+		}
+	}
+	return count
+}
+
+func sameLocalDate(a, b time.Time, loc *time.Location) bool {
+	ay, am, ad := a.In(loc).Date()
+	by, bm, bd := b.In(loc).Date()
+	return ay == by && am == bm && ad == bd
 }
 
 // scheduleOrderViolation checks available ≤ due ≤ closed (and available ≤
@@ -702,6 +832,9 @@ func confirmSchedule(out io.Writer, in io.Reader, result *scheduleResult) (bool,
 func printSchedulePlan(out io.Writer, result *scheduleResult) {
 	loc := result.loc
 	fmt.Fprintf(out, "Plan for course %d (times in %s):\n", result.CourseID, result.Timezone)
+	if result.movedCount > 1 {
+		fmt.Fprintf(out, "Moving %d items to %s\n", result.movedCount, result.movedDate)
+	}
 	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "TYPE\tID\tTITLE\tFIELD\tOLD (local)\tNEW (local)\tNEW (UTC)")
 	for i := range result.Items {
@@ -726,6 +859,12 @@ func printSchedulePlan(out io.Writer, result *scheduleResult) {
 		}
 	}
 	w.Flush()
+	for i := range result.Items {
+		it := &result.Items[i]
+		if it.Error != "" {
+			fmt.Fprintf(out, "  %s\n", it.Error)
+		}
+	}
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "Requests:")
 	for i := range result.Items {
