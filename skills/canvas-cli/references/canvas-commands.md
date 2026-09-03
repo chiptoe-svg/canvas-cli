@@ -46,7 +46,7 @@ canvas update check | status
 | `assignments` | `--bucket upcoming\|overdue\|past…`, `--json file` / `--stdin` bodies, `upcoming --course-id N\|--all-active (--within 10d\|--by DATE) [--include-undated] [-o markdown]` (read-only, local time) |
 | `assignment-groups` | — |
 | `overrides` | per-assignment date/audience overrides |
-| `submissions` | `grade`, `bulk-grade --csv`, `comments`, `add-comment`, `delete-comment` |
+| `submissions` | `grade`, `bulk-grade --csv`, `comments`, `add-comment`, `delete-comment`, `excuse --student NAME\|ID --assignment NAME\|ID [--unexcuse]` (read-back) |
 | `grades` | `history`, `feed`, `columns {list\|create\|update\|delete\|data}` |
 | `modules` | `publish`, `unpublish`, `relock`, `items {list\|get\|create\|update\|delete\|done}` |
 | `pages` | `front`, `duplicate`, `revisions`, `revert` |

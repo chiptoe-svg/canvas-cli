@@ -189,6 +189,29 @@ canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 \
 canvas submissions get --course-id 123 --assignment-id 456 --user-id 789 -o json
 ```
 
+## Workflow: excuse a student (`submissions excuse`)
+
+"Excuse <student> from <quiz/assignment>" is one command — no id hunting:
+
+```bash
+canvas submissions excuse --course-id 123 --student "Ada Lovelace" --assignment "Quiz 3"
+canvas submissions excuse --course-id 123 --student "lovelace" --assignment "lineup" --dry-run   # preview
+canvas submissions excuse --course-id 123 --student 789 --assignment 456 --force                 # ids, no prompt
+canvas submissions excuse --course-id 123 --student "Ada Lovelace" --assignment "Quiz 3" --unexcuse
+```
+
+`--student` takes an id, the exact name, the sortable name ("Lovelace,
+Ada"), a login/SIS id, or a substring that matches exactly one active
+student; `--assignment` takes an assignment id, a quiz id, the exact name,
+or a substring that matches exactly one item (a quiz resolves to the
+assignment it is graded under). Zero or several matches are refused with
+the candidates listed — pick one and re-run; never guess. The command
+prints who and what it resolved, reads the submission back and prints
+`excused: not excused → excused` and `verified: yes`; "done" means
+`verified: yes`. A `verified: no` line means the read-back disagreed and
+the command exited non-zero — report it. `-o json` carries
+`{student, assignment, before_excused, after_excused, verified}`.
+
 ## Workflow: bulk grading from CSV
 
 CSV columns: `user_id,assignment_id,score,comment`.
