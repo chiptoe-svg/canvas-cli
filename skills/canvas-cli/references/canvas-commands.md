@@ -43,7 +43,7 @@ canvas update check | status
 | Resource | Actions beyond list/get/create/update/delete |
 |---|---|
 | `courses` | — (admin listing via `--account-id`) |
-| `assignments` | `--bucket upcoming\|overdue\|past…`, `--json file` / `--stdin` bodies |
+| `assignments` | `--bucket upcoming\|overdue\|past…`, `--json file` / `--stdin` bodies, `upcoming --course-id N\|--all-active (--within 10d\|--by DATE) [--include-undated] [-o markdown]` (read-only, local time) |
 | `assignment-groups` | — |
 | `overrides` | per-assignment date/audience overrides |
 | `submissions` | `grade`, `bulk-grade --csv`, `comments`, `add-comment`, `delete-comment` |

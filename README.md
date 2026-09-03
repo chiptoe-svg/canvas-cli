@@ -111,7 +111,7 @@ canvas repl
 |----------|----------|
 | **Auth** | `login`, `logout`, `status` |
 | **Courses** | `list`, `get`, `create`, `update`, `delete` |
-| **Assignments** | `list`, `get`, `create`, `update`, `delete` |
+| **Assignments** | `list`, `get`, `create`, `update`, `delete`, `upcoming` (what is due within a window or by a date, per course, local time) |
 | **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments` |
 | **Users** | `me`, `list`, `get`, `create`, `update` |
 | **Enrollments** | `list`, `get`, `create`, `conclude`, `reactivate`, `accept`, `reject` |

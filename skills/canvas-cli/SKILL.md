@@ -148,6 +148,32 @@ am/pm, a time in a DST gap) is refused with the accepted forms; fix the
 input rather than guessing. Output always shows the resolved local time and
 the UTC value — report both to the user.
 
+## What is due soon (`assignments upcoming`)
+
+`canvas assignments upcoming` is read-only: per course it lists the
+assignments (quizzes and graded discussions included, through their
+assignments) due after now and up to a limit, sorted by due date, with the
+due time in local time, points, submission type and published state, and a
+one-line summary per course. The limit is `--within 36h|10d|2w` or `--by
+<local date>` (a date alone covers the whole day). Undated items only with
+`--include-undated`; unpublished only with `--published-only=false`.
+
+```bash
+# "In GC 1010, is anything due this Sunday?"
+canvas assignments upcoming --course-id 123 --by "this sunday"
+
+# "Which assignments are due in the next 10 days in GC 4800?"
+canvas assignments upcoming --course-id 456 --within 10d
+
+# Every course you teach this term, formatted for chat
+canvas assignments upcoming --all-active --within 2w -o markdown
+```
+
+Report the per-course summary line (`N due by <local time>`) and the rows;
+`-o json` carries `{now, limit, timezone, courses[].assignments[]}` with
+both `due_at` (UTC) and `due_local`. Due dates are the base dates —
+section or student overrides are not consulted.
+
 ## Workflow: grade a submission
 
 ```bash
