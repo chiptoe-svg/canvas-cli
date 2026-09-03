@@ -164,6 +164,7 @@ instances:
 settings:
   default_output_format: table
   cache_enabled: true
+  timezone: America/New_York   # zone for local-time flags such as --due "4:50pm" (default: $TZ, then system)
 ```
 
 See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-started/authentication/) for detailed setup.

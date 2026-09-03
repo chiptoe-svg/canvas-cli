@@ -133,6 +133,21 @@ canvas users list --account-id 1 --limit 100                 # cap result count
 Use built-in `--filter` for simple matching and `-o json | jq` for anything
 structural. Details: `references/output-and-filtering.md`.
 
+## Local times
+
+Commands that take a wall-clock time (`--due`, `--available`, `--closed`,
+`--by`, `--date`) read it in the user's local zone and send Canvas the UTC
+instant — never convert to UTC yourself. Pass what the user said:
+`--due "4:50pm"`, `--due "9/9/26"`, `--due "this sunday 11:59pm"`,
+`--by "next monday"`; `4pm`, `16:50`, `noon`, `today`, `tomorrow`,
+`2026-09-09`, `9/9/2026` and RFC 3339 also work. The zone is `--timezone
+<IANA>`, else `settings.timezone` in the config, else `$TZ`, else the
+system zone — ask the user for their zone if none of those is set and the
+resolved zone in the output looks wrong. Ambiguous input (`4:50` without
+am/pm, a time in a DST gap) is refused with the accepted forms; fix the
+input rather than guessing. Output always shows the resolved local time and
+the UTC value — report both to the user.
+
 ## Workflow: grade a submission
 
 ```bash
