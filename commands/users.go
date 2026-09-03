@@ -446,6 +446,7 @@ func runUsersCreate(ctx context.Context, client *api.Client, cmd *cobra.Command,
 	// Check for JSON input
 	if opts.JSONFile != "" || opts.Stdin {
 		jsonData, err := readUserJSON(opts.JSONFile, opts.Stdin)
+		recordActivityInputJSON(jsonData)
 		if err != nil {
 			logger.LogCommandError(ctx, "users.create", err, map[string]interface{}{
 				"json_file": opts.JSONFile,
@@ -544,6 +545,7 @@ func runUsersUpdate(ctx context.Context, client *api.Client, opts *options.Users
 	// Check for JSON input
 	if opts.JSONFile != "" || opts.Stdin {
 		jsonData, err := readUserJSON(opts.JSONFile, opts.Stdin)
+		recordActivityInputJSON(jsonData)
 		if err != nil {
 			logger.LogCommandError(ctx, "users.update", err, map[string]interface{}{
 				"json_file": opts.JSONFile,

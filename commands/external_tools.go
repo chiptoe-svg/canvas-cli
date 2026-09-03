@@ -409,6 +409,7 @@ func runExtToolsCreate(ctx context.Context, client *api.Client, opts *options.Ex
 			})
 			return fmt.Errorf("failed to read JSON file: %w", err)
 		}
+		recordActivityInputJSON(data)
 		params = &api.CreateExternalToolParams{}
 		if err := json.Unmarshal(data, params); err != nil {
 			logger.LogCommandError(ctx, "external_tools.create", err, map[string]interface{}{

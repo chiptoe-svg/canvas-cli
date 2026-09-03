@@ -218,13 +218,20 @@ commands directly.
 
 ## Activity log
 
-The operator may enable a local activity log (`activity_log.enabled: true`
-in the config, or `CANVAS_ACTIVITY_LOG=<path>`); it is off by default. When
-it is on, every invocation is recorded with its requests and the objects it
-touched, with secrets redacted. `canvas activity list --writes` shows what
-the agent changed — use it (and `canvas activity list --since 24h -o json`)
-when the user asks what was done, and mention the log exists if they ask
-how to audit the agent's actions.
+The operator may enable a local activity log (`canvas activity configure
+--enable`, `activity_log.enabled: true` in the config, or
+`CANVAS_ACTIVITY_LOG=<path>`); it is off by default. When it is on, every
+invocation that wrote to Canvas is recorded with its requests, their
+outcomes and the objects it touched, with secrets redacted; with
+`capture_bodies` on, the log also contains the full text of what the agent
+wrote (comments, messages, announcements, grades) and Canvas's response. In
+`required` (audited) mode a write is refused when the log cannot be written
+— do not work around that; tell the user. `canvas activity list --writes`
+shows what the agent changed — use it (and `canvas activity list --since
+24h -o json`) when the user asks what was done, and mention the log exists if
+they ask how to audit the agent's actions. An entry with
+`verification_required: true` means a write's response was lost: re-read
+the object before repeating the write.
 
 ## Errors & troubleshooting
 

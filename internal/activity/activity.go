@@ -6,8 +6,11 @@ package activity
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,6 +25,26 @@ import (
 // path in one go. It takes precedence over the config file.
 const EnvVar = "CANVAS_ACTIVITY_LOG"
 
+// EnvWritesOnly ("1"/"true" or "0"/"false") overrides activity_log.writes_only.
+const EnvWritesOnly = "CANVAS_ACTIVITY_WRITES_ONLY"
+
+// EnvCaptureBodies ("1"/"true" or "0"/"false") overrides activity_log.capture_bodies.
+const EnvCaptureBodies = "CANVAS_ACTIVITY_CAPTURE_BODIES"
+
+// EnvRequired ("1"/"true") overrides activity_log.required: audited mode,
+// where a write to Canvas is refused unless the log is writable first.
+const EnvRequired = "CANVAS_ACTIVITY_REQUIRED"
+
+// Outcomes of a non-GET request.
+const (
+	OutcomeOK       = "ok"       // Canvas answered 2xx/3xx
+	OutcomeRejected = "rejected" // Canvas answered 4xx/5xx
+	OutcomeUnknown  = "unknown"  // no response: Canvas may or may not have applied it
+)
+
+// MaxTextCapture bounds a captured non-JSON body: only its first 4 KiB are kept.
+const MaxTextCapture = 4 * 1024
+
 // DefaultFileName is the log file name inside the canvas-cli config dir.
 const DefaultFileName = "activity.jsonl"
 
@@ -31,12 +54,27 @@ const DefaultMaxSizeMB = 10
 // Redacted replaces every secret-looking value in logged arguments.
 const Redacted = "[REDACTED]"
 
-// Request is one HTTP request made during the invocation.
+// Request is one HTTP request made during the invocation. Body and Response
+// are only present when capture_bodies is on, and only for non-GET requests:
+// the payload as sent and the parsed response, both redacted.
 type Request struct {
-	Method string `json:"method"`
-	Path   string `json:"path"`   // URL path only, never the query string
-	Status int    `json:"status"` // 0 when no response was received (dry run, transport error)
+	Method   string      `json:"method"`
+	Path     string      `json:"path"`              // URL path only, never the query string
+	Status   int         `json:"status"`            // 0 when no response was received (dry run, transport error)
+	Outcome  string      `json:"outcome,omitempty"` // non-GET, sent: ok | rejected | unknown
+	Body     interface{} `json:"body,omitempty"`
+	Response interface{} `json:"response,omitempty"`
 }
+
+// RawRequest is a recorded request with the bytes that went over the wire.
+type RawRequest struct {
+	Request
+	RequestBody  []byte
+	ResponseBody []byte
+}
+
+// IsRead reports whether the request could not have changed anything.
+func (r Request) IsRead() bool { return r.Method == "GET" || r.Method == "HEAD" }
 
 // Touched is a Canvas object the invocation addressed, as far as the flags
 // and arguments make cheaply known.
@@ -45,18 +83,38 @@ type Touched struct {
 	ID   int64  `json:"id"`
 }
 
-// Entry is one logged invocation.
+// Entry is one logged invocation. VerificationRequired is set when a write
+// was sent but its outcome is unknown: Canvas may have applied it.
 type Entry struct {
-	Timestamp  string                 `json:"ts"`
-	Version    string                 `json:"version"`
-	Command    string                 `json:"command"`
-	Args       []string               `json:"args"`
-	DryRun     bool                   `json:"dry_run"`
-	ExitCode   int                    `json:"exit_code"`
-	DurationMs int64                  `json:"duration_ms"`
-	Requests   []Request              `json:"requests"`
-	Touched    []Touched              `json:"touched"`
-	Details    map[string]interface{} `json:"details,omitempty"`
+	Timestamp            string                 `json:"ts"`
+	Version              string                 `json:"version"`
+	Command              string                 `json:"command"`
+	Args                 []string               `json:"args"`
+	DryRun               bool                   `json:"dry_run"`
+	ExitCode             int                    `json:"exit_code"`
+	DurationMs           int64                  `json:"duration_ms"`
+	Requests             []Request              `json:"requests"`
+	Touched              []Touched              `json:"touched"`
+	VerificationRequired bool                   `json:"verification_required,omitempty"`
+	Details              map[string]interface{} `json:"details,omitempty"`
+}
+
+// HasUnknownWrites reports whether a non-GET request was sent without a
+// response arriving (transport error, timeout).
+func (e Entry) HasUnknownWrites() bool {
+	for _, r := range e.Requests {
+		if r.Outcome == OutcomeUnknown {
+			return true
+		}
+	}
+	return false
+}
+
+// ShouldLog decides whether the entry is written under writesOnly: entries
+// with a write that reached Canvas, or one whose outcome is unknown, always
+// are; with writesOnly off everything is.
+func (e Entry) ShouldLog(writesOnly bool) bool {
+	return !writesOnly || e.HasWrites() || e.HasUnknownWrites()
 }
 
 // HasWrites reports whether the entry made at least one non-GET request
@@ -85,7 +143,7 @@ func (e Entry) WriteCount() int {
 // use (batch commands issue requests from several goroutines).
 type Recorder struct {
 	mu       sync.Mutex
-	requests []Request
+	requests []RawRequest
 	touched  []Touched
 	details  map[string]interface{}
 }
@@ -103,12 +161,51 @@ func Default() *Recorder { return defaultRecorder }
 // Record adds one HTTP request. path may carry a query string; it is
 // dropped so tokens or search terms never reach the log.
 func (r *Recorder) Record(method, path string, status int) {
+	r.RecordBodies(method, path, status, nil, nil)
+}
+
+// RecordBodies is Record with the request payload and the response body as
+// sent and received.
+func (r *Recorder) RecordBodies(method, path string, status int, requestBody, responseBody []byte) {
+	r.Observe(Observation{Method: method, Path: path, Status: status, RequestBody: requestBody, ResponseBody: responseBody})
+}
+
+// Observation is everything the HTTP client reports about one request.
+type Observation struct {
+	Method       string
+	Path         string
+	Status       int  // 0 when no response was received
+	DryRun       bool // the request was rendered, not sent
+	RequestBody  []byte
+	ResponseBody []byte
+}
+
+// Observe records one request. The bytes are kept in memory only; they
+// reach the log solely through RequestsWithBodies, redacted. A body is
+// never stored for a GET or HEAD. A sent non-GET request gets its Outcome:
+// ok, rejected, or unknown when no response arrived.
+func (r *Recorder) Observe(o Observation) {
+	path := o.Path
 	if i := strings.IndexByte(path, '?'); i >= 0 {
 		path = path[:i]
 	}
+	req := RawRequest{Request: Request{Method: o.Method, Path: path, Status: o.Status}}
+	if !req.IsRead() {
+		req.RequestBody = append([]byte(nil), o.RequestBody...)
+		req.ResponseBody = append([]byte(nil), o.ResponseBody...)
+		switch {
+		case o.DryRun:
+		case o.Status == 0:
+			req.Outcome = OutcomeUnknown
+		case o.Status >= 400:
+			req.Outcome = OutcomeRejected
+		default:
+			req.Outcome = OutcomeOK
+		}
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.requests = append(r.requests, Request{Method: method, Path: path, Status: status})
+	r.requests = append(r.requests, req)
 }
 
 // Touch notes a Canvas object the command addressed. Duplicates are dropped.
@@ -134,11 +231,39 @@ func (r *Recorder) SetDetail(key string, v interface{}) {
 	r.details[key] = v
 }
 
-// Requests returns a copy of the recorded requests.
+// Requests returns a copy of the recorded requests without their bodies.
 func (r *Recorder) Requests() []Request {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return append([]Request(nil), r.requests...)
+	out := make([]Request, 0, len(r.requests))
+	for _, req := range r.requests {
+		out = append(out, req.Request)
+	}
+	return out
+}
+
+// RequestsWithBodies returns the recorded requests with, for every non-GET
+// request, the payload sent (Body) and the response received (Response),
+// decoded and redacted. Reads never carry either.
+func (r *Recorder) RequestsWithBodies() []Request {
+	raw := r.Raw()
+	out := make([]Request, 0, len(raw))
+	for _, req := range raw {
+		e := req.Request
+		if !e.IsRead() {
+			e.Body = Redact(DecodeBody(req.RequestBody))
+			e.Response = Redact(DecodeResponse(req.ResponseBody))
+		}
+		out = append(out, e)
+	}
+	return out
+}
+
+// Raw returns a copy of the recorded requests with their wire bytes.
+func (r *Recorder) Raw() []RawRequest {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]RawRequest(nil), r.requests...)
 }
 
 // Touched returns a copy of the touched objects, sorted for stable output.
@@ -238,14 +363,131 @@ func redactValue(s string) string {
 	return s
 }
 
+// secretKeys are JSON/form key fragments whose values are never logged.
+// Keys are compared lower-cased with "-" folded to "_", so access_code,
+// accessCode and access-code all match.
+var secretKeys = []string{"token", "secret", "password", "passwd", "authorization", "access_code", "accesscode", "api_key", "apikey"}
+
+func isSecretKey(name string) bool {
+	name = strings.ToLower(strings.ReplaceAll(name, "-", "_"))
+	for _, s := range secretKeys {
+		if strings.Contains(name, s) {
+			return true
+		}
+	}
+	return false
+}
+
+// Redact returns v (a decoded JSON value) with the value of every secret
+// key replaced by Redacted at any depth, and Canvas-shaped tokens and
+// Bearer credentials inside any string replaced as well.
+func Redact(v interface{}) interface{} {
+	switch x := v.(type) {
+	case map[string]interface{}:
+		out := make(map[string]interface{}, len(x))
+		for k, val := range x {
+			if isSecretKey(k) {
+				out[k] = Redacted
+			} else {
+				out[k] = Redact(val)
+			}
+		}
+		return out
+	case []interface{}:
+		out := make([]interface{}, len(x))
+		for i, val := range x {
+			out[i] = Redact(val)
+		}
+		return out
+	case string:
+		return redactValue(x)
+	default:
+		return v
+	}
+}
+
+// DecodeBody turns a request payload into a JSON value: JSON is parsed as
+// is (numbers kept verbatim), a form-encoded body becomes an object, and
+// anything else is {"text": <first 4 KiB>}. Empty yields nil.
+func DecodeBody(b []byte) interface{} {
+	if len(bytes.TrimSpace(b)) == 0 {
+		return nil
+	}
+	if v, ok := decodeJSON(b); ok {
+		return v
+	}
+	if form, ok := decodeForm(b); ok {
+		return form
+	}
+	return textValue(b)
+}
+
+// DecodeResponse turns a response body into a JSON value, or
+// {"text": <first 4 KiB>} when it is not JSON. Empty yields nil.
+func DecodeResponse(b []byte) interface{} {
+	if len(bytes.TrimSpace(b)) == 0 {
+		return nil
+	}
+	if v, ok := decodeJSON(b); ok {
+		return v
+	}
+	return textValue(b)
+}
+
+func decodeJSON(b []byte) (interface{}, bool) {
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.UseNumber()
+	var v interface{}
+	if err := dec.Decode(&v); err != nil {
+		return nil, false
+	}
+	if _, err := dec.Token(); err != io.EOF { // trailing garbage: not a JSON document
+		return nil, false
+	}
+	return v, true
+}
+
+func decodeForm(b []byte) (map[string]interface{}, bool) {
+	s := string(b)
+	if strings.ContainsAny(s, " \n{}\"") || !strings.Contains(s, "=") {
+		return nil, false
+	}
+	values, err := url.ParseQuery(s)
+	if err != nil || len(values) == 0 {
+		return nil, false
+	}
+	out := make(map[string]interface{}, len(values))
+	for k, v := range values {
+		if len(v) == 1 {
+			out[k] = v[0]
+		} else {
+			items := make([]interface{}, len(v))
+			for i := range v {
+				items[i] = v[i]
+			}
+			out[k] = items
+		}
+	}
+	return out, true
+}
+
+func textValue(b []byte) interface{} {
+	if len(b) > MaxTextCapture {
+		b = b[:MaxTextCapture]
+	}
+	return map[string]interface{}{"text": string(b)}
+}
+
 // ---- configuration ----
 
 // Config is the resolved activity-log configuration.
 type Config struct {
-	Enabled      bool
-	Path         string
-	WritesOnly   bool
-	MaxSizeBytes int64
+	Enabled       bool
+	Path          string
+	WritesOnly    bool
+	CaptureBodies bool
+	Required      bool
+	MaxSizeBytes  int64
 }
 
 // Settings mirrors the config-file block:
@@ -253,28 +495,78 @@ type Config struct {
 //	activity_log:
 //	  enabled: true
 //	  path: /custom/activity.jsonl   # optional
-//	  writes_only: false             # optional
+//	  writes_only: true              # optional, default true
+//	  capture_bodies: false          # optional
+//	  required: false                # optional: refuse writes when the log is unusable
 //	  max_size_mb: 10                # optional
+//
+// WritesOnly is nil when the key is absent (default: true).
 type Settings struct {
-	Enabled    bool
-	Path       string
-	WritesOnly bool
-	MaxSizeMB  int
+	Enabled       bool
+	Path          string
+	WritesOnly    *bool
+	CaptureBodies bool
+	Required      bool
+	MaxSizeMB     int
 }
 
-// Resolve combines the config-file settings, the environment variable and
-// the config directory into the effective configuration. The environment
-// variable wins: when set, logging is enabled and its value is the path.
-func Resolve(configDir string, s Settings, envValue string) Config {
-	cfg := Config{
-		Enabled:      s.Enabled,
-		Path:         s.Path,
-		WritesOnly:   s.WritesOnly,
-		MaxSizeBytes: int64(s.MaxSizeMB) * 1024 * 1024,
+// Env carries the raw values of the activity environment variables
+// (CANVAS_ACTIVITY_LOG, CANVAS_ACTIVITY_WRITES_ONLY,
+// CANVAS_ACTIVITY_CAPTURE_BODIES, CANVAS_ACTIVITY_REQUIRED); empty means
+// unset.
+type Env struct {
+	Path          string
+	WritesOnly    string
+	CaptureBodies string
+	Required      string
+}
+
+// ParseBoolEnv reads a boolean environment value: "1"/"true"/"yes"/"on" are
+// true, "0"/"false"/"no"/"off" are false; anything else (including empty)
+// is not set.
+func ParseBoolEnv(s string) (value, set bool) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "1", "true", "yes", "on":
+		return true, true
+	case "0", "false", "no", "off":
+		return false, true
 	}
-	if envValue != "" {
+	return false, false
+}
+
+// Resolve combines the config-file settings, the environment and the config
+// directory into the effective configuration. The environment wins:
+// CANVAS_ACTIVITY_LOG enables logging and sets the path, and the boolean
+// variables override their config keys. writes_only defaults to true:
+// reads and dry-runs leave no entry unless it is explicitly turned off.
+// required implies enabled.
+func Resolve(configDir string, s Settings, env Env) Config {
+	cfg := Config{
+		Enabled:       s.Enabled,
+		Path:          s.Path,
+		WritesOnly:    true,
+		CaptureBodies: s.CaptureBodies,
+		Required:      s.Required,
+		MaxSizeBytes:  int64(s.MaxSizeMB) * 1024 * 1024,
+	}
+	if s.WritesOnly != nil {
+		cfg.WritesOnly = *s.WritesOnly
+	}
+	if env.Path != "" {
 		cfg.Enabled = true
-		cfg.Path = envValue
+		cfg.Path = env.Path
+	}
+	if v, ok := ParseBoolEnv(env.WritesOnly); ok {
+		cfg.WritesOnly = v
+	}
+	if v, ok := ParseBoolEnv(env.CaptureBodies); ok {
+		cfg.CaptureBodies = v
+	}
+	if v, ok := ParseBoolEnv(env.Required); ok {
+		cfg.Required = v
+	}
+	if cfg.Required {
+		cfg.Enabled = true
 	}
 	if cfg.Path == "" {
 		cfg.Path = filepath.Join(configDir, DefaultFileName)
@@ -287,13 +579,81 @@ func Resolve(configDir string, s Settings, envValue string) Config {
 
 // ---- writing ----
 
-// Append writes one entry as a JSON line, archiving the file first when it
-// exceeds cfg.MaxSizeBytes. The archive name is returned when one was made.
-func Append(cfg Config, e Entry) (archived string, err error) {
+// AppendResult reports what Append did besides writing the line.
+type AppendResult struct {
+	Archived string   // archive file name when the log was rotated first
+	Notes    []string // permission tightening performed, for a stderr warning
+}
+
+// Prepare makes sure the log can be written: the parent directory exists
+// (created 0700 when missing), the file exists (created 0600) and is owned
+// by the current user, and any looser permissions on either — when owned by
+// the current user — are tightened to 0700/0600, never loosened. It returns
+// a note for each tightening. This is the audited-mode preflight and the
+// first step of every Append.
+func Prepare(cfg Config) ([]string, error) {
+	var notes []string
+	dir := filepath.Dir(cfg.Path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil, fmt.Errorf("create %s: %w", dir, err)
+	}
+	n, err := tighten(dir, 0o700, false)
+	if err != nil {
+		return nil, err
+	}
+	notes = append(notes, n...)
+
+	f, err := os.OpenFile(cfg.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) // #nosec G304 -- operator-configured log path
+	if err != nil {
+		return nil, fmt.Errorf("open %s for append: %w", cfg.Path, err)
+	}
+	_ = f.Close()
+	n, err = tighten(cfg.Path, 0o600, true)
+	if err != nil {
+		return nil, err
+	}
+	return append(notes, n...), nil
+}
+
+// tighten chmods path down to max when it is owned by the current user and
+// carries any permission bit outside max. Something owned by someone else
+// is left alone — or, with requireOwner (the log file itself), refused: the
+// log must be the operator's own.
+func tighten(path string, max os.FileMode, requireOwner bool) ([]string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if owned, known := ownedByCurrentUser(info); known && !owned {
+		if requireOwner {
+			return nil, fmt.Errorf("%s is not owned by the current user", path)
+		}
+		return nil, nil
+	}
+	perm := info.Mode().Perm()
+	if perm&^max == 0 {
+		return nil, nil
+	}
+	if err := os.Chmod(path, perm&max); err != nil {
+		return nil, fmt.Errorf("tighten permissions on %s: %w", path, err)
+	}
+	return []string{fmt.Sprintf("tightened permissions on %s from %04o to %04o", path, perm, perm&max)}, nil
+}
+
+// Append writes one entry as a JSON line, preparing the file first (see
+// Prepare) and archiving it when it exceeds cfg.MaxSizeBytes.
+func Append(cfg Config, e Entry) (AppendResult, error) {
+	var res AppendResult
+	notes, err := Prepare(cfg)
+	if err != nil {
+		return res, err
+	}
+	res.Notes = notes
+
 	if info, statErr := os.Stat(cfg.Path); statErr == nil && info.Size() > cfg.MaxSizeBytes {
-		archived, err = Archive(cfg.Path)
+		res.Archived, err = Archive(cfg.Path)
 		if err != nil {
-			return "", err
+			return res, err
 		}
 	}
 
@@ -308,21 +668,18 @@ func Append(cfg Config, e Entry) (archived string, err error) {
 	}
 	line, err := json.Marshal(e)
 	if err != nil {
-		return archived, fmt.Errorf("encode activity entry: %w", err)
+		return res, fmt.Errorf("encode activity entry: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(cfg.Path), 0o700); err != nil {
-		return archived, err
-	}
 	f, err := os.OpenFile(cfg.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) // #nosec G304 -- operator-configured log path
 	if err != nil {
-		return archived, err
+		return res, err
 	}
 	defer f.Close()
 	if _, err := f.Write(append(line, '\n')); err != nil {
-		return archived, err
+		return res, err
 	}
-	return archived, nil
+	return res, nil
 }
 
 // ArchiveName returns the archive file name for path at time t.

@@ -31,8 +31,23 @@ type Config struct {
 	// Context holds the current context (course_id, assignment_id, etc.)
 	Context *Context `yaml:"context,omitempty"`
 
+	// ActivityLog holds the local activity log settings
+	ActivityLog *ActivityLogSettings `yaml:"activity_log,omitempty"`
+
 	// configPath is the path to the config file
 	configPath string
+}
+
+// ActivityLogSettings configures the local activity log (canvas activity).
+// WritesOnly is a pointer so that an explicit "false" survives a save: the
+// log defaults to writes only when the key is absent.
+type ActivityLogSettings struct {
+	Enabled       bool   `yaml:"enabled"`
+	Path          string `yaml:"path,omitempty"`
+	WritesOnly    *bool  `yaml:"writes_only,omitempty"`
+	CaptureBodies bool   `yaml:"capture_bodies,omitempty"`
+	Required      bool   `yaml:"required,omitempty"`
+	MaxSizeMB     int    `yaml:"max_size_mb,omitempty"`
 }
 
 // Context holds the current working context
@@ -152,6 +167,16 @@ func (c *Config) Clone() *Config {
 	if c.Context != nil {
 		ctx := *c.Context
 		clone.Context = &ctx
+	}
+
+	// Clone ActivityLog
+	if c.ActivityLog != nil {
+		al := *c.ActivityLog
+		if al.WritesOnly != nil {
+			w := *al.WritesOnly
+			al.WritesOnly = &w
+		}
+		clone.ActivityLog = &al
 	}
 
 	return clone

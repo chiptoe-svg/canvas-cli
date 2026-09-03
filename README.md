@@ -172,32 +172,66 @@ See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-sta
 
 An optional local log of what the CLI did: one JSON line per invocation with
 the command, its arguments (secrets redacted), every HTTP request with its
-status, the Canvas objects touched, the exit code and the duration. It is
-**off by default** and never contains tokens.
-
-Enable it in `~/.canvas-cli/config.yaml`:
-
-```yaml
-activity_log:
-  enabled: true
-  path: ~/.canvas-cli/activity.jsonl   # optional (default)
-  writes_only: false                   # optional: only log invocations that wrote
-  max_size_mb: 10                      # optional: archive before exceeding
-```
-
-or with `CANVAS_ACTIVITY_LOG=/path/to/activity.jsonl`, which enables the log
-and sets its path (takes precedence over the config file).
+status and outcome, the Canvas objects touched, the exit code and the
+duration. It is **off by default** and never contains tokens.
 
 ```bash
-canvas activity path                     # resolved path and whether logging is enabled
+canvas activity configure --enable       # persistently, in ~/.canvas-cli/config.yaml
+canvas activity path                     # resolved path and the effective settings
 canvas activity list --since 7d          # what ran in the last week
 canvas activity list --writes -o json    # every invocation that changed something, in full
 canvas activity archive                  # rename to activity-<UTC timestamp>.jsonl
 canvas activity clear --force            # truncate (refuses without --force)
 ```
 
-When the file grows past `max_size_mb` it is archived automatically before
-the next write. A failure to write the log never fails the command.
+`configure` writes the `activity_log` block of the config file; the same keys
+can be edited by hand:
+
+```yaml
+activity_log:
+  enabled: true
+  path: ~/.canvas-cli/activity.jsonl   # optional (default)
+  writes_only: true                    # optional, default true
+  capture_bodies: false                # optional
+  required: false                      # optional
+  max_size_mb: 10                      # optional: archive before exceeding
+```
+
+Environment variables take precedence over the file: `CANVAS_ACTIVITY_LOG=<path>`
+enables the log and sets its path; `CANVAS_ACTIVITY_WRITES_ONLY`,
+`CANVAS_ACTIVITY_CAPTURE_BODIES` and `CANVAS_ACTIVITY_REQUIRED` (`1`/`true` or
+`0`/`false`) override the matching keys.
+
+- **The log records writes; reads and dry-runs leave no entry unless
+  `writes_only` is turned off** (`configure --writes-only=false` or
+  `CANVAS_ACTIVITY_WRITES_ONLY=0`). A write whose response was lost (timeout,
+  connection dropped) is always logged, with `"outcome": "unknown"` on the
+  request and `"verification_required": true` on the entry, because Canvas
+  may have applied it; other writes carry `"outcome": "ok"` or `"rejected"`.
+- **`capture_bodies`** adds to every write the exact payload sent (`body`)
+  and the parsed response (`response`) — for example the full text of a
+  comment, a message or an announcement the agent wrote. Reads are never
+  captured. Secret-looking keys (token, secret, password, authorization,
+  access_code, api_key — at any depth) and Canvas-shaped tokens or Bearer
+  credentials inside strings are redacted. File- and stdin-driven commands
+  (`submissions bulk-grade`, `assignments|users create|update --json-file`)
+  also record their parsed input under `details.input`. This mode stores
+  student-directed text; it is meant for operator audit logs, so keep the
+  file where only the operator can read it.
+- **`required`** is audited mode: before the first write of an invocation the
+  log is prepared (directory created 0700, file created 0600, owned by you,
+  writable), and if that fails the write is refused with
+  `audit log unavailable: <reason>; refusing to write to Canvas` and a
+  non-zero exit. Reads are never blocked. `required` implies `enabled`.
+  Without it, a log that cannot be written only produces a warning.
+- The log directory is created owner-only (0700) and the file 0600. On each
+  run that logs, looser permissions on either — when you own them — are
+  tightened to that and reported once on stderr; they are never loosened.
+  Put the log in a directory of its own: the tightening applies to the
+  parent directory of the file.
+- When the file grows past `max_size_mb` it is archived automatically before
+  the next write. A failure to write the log never fails the command (unless
+  `required` is on).
 
 ## MCP Server Mode
 

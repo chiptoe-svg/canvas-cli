@@ -4,7 +4,7 @@ title: canvas activity path
 
 ## canvas activity path
 
-Print the resolved log path and whether logging is enabled
+Print the resolved log path and the effective settings
 
 ```
 canvas activity path [flags]

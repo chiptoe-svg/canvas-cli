@@ -14,13 +14,19 @@ import (
 
 	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
 	"github.com/jjuanrivvera/canvas-cli/internal/activity"
+	"github.com/jjuanrivvera/canvas-cli/internal/config"
 )
 
 // useTempActivityLog points the activity log at a temp file via the
 // environment variable (which also enables it) and returns the path.
 func useTempActivityLog(t *testing.T) string {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "activity.jsonl")
+	// in its own 0700 directory: a bare t.TempDir() is 0755 and would be
+	// tightened (with a warning) on the first write
+	path := filepath.Join(t.TempDir(), "log", "activity.jsonl")
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	t.Setenv(activity.EnvVar, path)
 	return path
 }
@@ -91,10 +97,22 @@ func TestLogActivity_WritesEntry(t *testing.T) {
 	}
 }
 
-func TestLogActivity_DisabledByDefault(t *testing.T) {
+// useTempHome points the config dir at a fresh home (no config file) and
+// clears the config cache around the test.
+func useTempHome(t *testing.T) string {
+	t.Helper()
 	dir := t.TempDir()
-	t.Setenv(activity.EnvVar, "")
-	t.Setenv("HOME", dir) // config dir under the temp home: nothing should be written there either
+	t.Setenv("HOME", dir)
+	for _, name := range activityEnvVars {
+		t.Setenv(name, "")
+	}
+	config.ResetCache()
+	t.Cleanup(config.ResetCache)
+	return dir
+}
+
+func TestLogActivity_DisabledByDefault(t *testing.T) {
+	dir := useTempHome(t) // config dir under the temp home: nothing should be written there either
 	cmd := fakeExecuted(t, "10", "--course-id", "1", "--question", "789", "--correct-answer-id", "1002")
 	logActivity(cmd, nil, time.Now(), activity.NewRecorder(), []string{"quizzes", "regrade", "10"})
 	if _, err := os.Stat(filepath.Join(dir, ".canvas-cli", activity.DefaultFileName)); !os.IsNotExist(err) {

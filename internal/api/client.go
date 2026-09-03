@@ -59,13 +59,34 @@ type HTTPClient interface {
 	GetVersion() *CanvasVersion
 }
 
-// RequestObserver, when set, is told about every request the client sends:
-// the method, the request path (query string already dropped) and the
-// response status, or 0 when no response was received (dry run, transport
-// failure). The CLI's activity log installs it; it must not block.
-var RequestObserver func(method, path string, status int)
+// ObservedRequest describes one request the client sent: the method, the
+// request path (query string already dropped), the response status (0 when
+// no response was received: dry run, transport failure), the payload as
+// sent, and — for non-GET requests that succeeded — the response body.
+// GET responses are never captured.
+type ObservedRequest struct {
+	Method       string
+	Path         string
+	Status       int
+	DryRun       bool // rendered as curl, never sent
+	RequestBody  []byte
+	ResponseBody []byte
+}
 
-func observeRequest(method, fullURL string, resp *http.Response) {
+// RequestObserver, when set, is told about every request the client sends.
+// The CLI's activity log installs it; it must not block.
+var RequestObserver func(ObservedRequest)
+
+// RequestGate, when set, is consulted before a non-GET request is sent to
+// Canvas (dry runs and reads are never gated). A non-nil error aborts the
+// request and is returned to the caller in place of a response. The CLI's
+// audited activity mode installs it to refuse writes it could not log.
+var RequestGate func(method, path string) error
+
+// observeRequest reports the request to RequestObserver. For a successful
+// non-GET request the response body is read and put back so the observer
+// sees what Canvas returned without changing what the caller reads.
+func observeRequest(method, fullURL string, resp *http.Response, reqErr error, requestBody []byte, dryRun bool) {
 	if RequestObserver == nil {
 		return
 	}
@@ -75,12 +96,28 @@ func observeRequest(method, fullURL string, resp *http.Response) {
 	} else if i := strings.IndexByte(path, '?'); i >= 0 {
 		path = path[:i]
 	}
-	status := 0
+	o := ObservedRequest{Method: method, Path: path, RequestBody: requestBody, DryRun: dryRun}
 	if resp != nil {
-		status = resp.StatusCode
+		o.Status = resp.StatusCode
+		if reqErr == nil && method != http.MethodGet && method != http.MethodHead && resp.Body != nil {
+			b, err := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			if err == nil {
+				resp.Body = io.NopCloser(bytes.NewReader(b))
+				o.ResponseBody = b
+			} else {
+				// hand the caller what arrived, then the same read error
+				resp.Body = io.NopCloser(io.MultiReader(bytes.NewReader(b), errReader{err}))
+			}
+		}
 	}
-	RequestObserver(method, path, status)
+	RequestObserver(o)
 }
+
+// errReader fails every read with a fixed error.
+type errReader struct{ err error }
+
+func (r errReader) Read([]byte) (int, error) { return 0, r.err }
 
 // Client is the Canvas API client
 type Client struct {
@@ -334,12 +371,6 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		}
 	}
 
-	// Handle dry-run mode: print curl command and return mock response
-	if c.dryRun {
-		observeRequest(method, fullURL, nil)
-		return c.handleDryRun(method, fullURL, token, body)
-	}
-
 	// Buffer the body once so each retry attempt gets a fresh reader.
 	// Retrying with the same io.Reader would send an empty body on the second
 	// attempt because the reader is already at EOF.
@@ -349,6 +380,26 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		bodyBytes, readErr = io.ReadAll(body)
 		if readErr != nil {
 			return nil, fmt.Errorf("failed to read request body: %w", readErr)
+		}
+	}
+
+	// Handle dry-run mode: print curl command and return mock response
+	if c.dryRun {
+		observeRequest(method, fullURL, nil, nil, bodyBytes, true)
+		var dryBody io.Reader
+		if bodyBytes != nil {
+			dryBody = bytes.NewReader(bodyBytes)
+		}
+		return c.handleDryRun(method, fullURL, token, dryBody)
+	}
+
+	if RequestGate != nil && method != http.MethodGet && method != http.MethodHead {
+		if u, err := url.Parse(fullURL); err == nil {
+			if err := RequestGate(method, u.Path); err != nil {
+				return nil, err
+			}
+		} else if err := RequestGate(method, path); err != nil {
+			return nil, err
 		}
 	}
 
@@ -393,7 +444,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 
 		return resp, nil
 	})
-	observeRequest(method, fullURL, resp)
+	observeRequest(method, fullURL, resp, err, bodyBytes, false)
 	return resp, err
 }
 
