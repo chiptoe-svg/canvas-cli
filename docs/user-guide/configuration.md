@@ -20,7 +20,31 @@ instances:
     url: https://canvas-sandbox.example.com
     # API token (alternative to OAuth)
     token: "7~your-api-token-here"
+settings:
+  # IANA zone for commands that take or show local times (default: $TZ, then the system zone)
+  timezone: America/New_York
 ```
+
+### Local times
+
+Commands that accept a wall-clock time (`--available`, `--due`, `--closed`,
+`--by`, `--date`, …) read it in the local zone and send Canvas the UTC
+instant. The zone is, in order: the command's `--timezone <IANA>` flag,
+`settings.timezone` in the config file, the `TZ` environment variable, the
+system zone. Accepted forms:
+
+```
+times:  4pm, 4:00pm, 4:00 PM, 16:50, noon, midnight
+dates:  2026-09-09, 9/9/26, 9/9/2026, today, tomorrow, yesterday, sunday, this sunday, next monday
+both:   2026-09-09 4:50pm, tomorrow 9am, this sunday 11:59pm
+exact:  2026-09-09T16:50 (local), 2026-09-09T20:50:00Z, 2026-09-09T16:50:00-04:00
+```
+
+Dates are month/day/year. `this sunday` is the first Sunday on or after
+today; `next sunday` is the one a week later. `4:50` without am/pm, a time
+that does not exist on a spring-forward night, and a time that occurs twice
+on a fall-back night are refused rather than guessed. Every resolved time is
+printed in both the local zone and UTC.
 
 !!! note "Authentication Methods"
     - **API Token**: Stored directly in config file (set via `canvas auth token set`)

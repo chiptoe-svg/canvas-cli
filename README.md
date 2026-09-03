@@ -111,8 +111,8 @@ canvas repl
 |----------|----------|
 | **Auth** | `login`, `logout`, `status` |
 | **Courses** | `list`, `get`, `create`, `update`, `delete` |
-| **Assignments** | `list`, `get`, `create`, `update`, `delete` |
-| **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments`, `missing` (who is missing work, read-only) |
+| **Assignments** | `list`, `get`, `create`, `update`, `delete`, `upcoming` (what is due within a window or by a date, per course, local time) |
+| **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments`, `missing` (who is missing work, read-only), `excuse` (by student/assignment name, with read-back) |
 | **Users** | `me`, `list`, `get`, `create`, `update` |
 | **Enrollments** | `list`, `get`, `create`, `conclude`, `reactivate`, `accept`, `reject` |
 | **Modules** | `list`, `get`, `create`, `update`, `delete`, `publish`, `items` |
@@ -120,6 +120,7 @@ canvas repl
 | **Discussions** | `list`, `get`, `create`, `entries`, `post`, `reply`, `subscribe` |
 | **Announcements** | `list`, `get`, `create`, `update`, `delete` |
 | **Quizzes** | `list`, `get`, `create`, `update`, `delete`, `questions`, `submissions` |
+| **Schedule** | `schedule` — set available/due/closed times on quizzes and assignments in local time, one by `--id` or in bulk by `--match` |
 | **Grades** | `history`, `feed`, `columns` |
 | **Groups** | `list`, `get`, `create`, `update`, `delete`, `users`, `categories` |
 | **Outcomes** | `list`, `get`, `create`, `update`, `link`, `unlink`, `groups`, `results` |
@@ -164,6 +165,7 @@ instances:
 settings:
   default_output_format: table
   cache_enabled: true
+  timezone: America/New_York   # zone for local-time flags such as --due "4:50pm" (default: $TZ, then system)
 ```
 
 See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-started/authentication/) for detailed setup.

@@ -111,6 +111,9 @@ type Settings struct {
 	LogLevel              string  `yaml:"log_level"`
 	AutoUpdateEnabled     bool    `yaml:"auto_update_enabled"`
 	AutoUpdateIntervalMin int     `yaml:"auto_update_interval_minutes"`
+	// Timezone is the IANA zone (e.g. America/New_York) in which commands
+	// read and print local times. Empty means $TZ, then the system zone.
+	Timezone string `yaml:"timezone,omitempty"`
 }
 
 // DefaultSettings returns the default settings

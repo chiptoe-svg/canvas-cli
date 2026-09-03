@@ -164,6 +164,47 @@ Other knobs: `--types assignment,quiz,discussion`, `--exclude-zero-points`,
 `--published-only=false`, `--due-after <date>`, `--include-inactive` (inactive
 and completed enrollments; the course Test Student is always excluded).
 
+## Local times
+
+Commands that take a wall-clock time (`--due`, `--available`, `--closed`,
+`--by`, `--date`) read it in the user's local zone and send Canvas the UTC
+instant — never convert to UTC yourself. Pass what the user said:
+`--due "4:50pm"`, `--due "9/9/26"`, `--due "this sunday 11:59pm"`,
+`--by "next monday"`; `4pm`, `16:50`, `noon`, `today`, `tomorrow`,
+`2026-09-09`, `9/9/2026` and RFC 3339 also work. The zone is `--timezone
+<IANA>`, else `settings.timezone` in the config, else `$TZ`, else the
+system zone — ask the user for their zone if none of those is set and the
+resolved zone in the output looks wrong. Ambiguous input (`4:50` without
+am/pm, a time in a DST gap) is refused with the accepted forms; fix the
+input rather than guessing. Output always shows the resolved local time and
+the UTC value — report both to the user.
+
+## What is due soon (`assignments upcoming`)
+
+`canvas assignments upcoming` is read-only: per course it lists the
+assignments (quizzes and graded discussions included, through their
+assignments) due after now and up to a limit, sorted by due date, with the
+due time in local time, points, submission type and published state, and a
+one-line summary per course. The limit is `--within 36h|10d|2w` or `--by
+<local date>` (a date alone covers the whole day). Undated items only with
+`--include-undated`; unpublished only with `--published-only=false`.
+
+```bash
+# "In GC 1010, is anything due this Sunday?"
+canvas assignments upcoming --course-id 123 --by "this sunday"
+
+# "Which assignments are due in the next 10 days in GC 4800?"
+canvas assignments upcoming --course-id 456 --within 10d
+
+# Every course you teach this term, formatted for chat
+canvas assignments upcoming --all-active --within 2w -o markdown
+```
+
+Report the per-course summary line (`N due by <local time>`) and the rows;
+`-o json` carries `{now, limit, timezone, courses[].assignments[]}` with
+both `due_at` (UTC) and `due_local`. Due dates are the base dates —
+section or student overrides are not consulted.
+
 ## Workflow: grade a submission
 
 ```bash
@@ -182,6 +223,29 @@ and text, and `verified: yes|no`. "Done" means `verified: yes`; a mismatch
 prints `verified: no — <reason>` and exits non-zero — report that to the
 user, never say "graded". `-o json` carries `{before, after, requested,
 verified, mismatches}`. `--dry-run` prints the curl and reads nothing back.
+
+## Workflow: excuse a student (`submissions excuse`)
+
+"Excuse <student> from <quiz/assignment>" is one command — no id hunting:
+
+```bash
+canvas submissions excuse --course-id 123 --student "Ada Lovelace" --assignment "Quiz 3"
+canvas submissions excuse --course-id 123 --student "lovelace" --assignment "lineup" --dry-run   # preview
+canvas submissions excuse --course-id 123 --student 789 --assignment 456 --force                 # ids, no prompt
+canvas submissions excuse --course-id 123 --student "Ada Lovelace" --assignment "Quiz 3" --unexcuse
+```
+
+`--student` takes an id, the exact name, the sortable name ("Lovelace,
+Ada"), a login/SIS id, or a substring that matches exactly one active
+student; `--assignment` takes an assignment id, a quiz id, the exact name,
+or a substring that matches exactly one item (a quiz resolves to the
+assignment it is graded under). Zero or several matches are refused with
+the candidates listed — pick one and re-run; never guess. The command
+prints who and what it resolved, reads the submission back and prints
+`excused: not excused → excused` and `verified: yes`; "done" means
+`verified: yes`. A `verified: no` line means the read-back disagreed and
+the command exited non-zero — report it. `-o json` carries
+`{student, assignment, before_excused, after_excused, verified}`.
 
 ## Workflow: bulk grading from CSV
 
@@ -224,6 +288,42 @@ rescored; `--attempts all` rescores every attempt in the history and
 includes `pending_review` submissions. Other question types are refused.
 Single adjustments without a key change use
 `canvas quizzes submissions update <submission-id> --attempt N --question-score <qid>=<score>`.
+
+## Workflow: set quiz / assignment times (`schedule`)
+
+`canvas schedule` sets the three availability times — available from
+(`unlock_at`), due (`due_at`), closed (`lock_at`) — on quizzes **and**
+assignments in one command, in local time, one item (`--id`) or every item
+whose title matches (`--match <substring|/regex/>`, narrowed by `--type
+quiz|assignment|all`). A quiz-backed assignment is always updated through
+its quiz, and no item is written twice. Time-only values fall on `--date`
+(default today); a date-only `--due`/`--closed` means 11:59 PM that day.
+It refuses a plan where available ≤ due ≤ closed would not hold after
+merging with the current values, reads every item back, prints
+before/after, and exits non-zero on any mismatch.
+
+```bash
+# "make that quiz available at 4:00 and both due and closed at 4:50pm"
+canvas schedule --course-id 123 --id 456 --type quiz --available 4:00pm --due 4:50pm --closed 4:50pm
+
+# "make every attendance quiz have these times" — preview, then apply
+canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --dry-run
+canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --force
+
+# "make the course lineup assignment due 9/9/26"
+canvas schedule --course-id 123 --match "course lineup" --due 9/9/26
+
+# remove a close date
+canvas schedule --course-id 123 --id 789 --type assignment --clear closed
+```
+
+Always `--dry-run` a `--match` first and show the user the plan (item,
+type, each time old → new in local and UTC, and the exact `PUT` requests).
+Without `--force`, `--match` prompts for confirmation. "Done" means the
+result table shows `yes` under VERIFIED for every changed item and the
+summary line ends in `0 mismatched, 0 failed`; otherwise report the
+mismatch lines to the user. `-o json` carries `{items[].before, after,
+read_back, verified, mismatches}, summary`.
 
 ## Workflow: publish course content
 

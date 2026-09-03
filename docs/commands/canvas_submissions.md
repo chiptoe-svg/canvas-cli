@@ -49,6 +49,7 @@ canvas submissions list --course-id 123 --assignment-id 456 --workflow-state gra
 * [canvas submissions bulk-grade](canvas_submissions_bulk-grade.md)	 - Grade multiple submissions from CSV
 * [canvas submissions comments](canvas_submissions_comments.md)	 - List comments for a submission
 * [canvas submissions delete-comment](canvas_submissions_delete-comment.md)	 - Delete a submission comment
+* [canvas submissions excuse](canvas_submissions_excuse.md)	 - Excuse a student from an assignment or quiz by name, with read-back
 * [canvas submissions get](canvas_submissions_get.md)	 - Get a specific submission
 * [canvas submissions grade](canvas_submissions_grade.md)	 - Grade a submission
 * [canvas submissions list](canvas_submissions_list.md)	 - List submissions for an assignment

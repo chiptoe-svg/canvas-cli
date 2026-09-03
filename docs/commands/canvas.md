@@ -124,6 +124,7 @@ canvas submissions bulk-grade --course-id 123 --csv grades.csv # Bulk grade from
 * [canvas roles](canvas_roles.md)	 - Manage account roles
 * [canvas rubric-associations](canvas_rubric-associations.md)	 - Manage rubric associations and assessments
 * [canvas rubrics](canvas_rubrics.md)	 - Manage Canvas rubrics
+* [canvas schedule](canvas_schedule.md)	 - Set available/due/closed times on quizzes and assignments, in local time
 * [canvas sections](canvas_sections.md)	 - Manage Canvas course sections
 * [canvas sis-imports](canvas_sis-imports.md)	 - Manage SIS imports
 * [canvas skills](canvas_skills.md)	 - Install this CLI's AI-agent skill into Claude, Cursor, and other agents

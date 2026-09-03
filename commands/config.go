@@ -444,6 +444,9 @@ func runConfigShow(ctx context.Context, opts *options.ConfigShowOptions) error {
 		fmt.Printf("  Log level: %s\n", cfg.Settings.LogLevel)
 		fmt.Printf("  Auto-update: %t\n", cfg.Settings.AutoUpdateEnabled)
 		fmt.Printf("  Auto-update interval: %d minutes\n", cfg.Settings.AutoUpdateIntervalMin)
+		if cfg.Settings.Timezone != "" {
+			fmt.Printf("  Timezone: %s\n", cfg.Settings.Timezone)
+		}
 	}
 
 	logger.LogCommandComplete(ctx, "config.show", 1)
