@@ -17,6 +17,7 @@ import (
 
 	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
 	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
+	"github.com/jjuanrivvera/canvas-cli/internal/activity"
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
 )
 
@@ -327,6 +328,9 @@ func runQuizzesRegrade(ctx context.Context, client *api.Client, opts *options.Qu
 			result.Summary.Mismatched++
 		}
 	}
+
+	// The verification table and summary go into the activity log entry.
+	activity.Default().SetDetail("regrade", result)
 
 	if err := printRegradeResult(result); err != nil {
 		return err

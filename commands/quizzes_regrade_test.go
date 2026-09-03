@@ -11,9 +11,11 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
+	"github.com/jjuanrivvera/canvas-cli/internal/activity"
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
 )
 
@@ -977,4 +979,96 @@ func assertTableRow(t *testing.T, out string, cols ...string) {
 		return
 	}
 	t.Errorf("no table row for submission %s attempt %s in:\n%s", cols[0], cols[2], out)
+}
+
+// TestRunQuizzesRegrade_ActivityLogEntry runs a regrade with the activity
+// log enabled and checks the entry: the verification table and summary
+// under details.regrade, and outcome "ok" on every PUT.
+func TestRunQuizzesRegrade_ActivityLogEntry(t *testing.T) {
+	useTempHome(t)
+	logPath := useTempActivityLog(t)
+	withFastReadBack(t)
+	rs := newRegradeServer(t)
+	defer rs.Close()
+
+	rec := activity.Default()
+	rec.Reset()
+	api.RequestObserver = func(o api.ObservedRequest) {
+		rec.Observe(activity.Observation{Method: o.Method, Path: o.Path, Status: o.Status, DryRun: o.DryRun, RequestBody: o.RequestBody, ResponseBody: o.ResponseBody})
+	}
+	t.Cleanup(func() { api.RequestObserver = nil; rec.Reset() })
+
+	var runErr error
+	out := captureStdout(func() {
+		runErr = runQuizzesRegrade(context.Background(), newRegradeClient(t, rs), regradeOpts("completed", false))
+	})
+	if runErr != nil {
+		t.Fatalf("runQuizzesRegrade: %v\n%s", runErr, out)
+	}
+	argv := []string{"quizzes", "regrade", "10", "--course-id", "1", "--question", "789", "--correct-answer-id", "1002"}
+	logActivity(fakeExecuted(t, argv[2:]...), nil, time.Now(), rec, argv)
+
+	entries, skipped, err := activity.Read(logPath)
+	if err != nil || skipped != 0 || len(entries) != 1 {
+		t.Fatalf("activity log: %d entries, %d skipped, %v", len(entries), skipped, err)
+	}
+	e := entries[0]
+	if e.Command != "quizzes regrade" || e.ExitCode != 0 || e.VerificationRequired {
+		t.Errorf("entry = %+v", e)
+	}
+
+	puts := 0
+	for _, r := range e.Requests {
+		if r.Method == http.MethodPut {
+			puts++
+			if r.Outcome != activity.OutcomeOK || r.Status != 200 {
+				t.Errorf("PUT %s: status %d outcome %q, want 200 ok", r.Path, r.Status, r.Outcome)
+			}
+		}
+	}
+	// one question PUT plus one per changed attempt, as the server saw them
+	rs.mu.Lock()
+	want := 1
+	for _, p := range rs.subPUTs {
+		want += len(p)
+	}
+	rs.mu.Unlock()
+	if puts != want {
+		t.Errorf("PUTs logged = %d, want %d", puts, want)
+	}
+
+	raw, _ := json.Marshal(e.Details["regrade"])
+	var detail struct {
+		QuestionID      int64 `json:"question_id"`
+		CorrectAnswerID int64 `json:"correct_answer_id"`
+		Summary         struct {
+			Considered, Changed, Verified, Mismatched int
+		} `json:"summary"`
+		Submissions []struct {
+			SubmissionID  int64   `json:"submission_id"`
+			Attempt       int     `json:"attempt"`
+			OldScore      float64 `json:"old_score"`
+			ExpectedScore float64 `json:"expected_score"`
+			NewScore      float64 `json:"new_score"`
+			Verified      string  `json:"verified"`
+		} `json:"submissions"`
+	}
+	if err := json.Unmarshal(raw, &detail); err != nil || detail.QuestionID != 789 || detail.CorrectAnswerID != 1002 {
+		t.Fatalf("details.regrade = %s (%v)", raw, err)
+	}
+	if detail.Summary.Changed == 0 || detail.Summary.Verified != detail.Summary.Changed || detail.Summary.Mismatched != 0 {
+		t.Errorf("summary = %+v", detail.Summary)
+	}
+	verified := 0
+	for _, row := range detail.Submissions {
+		if row.Verified == "yes" {
+			verified++
+			if row.NewScore != row.ExpectedScore {
+				t.Errorf("row %+v: new_score must equal expected_score when verified", row)
+			}
+		}
+	}
+	if verified != detail.Summary.Verified {
+		t.Errorf("verification table has %d verified rows, summary says %d", verified, detail.Summary.Verified)
+	}
 }
