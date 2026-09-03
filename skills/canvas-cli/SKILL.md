@@ -173,6 +173,42 @@ canvas submissions bulk-grade --course-id 123 --csv-file grades.csv             
 canvas grades history --course-id 123                                      # audit afterwards
 ```
 
+## Workflow: set quiz / assignment times (`schedule`)
+
+`canvas schedule` sets the three availability times — available from
+(`unlock_at`), due (`due_at`), closed (`lock_at`) — on quizzes **and**
+assignments in one command, in local time, one item (`--id`) or every item
+whose title matches (`--match <substring|/regex/>`, narrowed by `--type
+quiz|assignment|all`). A quiz-backed assignment is always updated through
+its quiz, and no item is written twice. Time-only values fall on `--date`
+(default today); a date-only `--due`/`--closed` means 11:59 PM that day.
+It refuses a plan where available ≤ due ≤ closed would not hold after
+merging with the current values, reads every item back, prints
+before/after, and exits non-zero on any mismatch.
+
+```bash
+# "make that quiz available at 4:00 and both due and closed at 4:50pm"
+canvas schedule --course-id 123 --id 456 --type quiz --available 4:00pm --due 4:50pm --closed 4:50pm
+
+# "make every attendance quiz have these times" — preview, then apply
+canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --dry-run
+canvas schedule --course-id 123 --match attendance --type quiz --date 2026-09-09 --available 4pm --due 4:50pm --closed 4:50pm --force
+
+# "make the course lineup assignment due 9/9/26"
+canvas schedule --course-id 123 --match "course lineup" --due 9/9/26
+
+# remove a close date
+canvas schedule --course-id 123 --id 789 --type assignment --clear closed
+```
+
+Always `--dry-run` a `--match` first and show the user the plan (item,
+type, each time old → new in local and UTC, and the exact `PUT` requests).
+Without `--force`, `--match` prompts for confirmation. "Done" means the
+result table shows `yes` under VERIFIED for every changed item and the
+summary line ends in `0 mismatched, 0 failed`; otherwise report the
+mismatch lines to the user. `-o json` carries `{items[].before, after,
+read_back, verified, mismatches}, summary`.
+
 ## Workflow: publish course content
 
 ```bash

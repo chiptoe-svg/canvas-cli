@@ -120,6 +120,7 @@ canvas repl
 | **Discussions** | `list`, `get`, `create`, `entries`, `post`, `reply`, `subscribe` |
 | **Announcements** | `list`, `get`, `create`, `update`, `delete` |
 | **Quizzes** | `list`, `get`, `create`, `update`, `delete`, `questions`, `submissions` |
+| **Schedule** | `schedule` — set available/due/closed times on quizzes and assignments in local time, one by `--id` or in bulk by `--match` |
 | **Grades** | `history`, `feed`, `columns` |
 | **Groups** | `list`, `get`, `create`, `update`, `delete`, `users`, `categories` |
 | **Outcomes** | `list`, `get`, `create`, `update`, `link`, `unlink`, `groups`, `results` |

@@ -50,6 +50,7 @@ canvas update check | status
 | `grades` | `history`, `feed`, `columns {list\|create\|update\|delete\|data}` |
 | `modules` | `publish`, `unpublish`, `relock`, `items {list\|get\|create\|update\|delete\|done}` |
 | `pages` | `front`, `duplicate`, `revisions`, `revert` |
+| `schedule` | one command: `--course-id N (--id ID \| --match TEXT) [--type quiz\|assignment\|all] --available/--due/--closed <local time> [--date D] [--clear f] [--dry-run] [--force]` |
 | `quizzes` | `questions {…}`, `submissions {list\|get}` |
 | `discussions` | `entries`, `post`, `reply`, `subscribe`, `unsubscribe` |
 | `announcements` | — |
