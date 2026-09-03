@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -208,6 +209,28 @@ type Submission struct {
 	Assignment                    *Assignment         `json:"assignment,omitempty"`
 	Course                        *Course             `json:"course,omitempty"`
 	Rubric                        []RubricAssessment  `json:"rubric_assessment,omitempty"`
+	// SubmissionHistory is populated by include[]=submission_history: one
+	// Submission per attempt, oldest first, each carrying that attempt's
+	// score and (for classic quizzes) its SubmissionData.
+	SubmissionHistory []Submission `json:"submission_history,omitempty"`
+	// SubmissionData is the per-question record of a classic quiz attempt
+	// as seen by graders (present on submission_history entries): the
+	// question, the selected answer, whether it was correct and the points
+	// awarded. It is not part of the documented Submission object but is
+	// what the teacher-side API returns.
+	SubmissionData []QuizSubmissionData `json:"submission_data,omitempty"`
+}
+
+// QuizSubmissionData is one question of a classic quiz attempt in
+// Submission.SubmissionData. AnswerID is kept raw: Canvas returns it as a
+// number or as a numeric string depending on the question type and the
+// attempt's age. Correct is raw as well (true, false, "partial", ...).
+type QuizSubmissionData struct {
+	QuestionID int64           `json:"question_id"`
+	AnswerID   json.RawMessage `json:"answer_id,omitempty"`
+	Correct    json.RawMessage `json:"correct,omitempty"`
+	Points     float64         `json:"points"`
+	Text       string          `json:"text,omitempty"`
 }
 
 // Enrollment represents a Canvas enrollment

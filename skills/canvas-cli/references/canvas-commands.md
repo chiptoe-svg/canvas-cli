@@ -50,7 +50,7 @@ canvas update check | status
 | `grades` | `history`, `feed`, `columns {list\|create\|update\|delete\|data}` |
 | `modules` | `publish`, `unpublish`, `relock`, `items {list\|get\|create\|update\|delete\|done}` |
 | `pages` | `front`, `duplicate`, `revisions`, `revert` |
-| `quizzes` | `questions {…}`, `submissions {list\|get}` |
+| `quizzes` | `questions {…}`, `submissions {list\|get\|update}`, `regrade` |
 | `discussions` | `entries`, `post`, `reply`, `subscribe`, `unsubscribe` |
 | `announcements` | — |
 | `users` | `me`, `search <term>` |

@@ -26,6 +26,7 @@ type Quiz struct {
 	MobileURL                     string           `json:"mobile_url"`
 	Description                   string           `json:"description"`
 	QuizType                      string           `json:"quiz_type"`
+	AssignmentID                  int64            `json:"assignment_id,omitempty"`
 	AssignmentGroupID             int64            `json:"assignment_group_id,omitempty"`
 	TimeLimit                     int              `json:"time_limit,omitempty"`
 	ShuffleAnswers                bool             `json:"shuffle_answers"`

@@ -384,3 +384,33 @@ func TestQuizzesSubmissionsGetOptions_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestQuizzesRegradeOptions_Validate(t *testing.T) {
+	valid := func() *QuizzesRegradeOptions {
+		return &QuizzesRegradeOptions{CourseID: 1, QuizID: 2, QuestionID: 3, CorrectAnswerID: 4}
+	}
+	tests := []struct {
+		name    string
+		mutate  func(o *QuizzesRegradeOptions)
+		wantErr bool
+	}{
+		{"valid default attempts", func(o *QuizzesRegradeOptions) {}, false},
+		{"valid completed", func(o *QuizzesRegradeOptions) { o.Attempts = "completed" }, false},
+		{"valid all", func(o *QuizzesRegradeOptions) { o.Attempts = "all" }, false},
+		{"bad attempts", func(o *QuizzesRegradeOptions) { o.Attempts = "some" }, true},
+		{"zero course", func(o *QuizzesRegradeOptions) { o.CourseID = 0 }, true},
+		{"zero quiz", func(o *QuizzesRegradeOptions) { o.QuizID = 0 }, true},
+		{"zero question", func(o *QuizzesRegradeOptions) { o.QuestionID = 0 }, true},
+		{"zero answer", func(o *QuizzesRegradeOptions) { o.CorrectAnswerID = 0 }, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := valid()
+			tt.mutate(o)
+			err := o.Validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("QuizzesRegradeOptions.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

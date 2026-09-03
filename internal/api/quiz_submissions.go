@@ -290,3 +290,22 @@ func (s *QuizSubmissionsService) GetTime(ctx context.Context, courseID, quizID, 
 	}
 	return &result, nil
 }
+
+// GetAttempt retrieves a quiz submission as of a specific attempt.
+// Canvas API: GET /api/v1/courses/:course_id/quizzes/:quiz_id/submissions/:id?attempt=N
+// The returned object's score/attempt fields describe that attempt rather
+// than the latest one, which is what a per-attempt read-back needs.
+func (s *QuizSubmissionsService) GetAttempt(ctx context.Context, courseID, quizID, submissionID int64, attempt int) (*QuizSubmission, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/quizzes/%d/submissions/%d?attempt=%d", courseID, quizID, submissionID, attempt)
+
+	var response QuizSubmissionsResponse
+	if err := s.client.GetJSON(ctx, path, &response); err != nil {
+		return nil, err
+	}
+
+	if len(response.QuizSubmissions) == 0 {
+		return nil, fmt.Errorf("quiz submission not found")
+	}
+
+	return &response.QuizSubmissions[0], nil
+}

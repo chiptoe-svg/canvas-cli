@@ -540,6 +540,23 @@ func (c *Client) IsCacheEnabled() bool {
 	return c.cacheEnabled
 }
 
+// SetDryRun toggles dry-run mode on an existing client. Commands that must
+// read real data before deciding what they would write (for example
+// "quizzes regrade --dry-run") turn it off and render their own preview
+// instead of the per-request curl echo.
+func (c *Client) SetDryRun(enabled bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.dryRun = enabled
+}
+
+// IsDryRun reports whether the client is in dry-run mode.
+func (c *Client) IsDryRun() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.dryRun
+}
+
 // SetCacheEnabled enables or disables caching
 func (c *Client) SetCacheEnabled(enabled bool) {
 	c.mu.Lock()
