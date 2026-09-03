@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -121,6 +122,13 @@ func newSubmissionsGradeCmd() *cobra.Command {
 
 You can provide a score, comment, or excuse the submission.
 
+After the write the submission is read back and the evidence is printed:
+the grade before and after, the comment that was posted (id, author, text)
+and "verified: yes" when the read-back matches what was requested. A
+mismatch prints "verified: no" with the reason and exits non-zero. With
+-o json the output is {before, after, requested, comment, verified,
+mismatches}. --dry-run prints the request as curl and reads nothing back.
+
 Examples:
   canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 --score 95
   canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 --score 85 --comment "Good work"
@@ -133,6 +141,8 @@ Examples:
 			if err != nil {
 				return err
 			}
+			// The read-back must be live: a cached GET would echo the pre-write state.
+			client.SetCacheEnabled(false)
 			return runSubmissionsGrade(cmd.Context(), client, opts)
 		},
 	}
@@ -157,6 +167,11 @@ func newSubmissionsBulkGradeCmd() *cobra.Command {
 		Short: "Grade multiple submissions from CSV",
 		Long: `Grade multiple submissions at once by importing grades from a CSV file.
 
+Each row is written and then read back: the row line shows the grade
+before and after and whether it verified, and the run ends with
+"N graded, N verified, N mismatched". Any mismatch or error exits non-zero.
+With -o json the summary carries verified/mismatched counts and a row list.
+
 The CSV file should have the following format:
   user_id,assignment_id,score,comment
 
@@ -176,6 +191,7 @@ Examples:
 			if err != nil {
 				return err
 			}
+			client.SetCacheEnabled(false) // read-backs must be live
 			return runSubmissionsBulkGrade(cmd.Context(), client, opts)
 		},
 	}
@@ -230,6 +246,11 @@ func newSubmissionsAddCommentCmd() *cobra.Command {
 		Short: "Add a comment to a submission",
 		Long: `Add a comment to a specific submission.
 
+After the write the submission's comments are read back; the new comment
+(id, author, first 80 characters) is printed with "verified: yes", or
+"verified: no" and a non-zero exit when it cannot be found. -o json prints
+{before, after, requested, comment, verified, mismatches}.
+
 Examples:
   canvas submissions add-comment --course-id 123 --assignment-id 456 --user-id 789 --text "Great work!"
   canvas submissions add-comment --course-id 123 --assignment-id 456 --user-id 789 --text "Feedback" --group`,
@@ -241,6 +262,7 @@ Examples:
 			if err != nil {
 				return err
 			}
+			client.SetCacheEnabled(false) // read-backs must be live
 			return runSubmissionsAddComment(cmd.Context(), client, opts)
 		},
 	}
@@ -412,8 +434,17 @@ func runSubmissionsGrade(ctx context.Context, client *api.Client, opts *options.
 		params.Excuse = true
 	}
 
-	// Grade submission
-	submission, err := submissionsService.Grade(ctx, opts.CourseID, opts.AssignmentID, opts.UserID, params)
+	if dryRun {
+		// Dry run: render the PUT as curl, nothing to read back.
+		if _, err := submissionsService.Grade(ctx, opts.CourseID, opts.AssignmentID, opts.UserID, params); err != nil {
+			return fmt.Errorf("failed to grade submission: %w", err)
+		}
+		logger.LogCommandComplete(ctx, "submissions.grade", 0)
+		return nil
+	}
+
+	// Grade the submission and read it back
+	rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, opts.AssignmentID, opts.UserID, params)
 	if err != nil {
 		logger.LogCommandError(ctx, "submissions.grade", err, map[string]interface{}{
 			"course_id":     opts.CourseID,
@@ -423,37 +454,27 @@ func runSubmissionsGrade(ctx context.Context, client *api.Client, opts *options.
 		return fmt.Errorf("failed to grade submission: %w", err)
 	}
 
-	userName := "Unknown"
-	if submission.User != nil {
-		userName = submission.User.Name
-	}
-
 	logger.LogCommandComplete(ctx, "submissions.grade", 1)
 
 	if isStructuredOutput() {
-		return formatOutput(submission, nil)
+		if err := formatOutput(rb, nil); err != nil {
+			return err
+		}
+	} else {
+		userName := "Unknown"
+		if rb.After.User != nil {
+			userName = rb.After.User.Name
+		}
+		printInfo("✅ Successfully graded submission for %s (user %d, assignment %d)\n", userName, opts.UserID, opts.AssignmentID)
+		printReadBackLines(rb)
+		if !rb.After.GradedAt.IsZero() {
+			printInfo("   graded at: %s\n", rb.After.GradedAt.Format("2006-01-02 15:04"))
+		}
 	}
 
-	printInfo("✅ Successfully graded submission for %s\n", userName)
-	printInfo("   User ID: %d\n", submission.UserID)
-	printInfo("   Assignment ID: %d\n", submission.AssignmentID)
-
-	if submission.Score > 0 {
-		printInfo("   Score: %.1f\n", submission.Score)
+	if !rb.Verified {
+		return readBackError(opts.UserID, rb)
 	}
-
-	if submission.Grade != "" {
-		printInfo("   Grade: %s\n", submission.Grade)
-	}
-
-	if submission.ExcusedTLN {
-		printInfo("   ✓ Excused\n")
-	}
-
-	if !submission.GradedAt.IsZero() {
-		printInfo("   Graded: %s\n", submission.GradedAt.Format("2006-01-02 15:04"))
-	}
-
 	return nil
 }
 
@@ -524,13 +545,17 @@ func runSubmissionsBulkGrade(ctx context.Context, client *api.Client, opts *opti
 		return nil
 	}
 
-	// Process grades
+	// Process grades: write each row, read it back, compare
 	successCount := 0
 	errorCount := 0
+	verifiedCount := 0
+	mismatchCount := 0
 	var errors []string
+	rows := make([]bulkGradeRow, 0, len(grades))
 
 	for i, grade := range grades {
 		printInfo("Processing %d/%d: User %d, Assignment %d...", i+1, len(grades), grade.UserID, grade.AssignmentID)
+		row := bulkGradeRow{Row: grade.Row, UserID: grade.UserID, AssignmentID: grade.AssignmentID, Requested: grade.Grade}
 
 		// Build params
 		params := &api.GradeSubmissionParams{
@@ -543,53 +568,90 @@ func runSubmissionsBulkGrade(ctx context.Context, client *api.Client, opts *opti
 			}
 		}
 
-		// Grade submission
-		_, err = submissionsService.Grade(ctx, opts.CourseID, grade.AssignmentID, grade.UserID, params)
+		rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, grade.AssignmentID, grade.UserID, params)
 		if err != nil {
 			printInfo(" ❌ Error: %v\n", err)
 			errorCount++
+			row.Error = err.Error()
 			errors = append(errors, fmt.Sprintf("Row %d: %v", grade.Row, err))
+			rows = append(rows, row)
 			continue
 		}
-
-		printInfo(" ✅\n")
 		successCount++
+		row.Before, row.After = gradeState(rb.Before), gradeState(rb.After)
+		row.Verified = rb.Verified
+		row.Mismatches = rb.Mismatches
+		if rb.Comment != nil {
+			row.CommentID = rb.Comment.ID
+		}
+		if rb.Verified {
+			verifiedCount++
+			printInfo(" ✅ %s → %s, verified\n", row.Before, row.After)
+		} else {
+			mismatchCount++
+			printInfo(" ⚠️  %s → %s, NOT verified: %s\n", row.Before, row.After, strings.Join(rb.Mismatches, "; "))
+		}
+		rows = append(rows, row)
 	}
 
 	logger.LogCommandComplete(ctx, "submissions.bulk-grade", successCount)
 
 	if isStructuredOutput() {
 		summary := map[string]interface{}{
-			"total":   len(grades),
-			"success": successCount,
-			"errors":  errorCount,
+			"total":      len(grades),
+			"success":    successCount,
+			"errors":     errorCount,
+			"verified":   verifiedCount,
+			"mismatched": mismatchCount,
+			"rows":       rows,
 		}
 		if len(errors) > 0 {
 			summary["error_details"] = errors
 		}
-		return formatOutput(summary, nil)
-	}
+		if err := formatOutput(summary, nil); err != nil {
+			return err
+		}
+	} else {
+		// Print summary
+		fmt.Printf("\n═══════════════════════════════════════\n")
+		fmt.Printf("Bulk Grading Complete\n")
+		fmt.Printf("═══════════════════════════════════════\n")
+		fmt.Printf("%d graded, %d verified, %d mismatched\n", successCount, verifiedCount, mismatchCount)
+		fmt.Printf("Total: %d\n", len(grades))
+		fmt.Printf("Errors: %d\n", errorCount)
 
-	// Print summary
-	fmt.Printf("\n═══════════════════════════════════════\n")
-	fmt.Printf("Bulk Grading Complete\n")
-	fmt.Printf("═══════════════════════════════════════\n")
-	fmt.Printf("Total: %d\n", len(grades))
-	fmt.Printf("Success: %d\n", successCount)
-	fmt.Printf("Errors: %d\n", errorCount)
-
-	if len(errors) > 0 {
-		fmt.Printf("\nErrors:\n")
-		for _, errMsg := range errors {
-			fmt.Printf("  - %s\n", errMsg)
+		if len(errors) > 0 {
+			fmt.Printf("\nErrors:\n")
+			for _, errMsg := range errors {
+				fmt.Printf("  - %s\n", errMsg)
+			}
 		}
 	}
 
-	if errorCount > 0 {
+	switch {
+	case errorCount > 0 && mismatchCount > 0:
+		return fmt.Errorf("bulk grading completed with %d errors and %d submissions that did not read back as requested", errorCount, mismatchCount)
+	case errorCount > 0:
 		return fmt.Errorf("bulk grading completed with %d errors", errorCount)
+	case mismatchCount > 0:
+		return fmt.Errorf("%d of %d graded submissions did not read back as requested", mismatchCount, successCount)
 	}
-
 	return nil
+}
+
+// bulkGradeRow is one CSV row's outcome: what was asked, what the
+// submission read before and after, and whether the read-back matches.
+type bulkGradeRow struct {
+	Row          int      `json:"row"`
+	UserID       int64    `json:"user_id"`
+	AssignmentID int64    `json:"assignment_id"`
+	Requested    string   `json:"requested"`
+	Before       string   `json:"before,omitempty"`
+	After        string   `json:"after,omitempty"`
+	CommentID    int64    `json:"comment_id,omitempty"`
+	Verified     bool     `json:"verified"`
+	Mismatches   []string `json:"mismatches,omitempty"`
+	Error        string   `json:"error,omitempty"`
 }
 
 func runSubmissionsComments(ctx context.Context, client *api.Client, opts *options.SubmissionsCommentsOptions) error {
@@ -648,7 +710,15 @@ func runSubmissionsAddComment(ctx context.Context, client *api.Client, opts *opt
 		},
 	}
 
-	submission, err := submissionsService.Grade(ctx, opts.CourseID, opts.AssignmentID, opts.UserID, params)
+	if dryRun {
+		if _, err := submissionsService.Grade(ctx, opts.CourseID, opts.AssignmentID, opts.UserID, params); err != nil {
+			return fmt.Errorf("failed to add comment: %w", err)
+		}
+		logger.LogCommandComplete(ctx, "submissions.add-comment", 0)
+		return nil
+	}
+
+	rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, opts.AssignmentID, opts.UserID, params)
 	if err != nil {
 		logger.LogCommandError(ctx, "submissions.add-comment", err, map[string]interface{}{
 			"course_id":     opts.CourseID,
@@ -659,7 +729,19 @@ func runSubmissionsAddComment(ctx context.Context, client *api.Client, opts *opt
 	}
 
 	logger.LogCommandComplete(ctx, "submissions.add-comment", 1)
-	return formatSuccessOutput(submission, fmt.Sprintf("Comment added successfully to submission for user %d", submission.UserID))
+
+	if isStructuredOutput() {
+		if err := formatOutput(rb, nil); err != nil {
+			return err
+		}
+	} else {
+		printInfo("✅ Comment added successfully to submission for user %d (assignment %d)\n", opts.UserID, opts.AssignmentID)
+		printReadBackLines(rb)
+	}
+	if !rb.Verified {
+		return readBackError(opts.UserID, rb)
+	}
+	return nil
 }
 
 func runSubmissionsDeleteComment(ctx context.Context, client *api.Client, opts *options.SubmissionsDeleteCommentOptions) error {
