@@ -7,6 +7,14 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+# A called workflow can only use permissions the caller grants. The reusable
+# workflow needs id-token: write for keyless cosign signing, which no repository
+# default ever includes, so it must be declared here.
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 jobs:
   release:
     uses: jjuanrivvera/.github/.github/workflows/go-release.yml@main
