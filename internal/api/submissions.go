@@ -140,59 +140,7 @@ func (s *SubmissionsService) ListMultiple(ctx context.Context, courseID int64, s
 		query.Add("assignment_ids[]", strconv.FormatInt(id, 10))
 	}
 
-	if opts != nil {
-		for _, inc := range opts.Include {
-			query.Add("include[]", inc)
-		}
-
-		if opts.Grouped {
-			query.Add("grouped", "true")
-		}
-
-		if opts.PostToSIS != nil {
-			query.Add("post_to_sis", strconv.FormatBool(*opts.PostToSIS))
-		}
-
-		if opts.SubmittedSince != "" {
-			query.Add("submitted_since", opts.SubmittedSince)
-		}
-
-		if opts.GradedSince != "" {
-			query.Add("graded_since", opts.GradedSince)
-		}
-
-		if opts.GradingPeriodID > 0 {
-			query.Add("grading_period_id", strconv.FormatInt(opts.GradingPeriodID, 10))
-		}
-
-		if opts.WorkflowState != "" {
-			query.Add("workflow_state", opts.WorkflowState)
-		}
-
-		if opts.EnrollmentState != "" {
-			query.Add("enrollment_state", opts.EnrollmentState)
-		}
-
-		if opts.StateBasedOnDate {
-			query.Add("state_based_on_date", "true")
-		}
-
-		if opts.Order != "" {
-			query.Add("order", opts.Order)
-		}
-
-		if opts.OrderDirection != "" {
-			query.Add("order_direction", opts.OrderDirection)
-		}
-
-		if opts.Page > 0 {
-			query.Add("page", strconv.Itoa(opts.Page))
-		}
-
-		if opts.PerPage > 0 {
-			query.Add("per_page", strconv.Itoa(opts.PerPage))
-		}
-	}
+	addListSubmissionsQuery(query, opts)
 
 	if len(query) > 0 {
 		path += "?" + query.Encode()
@@ -204,6 +152,140 @@ func (s *SubmissionsService) ListMultiple(ctx context.Context, courseID int64, s
 	}
 
 	return NormalizeSubmissions(submissions), nil
+}
+
+// maxSubmissionsGridURLLen caps the length of a single
+// /students/submissions request URL. Canvas sits behind proxies that reject
+// very long query strings, so callers that pass many assignment_ids[] are
+// split into several requests that each stay under this length.
+const maxSubmissionsGridURLLen = 2000
+
+// ListForAllStudents retrieves the course-wide submissions grid:
+// GET /api/v1/courses/:course_id/students/submissions?student_ids[]=all
+//
+// Canvas docs (List submissions for multiple assignments,
+// https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.for_students):
+// student_ids[] — "the special id 'all' will return submissions for all
+// students in the course" (requires teacher privileges); assignment_ids[] —
+// "if none are given, submissions for all assignments are returned".
+//
+// With no assignmentIDs a single paginated read covers the whole course. With
+// assignmentIDs the list is chunked so no request URL exceeds
+// maxSubmissionsGridURLLen; the chunks are fetched in order and concatenated.
+func (s *SubmissionsService) ListForAllStudents(ctx context.Context, courseID int64, assignmentIDs []int64, opts *ListSubmissionsOptions) ([]Submission, error) {
+	path := fmt.Sprintf("/api/v1/courses/%d/students/submissions", courseID)
+
+	base := url.Values{}
+	base.Add("student_ids[]", "all")
+	addListSubmissionsQuery(base, opts)
+
+	var all []Submission
+	for _, chunk := range chunkAssignmentIDs(path, base, assignmentIDs) {
+		var page []Submission
+		if err := s.client.GetAllPages(ctx, chunk, &page); err != nil {
+			return nil, err
+		}
+		all = append(all, page...)
+	}
+
+	return NormalizeSubmissions(all), nil
+}
+
+// chunkAssignmentIDs returns the request URLs for path+base, adding
+// assignment_ids[] entries until the encoded URL would exceed
+// maxSubmissionsGridURLLen and then starting a new chunk. With no IDs it
+// returns the single unfiltered URL.
+func chunkAssignmentIDs(path string, base url.Values, assignmentIDs []int64) []string {
+	encode := func(ids []int64) string {
+		q := url.Values{}
+		for k, v := range base {
+			q[k] = append([]string(nil), v...)
+		}
+		for _, id := range ids {
+			q.Add("assignment_ids[]", strconv.FormatInt(id, 10))
+		}
+		return path + "?" + q.Encode()
+	}
+
+	if len(assignmentIDs) == 0 {
+		return []string{encode(nil)}
+	}
+
+	var urls []string
+	var current []int64
+	for _, id := range assignmentIDs {
+		candidate := append(append([]int64(nil), current...), id)
+		if len(current) > 0 && len(encode(candidate)) > maxSubmissionsGridURLLen {
+			urls = append(urls, encode(current))
+			current = []int64{id}
+			continue
+		}
+		current = candidate
+	}
+	if len(current) > 0 {
+		urls = append(urls, encode(current))
+	}
+	return urls
+}
+
+// addListSubmissionsQuery appends the optional filters shared by the
+// multi-assignment submission reads to query.
+func addListSubmissionsQuery(query url.Values, opts *ListSubmissionsOptions) {
+	if opts == nil {
+		return
+	}
+
+	for _, inc := range opts.Include {
+		query.Add("include[]", inc)
+	}
+
+	if opts.Grouped {
+		query.Add("grouped", "true")
+	}
+
+	if opts.PostToSIS != nil {
+		query.Add("post_to_sis", strconv.FormatBool(*opts.PostToSIS))
+	}
+
+	if opts.SubmittedSince != "" {
+		query.Add("submitted_since", opts.SubmittedSince)
+	}
+
+	if opts.GradedSince != "" {
+		query.Add("graded_since", opts.GradedSince)
+	}
+
+	if opts.GradingPeriodID > 0 {
+		query.Add("grading_period_id", strconv.FormatInt(opts.GradingPeriodID, 10))
+	}
+
+	if opts.WorkflowState != "" {
+		query.Add("workflow_state", opts.WorkflowState)
+	}
+
+	if opts.EnrollmentState != "" {
+		query.Add("enrollment_state", opts.EnrollmentState)
+	}
+
+	if opts.StateBasedOnDate {
+		query.Add("state_based_on_date", "true")
+	}
+
+	if opts.Order != "" {
+		query.Add("order", opts.Order)
+	}
+
+	if opts.OrderDirection != "" {
+		query.Add("order_direction", opts.OrderDirection)
+	}
+
+	if opts.Page > 0 {
+		query.Add("page", strconv.Itoa(opts.Page))
+	}
+
+	if opts.PerPage > 0 {
+		query.Add("per_page", strconv.Itoa(opts.PerPage))
+	}
 }
 
 // GradeSubmissionParams holds parameters for grading a submission

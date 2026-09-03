@@ -46,7 +46,7 @@ canvas update check | status
 | `assignments` | `--bucket upcoming\|overdue\|past…`, `--json file` / `--stdin` bodies |
 | `assignment-groups` | — |
 | `overrides` | per-assignment date/audience overrides |
-| `submissions` | `grade`, `bulk-grade --csv`, `comments`, `add-comment`, `delete-comment` |
+| `submissions` | `grade`, `bulk-grade --csv`, `comments`, `add-comment`, `delete-comment`, `missing` (read-only report) |
 | `grades` | `history`, `feed`, `columns {list\|create\|update\|delete\|data}` |
 | `modules` | `publish`, `unpublish`, `relock`, `items {list\|get\|create\|update\|delete\|done}` |
 | `pages` | `front`, `duplicate`, `revisions`, `revert` |

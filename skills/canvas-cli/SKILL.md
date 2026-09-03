@@ -133,6 +133,37 @@ canvas users list --account-id 1 --limit 100                 # cap result count
 Use built-in `--filter` for simple matching and `-o json | jq` for anything
 structural. Details: `references/output-and-filtering.md`.
 
+## Who is missing work
+
+`canvas submissions missing` is a read-only report (two paginated reads per
+course: the active roster and the course-wide submissions grid). It keeps two
+populations apart — students with **zero submissions** for every in-scope
+assignment, and students **missing one or more** specific assignments — and
+never counts late-but-submitted work as missing. By default it looks at
+published assignments, quizzes and graded discussions that are already due;
+undated ones need `--include-undated`. Use `-o markdown` to paste into chat,
+`-o json` for the structured shape (`courses[].students[].missing` = assignment
+ids, `zero_submissions` per student). The four shapes:
+
+```bash
+# Across every course you teach or TA this term
+canvas submissions missing --all-active -o markdown
+
+# One assignment: who has not turned in assignment 456 in course 123
+canvas submissions missing --course-id 123 --assignment-id 456
+canvas submissions missing --course-id 123 --assignment-match "/^Quiz 3/"   # or by name
+
+# Students who have submitted nothing at all
+canvas submissions missing --course-id 123 --zero-only
+
+# With a cutoff: only work that was due by a date (and at least 2 items missing)
+canvas submissions missing --course-id 123 --due-before 2026-03-01 --min-missing 2
+```
+
+Other knobs: `--types assignment,quiz,discussion`, `--exclude-zero-points`,
+`--published-only=false`, `--due-after <date>`, `--include-inactive` (inactive
+and completed enrollments; the course Test Student is always excluded).
+
 ## Workflow: grade a submission
 
 ```bash
