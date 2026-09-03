@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 )
@@ -17,15 +18,22 @@ func NewQuizSubmissionQuestionsService(client *Client) *QuizSubmissionQuestionsS
 }
 
 // QuizSubmissionQuestion represents a question in the context of a quiz submission.
+//
+// Answer is kept raw because its shape depends on the question type
+// (https://canvas.instructure.com/doc/api/quiz_submission_questions.html,
+// Appendix "Question Answer Formats"): for multiple_choice_question and
+// true_false_question it is the selected answer's ID, which Canvas returns
+// as a number or as a numeric string.
 type QuizSubmissionQuestion struct {
-	ID              int64       `json:"id"`
-	FlaggedAt       interface{} `json:"flagged,omitempty"`
-	QuestionText    string      `json:"question_text,omitempty"`
-	QuestionType    string      `json:"question_type,omitempty"`
-	Answers         interface{} `json:"answers,omitempty"`
-	PointsPossible  float64     `json:"points_possible,omitempty"`
-	CorrectComments string      `json:"correct_comments,omitempty"`
-	Position        int         `json:"position,omitempty"`
+	ID              int64           `json:"id"`
+	FlaggedAt       interface{}     `json:"flagged,omitempty"`
+	QuestionText    string          `json:"question_text,omitempty"`
+	QuestionType    string          `json:"question_type,omitempty"`
+	Answer          json.RawMessage `json:"answer,omitempty"`
+	Answers         interface{}     `json:"answers,omitempty"`
+	PointsPossible  float64         `json:"points_possible,omitempty"`
+	CorrectComments string          `json:"correct_comments,omitempty"`
+	Position        int             `json:"position,omitempty"`
 }
 
 // QuizSubmissionQuestionsResponse wraps the Canvas API envelope.

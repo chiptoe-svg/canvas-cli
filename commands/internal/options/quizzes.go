@@ -652,3 +652,36 @@ func (o *QuizzesAssignmentOverridesSetOptions) Validate() error {
 	}
 	return nil
 }
+
+// QuizzesRegradeOptions contains options for regrading one quiz question.
+type QuizzesRegradeOptions struct {
+	CourseID        int64
+	QuizID          int64
+	QuestionID      int64
+	CorrectAnswerID int64
+	Attempts        string // "completed" (workflow_state=complete) or "all"
+	Force           bool   // skip the confirmation prompt
+	DryRun          bool   // plan only, write nothing
+}
+
+// Validate validates the options
+func (o *QuizzesRegradeOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.QuizID <= 0 {
+		return fmt.Errorf("quiz-id is required and must be greater than 0")
+	}
+	if o.QuestionID <= 0 {
+		return fmt.Errorf("question is required and must be greater than 0")
+	}
+	if o.CorrectAnswerID <= 0 {
+		return fmt.Errorf("correct-answer-id is required and must be greater than 0")
+	}
+	switch o.Attempts {
+	case "", "completed", "all":
+	default:
+		return fmt.Errorf("attempts must be 'completed' or 'all', got %q", o.Attempts)
+	}
+	return nil
+}

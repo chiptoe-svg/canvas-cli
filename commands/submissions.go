@@ -494,6 +494,7 @@ func runSubmissionsBulkGrade(ctx context.Context, client *api.Client, opts *opti
 	}
 
 	printVerbose("Found %d grades in CSV file\n\n", len(grades))
+	recordActivityInput(gradeRecordsInput(grades))
 
 	if opts.DryRun {
 		printInfoln("DRY RUN - No changes will be applied")

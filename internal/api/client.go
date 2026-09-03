@@ -59,6 +59,66 @@ type HTTPClient interface {
 	GetVersion() *CanvasVersion
 }
 
+// ObservedRequest describes one request the client sent: the method, the
+// request path (query string already dropped), the response status (0 when
+// no response was received: dry run, transport failure), the payload as
+// sent, and — for non-GET requests that succeeded — the response body.
+// GET responses are never captured.
+type ObservedRequest struct {
+	Method       string
+	Path         string
+	Status       int
+	DryRun       bool // rendered as curl, never sent
+	RequestBody  []byte
+	ResponseBody []byte
+}
+
+// RequestObserver, when set, is told about every request the client sends.
+// The CLI's activity log installs it; it must not block.
+var RequestObserver func(ObservedRequest)
+
+// RequestGate, when set, is consulted before a non-GET request is sent to
+// Canvas (dry runs and reads are never gated). A non-nil error aborts the
+// request and is returned to the caller in place of a response. The CLI's
+// audited activity mode installs it to refuse writes it could not log.
+var RequestGate func(method, path string) error
+
+// observeRequest reports the request to RequestObserver. For a successful
+// non-GET request the response body is read and put back so the observer
+// sees what Canvas returned without changing what the caller reads.
+func observeRequest(method, fullURL string, resp *http.Response, reqErr error, requestBody []byte, dryRun bool) {
+	if RequestObserver == nil {
+		return
+	}
+	path := fullURL
+	if u, err := url.Parse(fullURL); err == nil {
+		path = u.Path
+	} else if i := strings.IndexByte(path, '?'); i >= 0 {
+		path = path[:i]
+	}
+	o := ObservedRequest{Method: method, Path: path, RequestBody: requestBody, DryRun: dryRun}
+	if resp != nil {
+		o.Status = resp.StatusCode
+		if reqErr == nil && method != http.MethodGet && method != http.MethodHead && resp.Body != nil {
+			b, err := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			if err == nil {
+				resp.Body = io.NopCloser(bytes.NewReader(b))
+				o.ResponseBody = b
+			} else {
+				// hand the caller what arrived, then the same read error
+				resp.Body = io.NopCloser(io.MultiReader(bytes.NewReader(b), errReader{err}))
+			}
+		}
+	}
+	RequestObserver(o)
+}
+
+// errReader fails every read with a fixed error.
+type errReader struct{ err error }
+
+func (r errReader) Read([]byte) (int, error) { return 0, r.err }
+
 // Client is the Canvas API client
 type Client struct {
 	httpClient     *http.Client
@@ -315,11 +375,6 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		}
 	}
 
-	// Handle dry-run mode: print curl command and return mock response
-	if c.dryRun {
-		return c.handleDryRun(method, fullURL, token, body)
-	}
-
 	// Buffer the body once so each retry attempt gets a fresh reader.
 	// Retrying with the same io.Reader would send an empty body on the second
 	// attempt because the reader is already at EOF.
@@ -332,13 +387,33 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		}
 	}
 
+	// Handle dry-run mode: print curl command and return mock response
+	if c.dryRun {
+		observeRequest(method, fullURL, nil, nil, bodyBytes, true)
+		var dryBody io.Reader
+		if bodyBytes != nil {
+			dryBody = bytes.NewReader(bodyBytes)
+		}
+		return c.handleDryRun(method, fullURL, token, dryBody)
+	}
+
+	if RequestGate != nil && method != http.MethodGet && method != http.MethodHead {
+		if u, err := url.Parse(fullURL); err == nil {
+			if err := RequestGate(method, u.Path); err != nil {
+				return nil, err
+			}
+		} else if err := RequestGate(method, path); err != nil {
+			return nil, err
+		}
+	}
+
 	// Wait for rate limiter
 	if err := c.rateLimiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("rate limiter error: %w", err)
 	}
 
 	// Execute with retry
-	return c.retryPolicy.ExecuteWithRetry(ctx, func() (*http.Response, error) {
+	resp, err := c.retryPolicy.ExecuteWithRetry(ctx, func() (*http.Response, error) {
 		var reqBody io.Reader
 		if bodyBytes != nil {
 			reqBody = bytes.NewReader(bodyBytes)
@@ -373,6 +448,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 
 		return resp, nil
 	})
+	observeRequest(method, fullURL, resp, err, bodyBytes, false)
+	return resp, err
 }
 
 // handleDryRun prints the curl command and returns a mock response
@@ -465,6 +542,23 @@ func (c *Client) IsCacheEnabled() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.cacheEnabled
+}
+
+// SetDryRun toggles dry-run mode on an existing client. Commands that must
+// read real data before deciding what they would write (for example
+// "quizzes regrade --dry-run") turn it off and render their own preview
+// instead of the per-request curl echo.
+func (c *Client) SetDryRun(enabled bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.dryRun = enabled
+}
+
+// IsDryRun reports whether the client is in dry-run mode.
+func (c *Client) IsDryRun() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.dryRun
 }
 
 // SetCacheEnabled enables or disables caching

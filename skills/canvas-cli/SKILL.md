@@ -158,6 +158,34 @@ canvas submissions bulk-grade --course-id 123 --csv-file grades.csv             
 canvas grades history --course-id 123                                      # audit afterwards
 ```
 
+## Workflow: regrade a quiz question
+
+When a classic-quiz multiple-choice or true/false question had the wrong
+answer marked correct, `quizzes regrade` fixes the answer key and rescores
+the completed attempts in one step: it rewrites the question's answer
+weights (100 for the new correct answer, 0 for the rest), reads each
+student's selected answer and awarded points from the assignment
+submission's `submission_history`, writes the new per-question score with
+the quiz-submission score update, then reads every changed attempt back.
+
+```bash
+canvas quizzes questions get 789 --course-id 123 --quiz-id 456 -o json | jq '.answers[] | {id,text,weight}'   # find the answer id
+canvas quizzes regrade 456 --course-id 123 --question 789 --correct-answer-id 1002 --dry-run   # full plan, writes nothing
+canvas quizzes regrade 456 --course-id 123 --question 789 --correct-answer-id 1002 --force     # apply
+```
+
+Always run the `--dry-run` first and show the user the plan. "Done" means
+the verification table: every changed attempt shows `VERIFIED yes` and the
+summary line reports `0 mismatched`. After a regrade, report that table to
+the user verbatim; do not say the quiz was "regraded" unless the summary
+line shows `0 mismatched`. A non-zero exit means at least one read-back did
+not match the expected score — report those rows to the user instead of
+re-running blindly. By default only each student's latest attempt is
+rescored; `--attempts all` rescores every attempt in the history and
+includes `pending_review` submissions. Other question types are refused.
+Single adjustments without a key change use
+`canvas quizzes submissions update <submission-id> --attempt N --question-score <qid>=<score>`.
+
 ## Workflow: publish course content
 
 ```bash
@@ -215,6 +243,23 @@ canvas mcp claude enable    # auto-configure Claude Desktop (also: cursor, vscod
 
 The skill (shell) and MCP modes can coexist; prefer the shell when you can run
 commands directly.
+
+## Activity log
+
+The operator may enable a local activity log (`canvas activity configure
+--enable`, `activity_log.enabled: true` in the config, or
+`CANVAS_ACTIVITY_LOG=<path>`); it is off by default. When it is on, every
+invocation that wrote to Canvas is recorded with its requests, their
+outcomes and the objects it touched, with secrets redacted; with
+`capture_bodies` on, the log also contains the full text of what the agent
+wrote (comments, messages, announcements, grades) and Canvas's response. In
+`required` (audited) mode a write is refused when the log cannot be written
+— do not work around that; tell the user. `canvas activity list --writes`
+shows what the agent changed — use it (and `canvas activity list --since
+24h -o json`) when the user asks what was done, and mention the log exists if
+they ask how to audit the agent's actions. An entry with
+`verification_required: true` means a write's response was lost: re-read
+the object before repeating the write.
 
 ## Errors & troubleshooting
 

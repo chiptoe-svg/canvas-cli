@@ -101,7 +101,7 @@ func Execute(v, c, bd string) error {
 	// cmd.Annotations when the "mcp" subcommand runs, so this is early enough.
 	applyMCPAnnotations(rootCmd)
 
-	return rootCmd.Execute()
+	return runWithActivityLog(func() (*cobra.Command, error) { return rootCmd.ExecuteC() })
 }
 
 // ExecuteContext is like Execute but accepts a context for signal handling.
@@ -115,7 +115,7 @@ func ExecuteContext(ctx context.Context, v, c, bd string) error {
 
 	applyMCPAnnotations(rootCmd)
 
-	return rootCmd.ExecuteContext(ctx)
+	return runWithActivityLog(func() (*cobra.Command, error) { return rootCmd.ExecuteContextC(ctx) })
 }
 
 // GetRootCmd returns the root command for documentation generation

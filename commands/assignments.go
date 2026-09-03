@@ -396,6 +396,7 @@ func runAssignmentsCreate(ctx context.Context, client *api.Client, cmd *cobra.Co
 	// Check for JSON input
 	if opts.JSONFile != "" || opts.Stdin {
 		jsonData, err := readAssignmentJSON(opts.JSONFile, opts.Stdin)
+		recordActivityInputJSON(jsonData)
 		if err != nil {
 			logger.LogCommandError(ctx, "assignments.create", err, map[string]interface{}{
 				"course_id": opts.CourseID,
@@ -509,6 +510,7 @@ func runAssignmentsUpdate(ctx context.Context, client *api.Client, cmd *cobra.Co
 	// Check for JSON input
 	if opts.JSONFile != "" || opts.Stdin {
 		jsonData, err := readAssignmentJSON(opts.JSONFile, opts.Stdin)
+		recordActivityInputJSON(jsonData)
 		if err != nil {
 			logger.LogCommandError(ctx, "assignments.update", err, map[string]interface{}{
 				"course_id":     opts.CourseID,

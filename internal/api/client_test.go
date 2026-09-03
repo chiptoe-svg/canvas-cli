@@ -3,11 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -1168,4 +1171,98 @@ func TestUnmarshalTolerant(t *testing.T) {
 			t.Errorf("expected error, got nil")
 		}
 	})
+}
+
+// TestRequestObserver_BodiesAndGate pins the observer/gate contract used by
+// the activity log: the payload and the response of a write are reported
+// and the caller still reads the response; a GET's response is never
+// captured; the gate can refuse a write before it is sent and is never
+// consulted for reads or dry runs.
+func TestRequestObserver_BodiesAndGate(t *testing.T) {
+	var hits []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits = append(hits, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPut {
+			raw, _ := io.ReadAll(r.Body)
+			_, _ = w.Write([]byte(`{"echo":` + string(raw) + `}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"id":1}`))
+	}))
+	defer server.Close()
+
+	var seen []ObservedRequest
+	RequestObserver = func(o ObservedRequest) { seen = append(seen, o) }
+	var gated []string
+	RequestGate = func(method, path string) error {
+		gated = append(gated, method+" "+path)
+		if strings.HasSuffix(path, "/refuse") {
+			return errors.New("refused by gate")
+		}
+		return nil
+	}
+	defer func() { RequestObserver = nil; RequestGate = nil }()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "t", RequestsPerSec: 100, UserAgent: "test", RetryInitialBackoff: time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	var got map[string]interface{}
+	if err := client.GetJSON(ctx, "/api/v1/courses/1", &got); err != nil {
+		t.Fatalf("GET: %v", err)
+	}
+	if err := client.PutJSON(ctx, "/api/v1/courses/1/x", map[string]string{"a": "b"}, &got); err != nil {
+		t.Fatalf("PUT: %v", err)
+	}
+	if echo, _ := got["echo"].(map[string]interface{}); echo["a"] != "b" {
+		t.Errorf("the caller must still read the PUT response, got %v", got)
+	}
+	if err := client.PutJSON(ctx, "/api/v1/courses/1/refuse", map[string]string{"a": "b"}, &got); err == nil || !strings.Contains(err.Error(), "refused by gate") {
+		t.Errorf("gated PUT must fail with the gate's error, got %v", err)
+	}
+
+	var get, put *ObservedRequest
+	for i := range seen {
+		switch {
+		case seen[i].Method == http.MethodGet && strings.HasSuffix(seen[i].Path, "/courses/1"):
+			get = &seen[i]
+		case seen[i].Method == http.MethodPut && strings.HasSuffix(seen[i].Path, "/x"):
+			put = &seen[i]
+		}
+	}
+	if get == nil || get.ResponseBody != nil || get.RequestBody != nil || get.Status != 200 {
+		t.Errorf("GET observation = %+v; a read's response must never be captured", get)
+	}
+	if put == nil || string(put.RequestBody) != `{"a":"b"}` || !strings.Contains(string(put.ResponseBody), `"echo"`) || put.Status != 200 || put.DryRun {
+		t.Errorf("PUT observation = %+v", put)
+	}
+	for _, o := range seen {
+		if strings.HasSuffix(o.Path, "/refuse") {
+			t.Errorf("a refused write must not be observed as sent: %+v", o)
+		}
+	}
+	for _, h := range hits {
+		if strings.HasSuffix(h, "/refuse") {
+			t.Errorf("the refused write reached the server: %v", hits)
+		}
+	}
+	for _, g := range gated {
+		if strings.HasPrefix(g, "GET") {
+			t.Errorf("the gate must not see reads: %v", gated)
+		}
+	}
+	if len(gated) != 2 {
+		t.Errorf("gate consulted for %v, want the two writes", gated)
+	}
+
+	// dry run: observed with DryRun, never gated, no response
+	seen, gated = nil, nil
+	dry, _ := NewClient(ClientConfig{BaseURL: server.URL, Token: "t", RequestsPerSec: 100, UserAgent: "test", DryRun: true})
+	_ = dry.PutJSON(ctx, "/api/v1/courses/1/refuse", map[string]string{"a": "b"}, nil)
+	if len(gated) != 0 || len(seen) != 1 || !seen[0].DryRun || seen[0].Status != 0 || seen[0].ResponseBody != nil || string(seen[0].RequestBody) != `{"a":"b"}` {
+		t.Errorf("dry run: gated=%v seen=%+v", gated, seen)
+	}
 }
