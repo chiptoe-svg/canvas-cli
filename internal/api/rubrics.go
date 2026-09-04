@@ -57,6 +57,20 @@ type rubricAssociationResponse struct {
 	RubricAssociation *RubricAssociation `json:"rubric_association"`
 }
 
+// rubricOrDryRun unwraps a rubric response. Canvas wraps rubric write
+// responses in {"rubric": ...}; in dry-run mode the client never sends the
+// request and answers with an empty body, so the wrapper carries no rubric.
+// That is not a failure: return an empty rubric, as other services do.
+func (s *RubricsService) rubricOrDryRun(response *rubricResponse) (*Rubric, error) {
+	if response.Rubric != nil {
+		return response.Rubric, nil
+	}
+	if s.client.IsDryRun() {
+		return &Rubric{}, nil
+	}
+	return nil, fmt.Errorf("rubric not returned in response")
+}
+
 // ListRubricsOptions holds options for listing rubrics
 type ListRubricsOptions struct {
 	Include []string // assessments, associations, assignment_associations
@@ -215,11 +229,7 @@ func (s *RubricsService) Create(ctx context.Context, courseID int64, params *Cre
 		return nil, err
 	}
 
-	if response.Rubric == nil {
-		return nil, fmt.Errorf("rubric not returned in response")
-	}
-
-	return response.Rubric, nil
+	return s.rubricOrDryRun(&response)
 }
 
 // encodeRubricCriteria converts criteria into the indexed-hash form Canvas
@@ -302,11 +312,7 @@ func (s *RubricsService) Update(ctx context.Context, courseID, rubricID int64, p
 		return nil, err
 	}
 
-	if response.Rubric == nil {
-		return nil, fmt.Errorf("rubric not returned in response")
-	}
-
-	return response.Rubric, nil
+	return s.rubricOrDryRun(&response)
 }
 
 // Delete deletes a rubric
@@ -318,11 +324,7 @@ func (s *RubricsService) Delete(ctx context.Context, courseID, rubricID int64) (
 		return nil, err
 	}
 
-	if response.Rubric == nil {
-		return nil, fmt.Errorf("rubric not returned in response")
-	}
-
-	return response.Rubric, nil
+	return s.rubricOrDryRun(&response)
 }
 
 // AssociateParams holds parameters for associating a rubric
@@ -357,6 +359,9 @@ func (s *RubricsService) Associate(ctx context.Context, courseID, rubricID int64
 	}
 
 	if response.RubricAssociation == nil {
+		if s.client.IsDryRun() {
+			return &RubricAssociation{}, nil
+		}
 		return nil, fmt.Errorf("rubric association not returned in response")
 	}
 
