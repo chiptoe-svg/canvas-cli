@@ -19,20 +19,31 @@ output. The manifest, raw responses, extracted text, and staged images may all
 be FERPA-sensitive records; store them in a restricted local directory and do
 not paste their contents into chat unless the instructor asks.
 
-## If the local PDF tools are missing, offer to install them
+## If the local PDF tools are missing
 
 `prepare-pdfs` needs Poppler (`pdfinfo`, `pdftotext`, `pdffonts`, `pdfimages`,
-`pdftoppm`). If it reports them missing, do not stop at the error and do not
-install silently. Say what is missing, say what the fix is, and ask:
+`pdftoppm`). Most faculty machines will not have it, and most faculty do not
+have Homebrew either. **Do not walk an instructor through installing a package
+manager.** That is a long, admin-rights detour for a helper tool.
 
-> "This needs Poppler, a small local PDF toolkit. I can install it with
-> `brew install poppler` — want me to?"
+What to do instead, in order:
 
-On approval run it and re-run the command. It needs no administrator rights on
-a Mac with Homebrew, installs nothing into Canvas, and sends nothing anywhere.
-The equivalents are `apt install poppler-utils` on Debian or Ubuntu and
-`scoop install poppler` on Windows. If Homebrew itself is missing, say so and
-point at https://brew.sh rather than installing a package manager unasked.
+1. **Check whether the step is needed at all.** Downloading submissions never
+   needs Poppler, and Docling accepts the original PDF directly — so for
+   printed prose the whole preparation step can be skipped. Say so.
+2. **Install it only if a package manager is already there.** If `brew` (or
+   `apt`, or `scoop`) is already on the machine, offer the one-line install and
+   ask before running it:
+   > "This needs Poppler, a small local PDF toolkit. You already have Homebrew,
+   > so I can add it with `brew install poppler` — want me to?"
+3. **Otherwise, hand it to the operator.** Say plainly that the machine is
+   missing a local PDF toolkit, that installing it is a one-time setup task,
+   and that whoever administers their assistant can do it. Do not install a
+   package manager, and do not download loose binaries from the internet to
+   work around it.
+
+Never treat a missing tool as a reason to send student work somewhere it was
+not authorized to go.
 
 ## Ask which model reads the work — every batch
 
