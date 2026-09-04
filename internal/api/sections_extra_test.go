@@ -273,7 +273,7 @@ func TestSectionsService_GradeSubmission_FullBody(t *testing.T) {
 			GroupComment: true,
 		},
 		RubricAssessment: map[string]RubricAssessmentParams{
-			"criterion_1": {Points: 5.0, Rating: "full_marks", Comments: "Excellent"},
+			"criterion_1": {Points: floatPtr(5.0), Rating: "full_marks", Comments: "Excellent"},
 		},
 	})
 	if err != nil {

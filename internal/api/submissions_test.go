@@ -502,7 +502,7 @@ func TestSubmissionsService_Grade_WithAllOptions(t *testing.T) {
 		},
 		RubricAssessment: map[string]RubricAssessmentParams{
 			"criterion_1": {
-				Points:   8.5,
+				Points: floatPtr(8.5),
 				Rating:   "rating_1",
 				Comments: "Excellent",
 			},
@@ -858,7 +858,7 @@ func TestSubmissionsService_BulkGrade_WithRubric(t *testing.T) {
 				LatePolicyStatus: "late",
 				RubricAssessment: map[string]RubricAssessmentParams{
 					"criterion_1": {
-						Points:   10.0,
+						Points: floatPtr(10.0),
 						Rating:   "excellent",
 						Comments: "Outstanding work",
 					},
@@ -917,5 +917,58 @@ func TestSubmissionsService_DeleteComment(t *testing.T) {
 
 	if comment.ID != 999 {
 		t.Errorf("expected comment ID 999, got %d", comment.ID)
+	}
+}
+
+// floatPtr is the test-side helper for RubricAssessmentParams.Points, which is
+// a pointer so that a criterion scored zero is sent rather than dropped.
+func floatPtr(v float64) *float64 { return &v }
+
+// The wire shape that makes rubric grading possible at all: score and rubric
+// rows on ONE submission update, with a zero-scored criterion actually sent.
+func TestGradeSubmission_SendsRubricRowsWithScore(t *testing.T) {
+	var body map[string]interface{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			_ = json.NewDecoder(r.Body).Decode(&body)
+		}
+		_, _ = w.Write([]byte(`{"id":100,"user_id":3,"score":14}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "t", RequestsPerSec: 100})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	zero := 0.0
+	four := 4.0
+	if _, err := NewSubmissionsService(client).Grade(context.Background(), 1, 2, 3, &GradeSubmissionParams{
+		PostedGrade: "14",
+		RubricAssessment: map[string]RubricAssessmentParams{
+			"_1234": {Points: &four},
+			"_5678": {Points: &zero, Comments: "no evidence of a third review"},
+		},
+	}); err != nil {
+		t.Fatalf("Grade: %v", err)
+	}
+
+	submission, _ := body["submission"].(map[string]interface{})
+	if submission["posted_grade"] != "14" {
+		t.Errorf("posted_grade = %v, want 14", submission["posted_grade"])
+	}
+	assessment, ok := body["rubric_assessment"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("no rubric_assessment in body: %#v", body)
+	}
+	scored, _ := assessment["_5678"].(map[string]interface{})
+	points, present := scored["points"]
+	if !present {
+		t.Fatal("a criterion scored 0 was dropped from the request; Canvas would leave it unchanged")
+	}
+	if points != float64(0) {
+		t.Errorf("zero criterion points = %v, want 0", points)
+	}
+	if scored["comments"] != "no evidence of a third review" {
+		t.Errorf("criterion comment = %v", scored["comments"])
 	}
 }
