@@ -129,3 +129,18 @@ func TestWriteSubmissionPDFManifest_IsJSONLines(t *testing.T) {
 		}
 	}
 }
+
+// The Poppler check belongs to the real command, not the injected run
+// function: a CI box without Poppler must still exercise the logic with a fake
+// runner. This pins the message so the check is not quietly lost either.
+func TestRequirePopplerTools_NamesTheFix(t *testing.T) {
+	err := requirePopplerTools()
+	if err == nil {
+		return // Poppler is installed here; nothing to assert about the message
+	}
+	for _, want := range []string{"pdftotext", "brew install poppler"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("missing-tools error should mention %q: %v", want, err)
+		}
+	}
+}

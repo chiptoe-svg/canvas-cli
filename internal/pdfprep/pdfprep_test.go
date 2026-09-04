@@ -137,7 +137,6 @@ func TestExtractPageImagesRendersWhenEmbeddedImagesDoNotMatchPages(t *testing.T)
 	}
 }
 
-
 // VERBATIM `pdffonts` output from Poppler 25.x. The fixture it replaced was
 // invented — rows beginning with a number — and the code matched that
 // invention, so the font count was always zero against a real PDF and the

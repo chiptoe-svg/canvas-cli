@@ -502,7 +502,7 @@ func TestSubmissionsService_Grade_WithAllOptions(t *testing.T) {
 		},
 		RubricAssessment: map[string]RubricAssessmentParams{
 			"criterion_1": {
-				Points: floatPtr(8.5),
+				Points:   floatPtr(8.5),
 				Rating:   "rating_1",
 				Comments: "Excellent",
 			},
@@ -858,7 +858,7 @@ func TestSubmissionsService_BulkGrade_WithRubric(t *testing.T) {
 				LatePolicyStatus: "late",
 				RubricAssessment: map[string]RubricAssessmentParams{
 					"criterion_1": {
-						Points: floatPtr(10.0),
+						Points:   floatPtr(10.0),
 						Rating:   "excellent",
 						Comments: "Outstanding work",
 					},

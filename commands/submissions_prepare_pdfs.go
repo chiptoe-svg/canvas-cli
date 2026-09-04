@@ -59,6 +59,12 @@ Examples:
 			if err := opts.Validate(); err != nil {
 				return err
 			}
+			// Checked HERE, not inside the run function: this is about the real
+			// machine, and the run function is exercised with an injected fake
+			// runner that needs no Poppler on the box.
+			if err := requirePopplerTools(); err != nil {
+				return err
+			}
 			return runSubmissionsPreparePDFs(cmd.Context(), opts, pdfprep.New())
 		},
 	}
@@ -86,9 +92,6 @@ func requirePopplerTools() error {
 }
 
 func runSubmissionsPreparePDFs(ctx context.Context, opts *options.SubmissionsPreparePDFsOptions, preparer pdfprep.Preparer) error {
-	if err := requirePopplerTools(); err != nil {
-		return err
-	}
 	root, err := filepath.Abs(opts.Folder)
 	if err != nil {
 		return fmt.Errorf("resolve folder: %w", err)
