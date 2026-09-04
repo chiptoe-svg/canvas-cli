@@ -236,7 +236,9 @@ canvas submissions download --course-id 123 --assignment-id 456 \
 ```
 
 Files are stored below `user-<Canvas user ID>/` and include the attachment ID,
-so duplicate student filenames do not collide. The command writes
+so duplicate student filenames do not collide. Files from EVERY attempt are
+downloaded, not just the latest one — multi-part work often arrives across
+separate attempts — and each manifest entry names the attempt it came from. The command writes
 `submission-download-manifest.json` at the destination. The manifest records
 text-entry and URL submissions as `no_attachment`, but deliberately does not
 copy their body text.
