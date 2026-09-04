@@ -276,6 +276,15 @@ Both can contain FERPA-sensitive student work. Keep them in a restricted local
 directory. The command will not replace an existing manifest unless the
 instructor specifically approves `--overwrite`.
 
+## Workflow: Spark-assisted PDF review
+
+For a batch of downloaded student PDFs that needs text extraction or handwriting
+review, first run `submissions prepare-pdfs`. Then read
+`references/pdf-review-workflows.md` before choosing Docling or Qwen, sending
+any student work to Spark, or proposing a grade. The reference distinguishes
+the local preparation command from the separately authorized network step and
+keeps model output as evidence, not an automatic grade.
+
 `grade`, `add-comment` and `bulk-grade` read the submission back after the
 write and print the evidence: `grade: 88 → 95`, the new comment's id, author
 and text, and `verified: yes|no`. "Done" means `verified: yes`; a mismatch

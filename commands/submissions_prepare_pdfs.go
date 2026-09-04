@@ -154,6 +154,7 @@ func preparePDF(ctx context.Context, root, output, path string, preparer pdfprep
 	if err != nil {
 		return submissionPDFRecord{}, fmt.Errorf("resolve relative path: %w", err)
 	}
+	relativePath = filepath.ToSlash(relativePath)
 	info, err := os.Stat(path)
 	if err != nil {
 		return submissionPDFRecord{SourceRelativePath: relativePath}, fmt.Errorf("inspect PDF: %w", err)
@@ -180,7 +181,7 @@ func preparePDF(ctx context.Context, root, output, path string, preparer pdfprep
 		if err != nil {
 			return record, fmt.Errorf("resolve page image path: %w", err)
 		}
-		images.Paths[index] = relativeImagePath
+		images.Paths[index] = filepath.ToSlash(relativeImagePath)
 	}
 	record.PageImages = images
 	return record, nil
