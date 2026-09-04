@@ -280,6 +280,153 @@ func TestRubricsService_Update(t *testing.T) {
 	}
 }
 
+func TestRubricsService_Create_CriteriaEncoding(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("failed to decode body: %v", err)
+		}
+		assertRubricCriteriaBody(t, body)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]interface{}{"rubric": Rubric{ID: 1}})
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "test-token"})
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	_, err = NewRubricsService(client).Create(context.Background(), 123, &CreateRubricParams{
+		Title:    "Essay",
+		Criteria: sampleRubricCriteria(),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRubricsService_Update_WithCriteria(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		if r.Method != http.MethodPut {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("failed to decode body: %v", err)
+		}
+		assertRubricCriteriaBody(t, body)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"rubric": Rubric{ID: 456}})
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "test-token"})
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	_, err = NewRubricsService(client).Update(context.Background(), 123, 456, &UpdateRubricParams{
+		Criteria: sampleRubricCriteria(),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRubricsService_Update_NoCriteriaOmitsKey(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		var body map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("failed to decode body: %v", err)
+		}
+		rubricData := body["rubric"].(map[string]interface{})
+		if _, present := rubricData["criteria"]; present {
+			t.Error("criteria must be omitted when not supplied, or Canvas wipes the existing rows")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"rubric": Rubric{ID: 456}})
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "test-token"})
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	title := "Renamed"
+	if _, err = NewRubricsService(client).Update(context.Background(), 123, 456, &UpdateRubricParams{Title: &title}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func sampleRubricCriteria() []RubricCriterion {
+	return []RubricCriterion{
+		{
+			Description:       "Thesis",
+			LongDescription:   "Clear claim",
+			Points:            10,
+			CriterionUseRange: true,
+			Ratings: []RubricRating{
+				{Description: "Excellent", Points: 10},
+				{Description: "Weak", LongDescription: "Vague", Points: 4},
+			},
+		},
+		{Description: "Evidence", Points: 5},
+	}
+}
+
+// assertRubricCriteriaBody checks the Canvas indexed-hash encoding of
+// sampleRubricCriteria: rubric[criteria][0][ratings][1][description] etc.
+func assertRubricCriteriaBody(t *testing.T, body map[string]interface{}) {
+	t.Helper()
+	rubricData, ok := body["rubric"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected rubric in body")
+	}
+	criteria, ok := rubricData["criteria"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected criteria hash, got %T", rubricData["criteria"])
+	}
+	if len(criteria) != 2 {
+		t.Fatalf("expected 2 criteria, got %d", len(criteria))
+	}
+	first := criteria["0"].(map[string]interface{})
+	if first["description"] != "Thesis" || first["long_description"] != "Clear claim" || first["points"] != 10.0 {
+		t.Errorf("unexpected first criterion: %v", first)
+	}
+	if first["criterion_use_range"] != true {
+		t.Errorf("expected criterion_use_range true, got %v", first["criterion_use_range"])
+	}
+	ratings := first["ratings"].(map[string]interface{})
+	weak := ratings["1"].(map[string]interface{})
+	if weak["description"] != "Weak" || weak["long_description"] != "Vague" || weak["points"] != 4.0 {
+		t.Errorf("unexpected rating: %v", weak)
+	}
+	second := criteria["1"].(map[string]interface{})
+	if second["description"] != "Evidence" || second["points"] != 5.0 {
+		t.Errorf("unexpected second criterion: %v", second)
+	}
+	if _, present := second["criterion_use_range"]; present {
+		t.Errorf("criterion_use_range should be omitted when false")
+	}
+	if _, present := second["ratings"]; present {
+		t.Errorf("ratings should be omitted when empty")
+	}
+}
+
 func TestRubricsService_Delete(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {

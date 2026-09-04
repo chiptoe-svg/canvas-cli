@@ -114,6 +114,33 @@ func TestRubricsCreateCmd(t *testing.T) {
 			},
 		},
 		{
+			Name: "create rubric with criteria file",
+			Args: []string{"--course-id", "1", "--title", "Essay Rubric", "--criteria-file", writeCriteriaFile(t, `[{"description": "Thesis", "points": 10}]`)},
+			MockResponses: map[string]cmdtest.MockResponse{
+				"/api/v1/accounts": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/courses/1/rubrics": cmdtest.NewMockResponse(`{
+					"rubric": {"id": 21, "title": "Essay Rubric", "points_possible": 10,
+						"data": [{"id": "_1", "description": "Thesis", "points": 10}]}
+				}`),
+			},
+			ExpectError: false,
+			ValidateOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "Essay Rubric") && !strings.Contains(output, "21") {
+					t.Error("Expected rubric title or ID in output")
+				}
+			},
+		},
+		{
+			Name:        "create rubric - criteria file missing",
+			Args:        []string{"--course-id", "1", "--title", "Essay Rubric", "--criteria-file", "/nonexistent/criteria.json"},
+			ExpectError: true,
+		},
+		{
+			Name:        "create rubric - criteria file invalid",
+			Args:        []string{"--course-id", "1", "--title", "Essay Rubric", "--criteria-file", writeCriteriaFile(t, `[]`)},
+			ExpectError: true,
+		},
+		{
 			Name:        "create rubric - missing course ID",
 			Args:        []string{"--title", "New Rubric"},
 			ExpectError: true,
@@ -156,6 +183,28 @@ func TestRubricsUpdateCmd(t *testing.T) {
 					t.Error("Expected rubric title or ID in output")
 				}
 			},
+		},
+		{
+			Name: "update rubric criteria from file",
+			Args: []string{"10", "--course-id", "1", "--criteria-file", writeCriteriaFile(t, `{"data": [{"description": "Thesis", "points": 10}]}`)},
+			MockResponses: map[string]cmdtest.MockResponse{
+				"/api/v1/accounts": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/courses/1/rubrics/10": cmdtest.NewMockResponse(`{
+					"rubric": {"id": 10, "title": "Essay Rubric", "points_possible": 10,
+						"data": [{"id": "_1", "description": "Thesis", "points": 10}]}
+				}`),
+			},
+			ExpectError: false,
+			ValidateOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "Essay Rubric") && !strings.Contains(output, "10") {
+					t.Error("Expected rubric title or ID in output")
+				}
+			},
+		},
+		{
+			Name:        "update rubric - criteria file invalid",
+			Args:        []string{"10", "--course-id", "1", "--criteria-file", writeCriteriaFile(t, `{not json`)},
+			ExpectError: true,
 		},
 		{
 			Name:        "update rubric - missing rubric ID",

@@ -207,31 +207,7 @@ func (s *RubricsService) Create(ctx context.Context, courseID int64, params *Cre
 	}
 
 	if len(params.Criteria) > 0 {
-		criteria := make(map[string]interface{})
-		for i, c := range params.Criteria {
-			key := strconv.Itoa(i)
-			criterionData := map[string]interface{}{
-				"description":      c.Description,
-				"long_description": c.LongDescription,
-				"points":           c.Points,
-			}
-
-			if len(c.Ratings) > 0 {
-				ratings := make(map[string]interface{})
-				for j, r := range c.Ratings {
-					ratingKey := strconv.Itoa(j)
-					ratings[ratingKey] = map[string]interface{}{
-						"description":      r.Description,
-						"long_description": r.LongDescription,
-						"points":           r.Points,
-					}
-				}
-				criterionData["ratings"] = ratings
-			}
-
-			criteria[key] = criterionData
-		}
-		body["rubric"].(map[string]interface{})["criteria"] = criteria
+		rubricData["criteria"] = encodeRubricCriteria(params.Criteria)
 	}
 
 	var response rubricResponse
@@ -246,12 +222,46 @@ func (s *RubricsService) Create(ctx context.Context, courseID int64, params *Cre
 	return response.Rubric, nil
 }
 
+// encodeRubricCriteria converts criteria into the indexed-hash form Canvas
+// expects: rubric[criteria][0][description], rubric[criteria][0][ratings][1][points], ...
+func encodeRubricCriteria(criteria []RubricCriterion) map[string]interface{} {
+	encoded := make(map[string]interface{}, len(criteria))
+	for i, c := range criteria {
+		criterionData := map[string]interface{}{
+			"description":      c.Description,
+			"long_description": c.LongDescription,
+			"points":           c.Points,
+		}
+		if c.CriterionUseRange {
+			criterionData["criterion_use_range"] = true
+		}
+
+		if len(c.Ratings) > 0 {
+			ratings := make(map[string]interface{}, len(c.Ratings))
+			for j, r := range c.Ratings {
+				ratings[strconv.Itoa(j)] = map[string]interface{}{
+					"description":      r.Description,
+					"long_description": r.LongDescription,
+					"points":           r.Points,
+				}
+			}
+			criterionData["ratings"] = ratings
+		}
+
+		encoded[strconv.Itoa(i)] = criterionData
+	}
+	return encoded
+}
+
 // UpdateRubricParams holds parameters for updating a rubric
 type UpdateRubricParams struct {
 	Title                     *string
 	PointsPossible            *float64
 	FreeFormCriterionComments *bool
 	HideScoreTotal            *bool
+	// Criteria, when non-empty, replaces the rubric's criteria wholesale.
+	// Left empty, the existing criteria are untouched.
+	Criteria []RubricCriterion
 }
 
 // Update updates an existing rubric
@@ -281,6 +291,10 @@ func (s *RubricsService) Update(ctx context.Context, courseID, rubricID int64, p
 
 	if params.HideScoreTotal != nil {
 		rubricData["hide_score_total"] = *params.HideScoreTotal
+	}
+
+	if len(params.Criteria) > 0 {
+		rubricData["criteria"] = encodeRubricCriteria(params.Criteria)
 	}
 
 	var response rubricResponse

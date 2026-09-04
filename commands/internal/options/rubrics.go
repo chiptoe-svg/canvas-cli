@@ -41,6 +41,7 @@ type RubricsCreateOptions struct {
 	PointsPossible            float64
 	FreeFormCriterionComments bool
 	HideScoreTotal            bool
+	CriteriaFile              string
 }
 
 // Validate validates the options
@@ -59,6 +60,7 @@ type RubricsUpdateOptions struct {
 	PointsPossible            float64
 	FreeFormCriterionComments bool
 	HideScoreTotal            bool
+	CriteriaFile              string
 	// Track which fields were set
 	TitleSet                     bool
 	PointsPossibleSet            bool
