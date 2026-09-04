@@ -308,6 +308,23 @@ func (r *Recorder) Reset() {
 // --access-code and --password are all covered.
 var secretFlags = []string{"token", "secret", "password", "passwd", "authorization", "access-code", "api-key", "apikey"}
 
+// freeTextFlags carry student-directed or student-identifying text on the
+// command line (a comment, a message, a student's name). Their values are
+// redacted from the logged arguments: the log records that a comment was
+// posted and to whom by id, not what it said. The text itself is only
+// stored under capture_bodies, with the request payload.
+var freeTextFlags = []string{"comment", "rubric-comment", "text", "message", "body", "student"}
+
+func isFreeTextFlag(name string) bool {
+	name = strings.ToLower(strings.TrimLeft(name, "-"))
+	for _, f := range freeTextFlags {
+		if name == f {
+			return true
+		}
+	}
+	return false
+}
+
 var (
 	// canvasTokenRe matches a Canvas API token (e.g. "7~AbC...") anywhere in
 	// an argument, so a token pasted as a bare value or inside a header is
@@ -328,10 +345,11 @@ func isSecretFlag(name string) bool {
 	return false
 }
 
-// RedactArgs returns a copy of argv (without the binary) with secret values
-// replaced: the value of any token/secret/password/authorization flag in
-// both "--flag value" and "--flag=value" form, Canvas-shaped tokens, and
-// Bearer credentials embedded in header arguments.
+// RedactArgs returns a copy of argv (without the binary) with sensitive
+// values replaced: the value of any token/secret/password/authorization
+// flag and of any free-text flag (comment, message, student name) in both
+// "--flag value" and "--flag=value" form, Canvas-shaped tokens, and Bearer
+// credentials embedded in header arguments. Ids, scores and switches stay.
 func RedactArgs(args []string) []string {
 	out := make([]string, len(args))
 	redactNext := false
@@ -342,12 +360,12 @@ func RedactArgs(args []string) []string {
 			redactNext = false
 		case strings.HasPrefix(a, "-") && strings.Contains(a, "="):
 			name, _, _ := strings.Cut(a, "=")
-			if isSecretFlag(name) {
+			if isSecretFlag(name) || isFreeTextFlag(name) {
 				out[i] = name + "=" + Redacted
 			} else {
 				out[i] = redactValue(a)
 			}
-		case strings.HasPrefix(a, "-") && isSecretFlag(a):
+		case strings.HasPrefix(a, "-") && (isSecretFlag(a) || isFreeTextFlag(a)):
 			out[i] = a
 			redactNext = true
 		default:

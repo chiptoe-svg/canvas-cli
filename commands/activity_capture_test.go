@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,12 +13,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
 	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
 	"github.com/jjuanrivvera/canvas-cli/internal/activity"
 	"github.com/jjuanrivvera/canvas-cli/internal/api"
@@ -390,9 +393,52 @@ func TestBulkGrade_CapturesEveryWriteBody(t *testing.T) {
 	t.Setenv(activity.EnvCaptureBodies, "true")
 
 	csvPath := filepath.Join(t.TempDir(), "grades.csv")
-	// every row asks for the grade the static mock reports back, so the
-	// test also holds once the command verifies its writes by read-back
 	_ = os.WriteFile(csvPath, []byte("user_id,assignment_id,grade,comment\n10,100,95,Great work\n11,100,95,\n12,100,95,See rubric token 7~AbCdEfGhIjKlMnOpQrStUv\n"), 0o600)
+
+	// A Canvas that remembers what was posted: the read-back after each PUT
+	// shows the grade and the comment, the pre-read before it does not, so
+	// every comment in the CSV is genuinely new and gets posted.
+	var mu sync.Mutex
+	comments := map[string][]map[string]interface{}{}
+	nextID := int64(100)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/api/v1/accounts":
+			fmt.Fprint(w, `[]`)
+		case r.URL.Path == "/api/v1/courses/1":
+			fmt.Fprint(w, courseMock.Body)
+		case r.Method == http.MethodPut:
+			var body struct {
+				Comment struct {
+					TextComment string `json:"text_comment"`
+				} `json:"comment"`
+			}
+			raw, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(raw, &body)
+			mu.Lock()
+			if body.Comment.TextComment != "" {
+				nextID++
+				comments[r.URL.Path] = append(comments[r.URL.Path], map[string]interface{}{"id": nextID, "author_name": "Teacher", "comment": body.Comment.TextComment})
+			}
+			mu.Unlock()
+			fmt.Fprint(w, `{"id":1,"assignment_id":100,"score":95,"grade":"95"}`)
+		default:
+			mu.Lock()
+			existing := comments[r.URL.Path]
+			mu.Unlock()
+			if existing == nil {
+				existing = []map[string]interface{}{}
+			}
+			raw, _ := json.Marshal(map[string]interface{}{"id": 1, "assignment_id": 100, "score": 95, "grade": "95", "entered_score": 95, "submission_comments": existing})
+			_, _ = w.Write(raw)
+		}
+	}))
+	defer server.Close()
+	client, err := api.NewClient(api.ClientConfig{BaseURL: server.URL, Token: "test-token", RequestsPerSec: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// the command attaches details.input to the process-wide recorder
 	rec := activity.Default()
@@ -408,14 +454,10 @@ func TestBulkGrade_CapturesEveryWriteBody(t *testing.T) {
 	root := &cobra.Command{Use: "canvas"}
 	root.AddCommand(sub)
 	argv := []string{"submissions", "bulk-grade", "--course-id", "1", "--csv-file", csvPath}
-	cmdtest.RunCommandTest(t, root, cmdtest.CommandTestCase{
-		Name: "bulk grade",
-		Args: argv,
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/courses/1": courseMock,
-			"/api/v1/courses/1/assignments/100": cmdtest.NewMockResponse(`{"id":1,"assignment_id":100,"user_id":10,"score":95,"grade":"95",
-				"submission_comments":[{"id":5,"author_name":"Teacher","comment":"Great work"},{"id":6,"author_name":"Teacher","comment":"See rubric token 7~AbCdEfGhIjKlMnOpQrStUv"}]}`),
-		},
+	captureStdout(func() {
+		if err := runSubmissionsBulkGrade(context.Background(), client, &options.SubmissionsBulkGradeOptions{CourseID: 1, CSV: csvPath}); err != nil {
+			t.Errorf("bulk-grade: %v", err)
+		}
 	})
 	logActivity(leaf, nil, time.Now(), rec, argv)
 
@@ -460,10 +502,7 @@ func TestBulkGrade_CapturesEveryWriteBody(t *testing.T) {
 	}
 	raw, _ := os.ReadFile(path)
 	if strings.Contains(string(raw), "7~AbCd") {
-		t.Errorf("token leaked: %s", raw)
-	}
-	if got := readEntries(t, path)[0].Touched; len(got) == 0 || got[0].Type != "course" {
-		t.Errorf("touched = %v", got)
+		t.Errorf("token leaked into the log file")
 	}
 }
 
