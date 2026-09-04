@@ -31,6 +31,7 @@ func init() {
 	submissionsCmd.AddCommand(newSubmissionsListCmd())
 	submissionsCmd.AddCommand(newSubmissionsGetCmd())
 	submissionsCmd.AddCommand(newSubmissionsDownloadCmd())
+	submissionsCmd.AddCommand(newSubmissionsPreparePDFsCmd())
 	submissionsCmd.AddCommand(newSubmissionsGradeCmd())
 	submissionsCmd.AddCommand(newSubmissionsBulkGradeCmd())
 	submissionsCmd.AddCommand(newSubmissionsCommentsCmd())

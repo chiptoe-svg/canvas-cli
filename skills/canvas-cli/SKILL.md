@@ -79,7 +79,7 @@ canvas assignments list --course-id 123 --filter "Quiz 1"                       
 | Area | Resources |
 |---|---|
 | Teaching | `courses`, `assignments`, `assignment-groups`, `modules`, `pages`, `quizzes` (incl. `reports`, `statistics`, `question-groups`, `ip-filters`), `discussions`, `announcements`, `rubrics`, `rubric-associations`, `outcomes`, `overrides`, `peer-reviews`, `polls` |
-| Grading | `submissions` (`list`, `get`, `download`, `grade`, `bulk-grade`, `add-comment`), `grades`, `grading-periods`, `grading-standards`, `grading-period-sets`, `live-assessments` |
+| Grading | `submissions` (`list`, `get`, `download`, `prepare-pdfs`, `grade`, `bulk-grade`, `add-comment`), `grades`, `grading-periods`, `grading-standards`, `grading-period-sets`, `live-assessments` |
 | People | `users`, `enrollments`, `sections`, `groups` (`memberships`, `categories`), `conversations`, `comm-channels`, `observees`, `appointment-groups` |
 | Content & files | `files`, `folders`, `calendar`, `content-migrations`, `content-exports`, `content-shares`, `blueprint`, `course-pacing`, `blackout-dates`, `media`, `eportfolios` |
 | Personal | `favorites`, `bookmarks`, `course-nicknames`, `planner`, `history` |
@@ -255,6 +255,26 @@ canvas submissions download --course-id 123 --assignment-id 456 \
 Report the final downloaded/skipped/failed counts and the manifest path. If any
 file failed, do not call the download complete; inspect the manifest and retry
 only the failed work.
+
+## Workflow: prepare downloaded PDFs for local review
+
+`canvas submissions prepare-pdfs` works only on files already on this Mac. It
+does **not** contact Canvas, Docling, Qwen, or any other service. It classifies
+each PDF using local text/font/image signals and writes a protected manifest.
+For photographed notes that contain one image per page, it keeps the original
+embedded images; otherwise it renders pages locally at 300 DPI. This avoids
+unnecessary downsampling before a separately approved handwriting or visual
+review workflow.
+
+```bash
+canvas submissions prepare-pdfs --folder ./assignment-456-submissions \
+  --output ./assignment-456-review
+```
+
+The output directory contains `submission-pdf-manifest.jsonl` and page images.
+Both can contain FERPA-sensitive student work. Keep them in a restricted local
+directory. The command will not replace an existing manifest unless the
+instructor specifically approves `--overwrite`.
 
 `grade`, `add-comment` and `bulk-grade` read the submission back after the
 write and print the evidence: `grade: 88 → 95`, the new comment's id, author
