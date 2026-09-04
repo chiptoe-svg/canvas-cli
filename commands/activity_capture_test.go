@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -278,11 +279,13 @@ func TestActivityGate_Required(t *testing.T) {
 	if err := gate("PUT", "/x"); err != nil {
 		t.Fatalf("usable log refused: %v", err)
 	}
-	if info, err := os.Stat(good); err != nil || info.Mode().Perm() != 0o600 {
-		t.Errorf("preflight must create the log 0600: %v %v", info, err)
-	}
-	if info, _ := os.Stat(filepath.Dir(good)); info.Mode().Perm() != 0o700 {
-		t.Errorf("preflight must create the dir 0700, got %o", info.Mode().Perm())
+	if enforcesUnixPerms() {
+		if info, err := os.Stat(good); err != nil || info.Mode().Perm() != 0o600 {
+			t.Errorf("preflight must create the log 0600: %v %v", info, err)
+		}
+		if info, _ := os.Stat(filepath.Dir(good)); info.Mode().Perm() != 0o700 {
+			t.Errorf("preflight must create the dir 0700, got %o", info.Mode().Perm())
+		}
 	}
 }
 
@@ -353,6 +356,9 @@ func TestLogActivity_TightensLoosePermissions(t *testing.T) {
 	path := useTempActivityLog(t)
 	if err := os.WriteFile(path, []byte(""), 0o644); err != nil {
 		t.Fatal(err)
+	}
+	if !enforcesUnixPerms() {
+		t.Skip("file mode bits are not enforced on Windows")
 	}
 	_ = os.Chmod(path, 0o644)
 
@@ -486,7 +492,7 @@ func TestActivityConfigureCmd_RoundTrip(t *testing.T) {
 	if !al.Enabled || !al.CaptureBodies || !al.Required || al.Path != logPath || al.MaxSizeMB != 5 || al.WritesOnly != nil {
 		t.Errorf("activity_log = %+v", al)
 	}
-	if info, _ := os.Stat(filepath.Join(home, ".canvas-cli", "config.yaml")); info == nil || info.Mode().Perm() != 0o600 {
+	if info, _ := os.Stat(filepath.Join(home, ".canvas-cli", "config.yaml")); info == nil || (enforcesUnixPerms() && info.Mode().Perm() != 0o600) {
 		t.Errorf("config file perm = %v", info)
 	}
 
@@ -597,3 +603,9 @@ func TestLogActivity_EnrichesTouchedFromResponse(t *testing.T) {
 		t.Errorf("touched = %q, want %q", strings.Join(got, " "), want)
 	}
 }
+
+// Windows does not carry Unix mode bits: a file created there reports 0666 and
+// a directory 0777 no matter what chmod asked for. The restrictive-permission
+// behaviour is real on POSIX and untestable on Windows, so assert it only
+// where the operating system can honour it.
+func enforcesUnixPerms() bool { return runtime.GOOS != "windows" }

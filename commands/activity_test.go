@@ -103,6 +103,10 @@ func useTempHome(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	t.Setenv("HOME", dir)
+	// os.UserHomeDir reads USERPROFILE on Windows, so setting HOME alone let
+	// these tests write into the RUNNER's real profile and then assert against
+	// the temp path they never used.
+	t.Setenv("USERPROFILE", dir)
 	for _, name := range activityEnvVars {
 		t.Setenv(name, "")
 	}

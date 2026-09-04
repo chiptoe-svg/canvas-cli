@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -280,11 +281,15 @@ func TestAppendReadAndRotation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("log not created: %v", err)
 	}
-	if info.Mode().Perm() != 0o600 {
-		t.Errorf("log perm = %o, want 600", info.Mode().Perm())
-	}
-	if dinfo, _ := os.Stat(filepath.Dir(cfg.Path)); dinfo == nil || dinfo.Mode().Perm() != 0o700 {
-		t.Errorf("created log dir perm = %v, want 700", dinfo)
+	// Windows reports 0666/0777 regardless of chmod, so the restrictive-mode
+	// guarantee is only checkable where the OS carries mode bits.
+	if runtime.GOOS != "windows" {
+		if info.Mode().Perm() != 0o600 {
+			t.Errorf("log perm = %o, want 600", info.Mode().Perm())
+		}
+		if dinfo, _ := os.Stat(filepath.Dir(cfg.Path)); dinfo == nil || dinfo.Mode().Perm() != 0o700 {
+			t.Errorf("created log dir perm = %v, want 700", dinfo)
+		}
 	}
 
 	entries, skipped, err := Read(cfg.Path)
