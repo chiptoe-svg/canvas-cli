@@ -63,8 +63,8 @@ func TestUpdateStatusCmd_DefaultSettings(t *testing.T) {
 		}
 	})
 
-	if !strings.Contains(out, "Auto-Update Status") {
-		t.Errorf("expected 'Auto-Update Status' in output, got: %q", out)
+	if !strings.Contains(out, "Update Check Status") {
+		t.Errorf("expected 'Update Check Status' in output, got: %q", out)
 	}
 }
 

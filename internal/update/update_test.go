@@ -33,13 +33,20 @@ func TestIsNewerVersion(t *testing.T) {
 		{"with v prefix", "v1.1.0", "v1.0.0", true},
 		{"mixed prefix", "1.1.0", "v1.0.0", true},
 		{"with prerelease", "1.1.0-beta", "1.0.0", true},
+		// Fork releases carry a numeric build-metadata suffix; it must order.
+		{"newer audited build", "1.13.0+audited.12", "1.13.0+audited.11", true},
+		{"same audited build", "1.13.0+audited.11", "1.13.0+audited.11", false},
+		{"older audited build", "1.13.0+audited.10", "1.13.0+audited.11", false},
+		{"upstream patch beats audited", "1.13.1", "1.13.0+audited.11", true},
+		{"plain equals base of audited", "1.13.0", "1.13.0+audited.11", false},
+		{"two-digit metadata orders numerically", "1.13.0+audited.10", "1.13.0+audited.9", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isNewerVersion(tt.latest, tt.current)
+			result := IsNewerVersion(tt.latest, tt.current)
 			if result != tt.expected {
-				t.Errorf("isNewerVersion(%q, %q) = %v, expected %v", tt.latest, tt.current, result, tt.expected)
+				t.Errorf("IsNewerVersion(%q, %q) = %v, expected %v", tt.latest, tt.current, result, tt.expected)
 			}
 		})
 	}
@@ -48,14 +55,17 @@ func TestIsNewerVersion(t *testing.T) {
 func TestParseVersion(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected [3]int
+		expected [4]int
 	}{
-		{"1.2.3", [3]int{1, 2, 3}},
-		{"v1.2.3", [3]int{1, 2, 3}},
-		{"1.2", [3]int{1, 2, 0}},
-		{"1", [3]int{1, 0, 0}},
-		{"1.2.3-beta", [3]int{1, 2, 3}},
-		{"1.2.3-rc.1", [3]int{1, 2, 3}},
+		{"1.2.3", [4]int{1, 2, 3, 0}},
+		{"v1.2.3", [4]int{1, 2, 3, 0}},
+		{"1.2", [4]int{1, 2, 0, 0}},
+		{"1", [4]int{1, 0, 0, 0}},
+		{"1.2.3-beta", [4]int{1, 2, 3, 0}},
+		{"1.2.3-rc.1", [4]int{1, 2, 3, 0}},
+		{"1.13.0+audited.11", [4]int{1, 13, 0, 11}},
+		{"v1.13.0+audited.7", [4]int{1, 13, 0, 7}},
+		{"1.13.0+audited", [4]int{1, 13, 0, 0}},
 	}
 
 	for _, tt := range tests {
@@ -87,7 +97,9 @@ func TestGetLatestRelease(t *testing.T) {
 		},
 	}
 
+	var requestedPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestedPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(release)
 	}))
@@ -111,6 +123,11 @@ func TestGetLatestRelease(t *testing.T) {
 
 	if result.TagName != "v1.2.3" {
 		t.Errorf("Expected tag v1.2.3, got %s", result.TagName)
+	}
+	// Faculty install this fork's audited builds; the updater must never look
+	// at the upstream author's repository.
+	if want := "/repos/chiptoe-svg/canvas-cli/releases/latest"; requestedPath != want {
+		t.Errorf("release lookup hit %q, want %q", requestedPath, want)
 	}
 }
 

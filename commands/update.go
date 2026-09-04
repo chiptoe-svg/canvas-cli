@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -17,17 +16,18 @@ import (
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Check for and install updates",
-	Long: `Check for new versions of canvas-cli and install them automatically.
+	Long: `Check for new versions of canvas-cli and install one on request.
 
-The CLI automatically checks for updates in the background. You can use this
-command to check immediately or configure auto-update behavior.
+The CLI checks for a newer release in the background (at most once per
+interval) and prints a notice when one exists. It never installs anything on
+its own: run 'canvas update' to install, or re-run the installer.
 
 Examples:
   canvas update              # Check and install updates now
   canvas update check        # Check for updates without installing
-  canvas update disable      # Disable auto-updates
-  canvas update enable       # Enable auto-updates
-  canvas update status       # Show auto-update status`,
+  canvas update disable      # Stop the background version check
+  canvas update enable       # Resume the background version check
+  canvas update status       # Show update-check status`,
 }
 
 func init() {
@@ -68,7 +68,7 @@ func newUpdateEnableCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "enable",
-		Short: "Enable automatic updates",
+		Short: "Enable the background check for new versions",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -86,7 +86,7 @@ func newUpdateDisableCmd() *cobra.Command {
 
 	return &cobra.Command{
 		Use:   "disable",
-		Short: "Disable automatic updates",
+		Short: "Disable the background check for new versions",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -101,7 +101,7 @@ func newUpdateStatusCmd() *cobra.Command {
 
 	return &cobra.Command{
 		Use:   "status",
-		Short: "Show auto-update status and configuration",
+		Short: "Show update-check status and configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -134,7 +134,7 @@ func runUpdateNow(ctx context.Context, opts *options.UpdateOptions) error {
 	fmt.Printf("Latest version:  %s\n", latestVersion)
 
 	// Check if update is needed using semantic version comparison
-	if !isNewerVersion(latestVersion, version) {
+	if !update.IsNewerVersion(latestVersion, version) {
 		fmt.Println("\nYou're already running the latest version!")
 		logger.LogCommandComplete(ctx, "update.now", 0)
 		return nil
@@ -182,7 +182,7 @@ func runUpdateCheck(ctx context.Context, opts *options.UpdateCheckOptions) error
 	fmt.Printf("Current version: %s\n", version)
 	fmt.Printf("Latest version:  %s\n", latestVersion)
 
-	if isNewerVersion(latestVersion, version) {
+	if update.IsNewerVersion(latestVersion, version) {
 		fmt.Printf("\n\033[33mA new version is available!\033[0m\n")
 		fmt.Println("Run 'canvas update' to install it.")
 	} else {
@@ -217,7 +217,7 @@ func runUpdateEnable(ctx context.Context, opts *options.UpdateEnableOptions) err
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Printf("Auto-updates enabled (checking every %d minutes)\n", opts.Interval)
+	fmt.Printf("Background version check enabled (every %d minutes; installs only on 'canvas update')\n", opts.Interval)
 	logger.LogCommandComplete(ctx, "update.enable", 1)
 	return nil
 }
@@ -243,8 +243,8 @@ func runUpdateDisable(ctx context.Context, opts *options.UpdateDisableOptions) e
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	fmt.Println("Auto-updates disabled")
-	fmt.Println("Run 'canvas update enable' to re-enable automatic updates.")
+	fmt.Println("Background version check disabled")
+	fmt.Println("Run 'canvas update enable' to turn it back on.")
 	logger.LogCommandComplete(ctx, "update.disable", 1)
 	return nil
 }
@@ -259,7 +259,7 @@ func runUpdateStatus(ctx context.Context, opts *options.UpdateStatusOptions) err
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	fmt.Println("Auto-Update Status")
+	fmt.Println("Update Check Status")
 	fmt.Println("==================")
 	fmt.Printf("Current version: %s\n", version)
 
@@ -268,10 +268,10 @@ func runUpdateStatus(ctx context.Context, opts *options.UpdateStatusOptions) err
 		if cfg.Settings.AutoUpdateEnabled {
 			status = "enabled"
 		}
-		fmt.Printf("Auto-update: %s\n", status)
+		fmt.Printf("Background check: %s\n", status)
 		fmt.Printf("Check interval: %d minutes\n", cfg.Settings.AutoUpdateIntervalMin)
 	} else {
-		fmt.Println("Auto-update: enabled (default)")
+		fmt.Println("Background check: enabled (default; installs only on 'canvas update')")
 		fmt.Println("Check interval: 60 minutes (default)")
 	}
 
@@ -289,46 +289,4 @@ func runUpdateStatus(ctx context.Context, opts *options.UpdateStatusOptions) err
 
 	logger.LogCommandComplete(ctx, "update.status", 1)
 	return nil
-}
-
-// isNewerVersion compares two semver versions
-// Returns true if latest is newer than current
-func isNewerVersion(latest, current string) bool {
-	// Strip 'v' prefix for comparison
-	latest = strings.TrimPrefix(latest, "v")
-	current = strings.TrimPrefix(current, "v")
-
-	// Skip dev versions
-	if current == "dev" || current == "" {
-		return false
-	}
-
-	latestParts := parseVersion(latest)
-	currentParts := parseVersion(current)
-
-	for i := 0; i < 3; i++ {
-		if latestParts[i] > currentParts[i] {
-			return true
-		}
-		if latestParts[i] < currentParts[i] {
-			return false
-		}
-	}
-
-	return false
-}
-
-// parseVersion parses a semver string into [major, minor, patch]
-func parseVersion(v string) [3]int {
-	v = strings.TrimPrefix(v, "v")
-	parts := strings.Split(v, ".")
-
-	var result [3]int
-	for i := 0; i < 3 && i < len(parts); i++ {
-		// Strip any pre-release suffix
-		numStr := strings.Split(parts[i], "-")[0]
-		fmt.Sscanf(numStr, "%d", &result[i]) // #nosec G104 -- parse failure leaves the element zero, which is correct for a missing/malformed version component
-	}
-
-	return result
 }

@@ -99,6 +99,7 @@ func (o *FilesUploadOptions) Validate() error {
 type FilesDownloadOptions struct {
 	FileID      int64
 	Destination string
+	Overwrite   bool
 }
 
 // Validate validates the options

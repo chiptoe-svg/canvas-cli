@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	// GitHubOwner is the repository owner
-	GitHubOwner = "jjuanrivvera"
+	// GitHubOwner is the repository owner. Faculty install this fork's audited
+	// builds, so update checks look at the fork, never at upstream.
+	GitHubOwner = "chiptoe-svg"
 	// GitHubRepo is the repository name
 	GitHubRepo = "canvas-cli"
 	// BinaryName is the name of the binary to update
@@ -50,11 +51,18 @@ type Asset struct {
 
 // UpdateResult contains the result of an update operation
 type UpdateResult struct {
+	// Available is true when a newer release exists; ToVersion names it.
+	Available   bool
 	Updated     bool
 	FromVersion string
 	ToVersion   string
 	Error       error
 }
+
+// InstallHint is how a user gets a newer build. The background checker only
+// notifies; installing is always an explicit action.
+const InstallHint = "Run 'canvas update', or re-run the installer:\n" +
+	"  curl -fsSL https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh | sh"
 
 // Updater handles checking and applying updates
 type Updater struct {
@@ -75,32 +83,42 @@ func NewUpdater(currentVersion string) *Updater {
 }
 
 // CheckAndUpdate checks for updates and applies them if available
-func (u *Updater) CheckAndUpdate(ctx context.Context) *UpdateResult {
+// Check finds out whether a newer release exists without downloading
+// anything. It is what the background checker runs before every command.
+func (u *Updater) Check(ctx context.Context) (*UpdateResult, *Release) {
 	result := &UpdateResult{
 		FromVersion: u.CurrentVersion,
 	}
 
 	// Skip if running dev version
 	if u.CurrentVersion == "dev" || u.CurrentVersion == "" {
-		return result
+		return result, nil
 	}
 
-	// Get latest release
 	release, err := u.GetLatestRelease(ctx)
 	if err != nil {
 		result.Error = fmt.Errorf("failed to check for updates: %w", err)
+		return result, nil
+	}
+
+	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	if !IsNewerVersion(latestVersion, u.CurrentVersion) {
+		return result, release
+	}
+
+	result.Available = true
+	result.ToVersion = latestVersion
+	return result, release
+}
+
+// CheckAndUpdate checks for a newer release and, if one exists, downloads,
+// verifies (SHA-256 against the release's checksums.txt) and installs it in
+// place. Only an explicit user command should call this.
+func (u *Updater) CheckAndUpdate(ctx context.Context) *UpdateResult {
+	result, release := u.Check(ctx)
+	if result.Error != nil || !result.Available {
 		return result
 	}
-
-	// Compare versions
-	latestVersion := strings.TrimPrefix(release.TagName, "v")
-	currentVersion := strings.TrimPrefix(u.CurrentVersion, "v")
-
-	if !isNewerVersion(latestVersion, currentVersion) {
-		return result // No update needed
-	}
-
-	result.ToVersion = latestVersion
 
 	// Find the appropriate asset
 	asset, checksumAsset := u.findAssets(release)
@@ -402,13 +420,21 @@ func (u *Updater) applyUpdate(newBinary []byte) error {
 	return nil
 }
 
-// isNewerVersion compares two semver versions
-// Returns true if latest is newer than current
-func isNewerVersion(latest, current string) bool {
+// IsNewerVersion reports whether latest is a newer release than current.
+// Both may carry a "v" prefix, a pre-release suffix ("-rc1", ignored) and a
+// numeric build-metadata suffix ("+audited.11"), which orders after the
+// patch number so successive audited builds of one base version compare.
+// A dev build never updates.
+func IsNewerVersion(latest, current string) bool {
+	current = strings.TrimPrefix(current, "v")
+	if current == "dev" || current == "" {
+		return false
+	}
+
 	latestParts := parseVersion(latest)
 	currentParts := parseVersion(current)
 
-	for i := 0; i < 3; i++ {
+	for i := range latestParts {
 		if latestParts[i] > currentParts[i] {
 			return true
 		}
@@ -420,12 +446,19 @@ func isNewerVersion(latest, current string) bool {
 	return false
 }
 
-// parseVersion parses a semver string into [major, minor, patch]
-func parseVersion(v string) [3]int {
+// parseVersion parses a version string into [major, minor, patch, build],
+// where build is the trailing number of any "+metadata.N" suffix (0 if none).
+func parseVersion(v string) [4]int {
 	v = strings.TrimPrefix(v, "v")
-	parts := strings.Split(v, ".")
 
-	var result [3]int
+	var result [4]int
+	core, meta, hasMeta := strings.Cut(v, "+")
+	if hasMeta {
+		metaParts := strings.Split(meta, ".")
+		fmt.Sscanf(metaParts[len(metaParts)-1], "%d", &result[3]) // #nosec G104 -- non-numeric metadata leaves build zero
+	}
+
+	parts := strings.Split(core, ".")
 	for i := 0; i < 3 && i < len(parts); i++ {
 		// Strip any pre-release suffix
 		numStr := strings.Split(parts[i], "-")[0]

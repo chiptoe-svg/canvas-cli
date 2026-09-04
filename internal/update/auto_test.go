@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 )
@@ -784,4 +785,65 @@ func buildZipArchive(t *testing.T) ([]byte, []byte) {
 	}
 	zw.Close()
 	return buf.Bytes(), content
+}
+
+// The background check that runs before every command must only find out
+// whether a newer release exists and leave a notification. Installing a
+// binary silently — verified against nothing stronger than a checksum file
+// fetched from the same place — is reserved for an explicit `canvas update`.
+func TestAutoUpdater_RunUpdateCheck_NewerAvailable_NotifiesWithoutInstalling(t *testing.T) {
+	release := Release{
+		TagName: "v9.9.9",
+		Assets: []Asset{
+			{Name: fmt.Sprintf("canvas-cli_%s_%s.tar.gz", runtime.GOOS, archName()), BrowserDownloadURL: "https://example.com/download/bin.tar.gz"},
+			{Name: "checksums.txt", BrowserDownloadURL: "https://example.com/download/checksums.txt"},
+		},
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/download/") {
+			t.Errorf("background check must not download anything, got %s", r.URL.Path)
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(release)
+	}))
+	defer server.Close()
+
+	sm := buildTestStateManager(t)
+	u := NewUpdater("1.0.0")
+	u.HTTPClient = &http.Client{Transport: &urlRewriteTransport{targetURL: server.URL}}
+	au := buildAutoUpdaterWithState("1.0.0", true, sm, u)
+
+	au.RunUpdateCheck(context.Background())
+
+	state, err := sm.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.AvailableVersion != "9.9.9" {
+		t.Errorf("AvailableVersion = %q, want 9.9.9", state.AvailableVersion)
+	}
+	if state.UpdatedToVersion != "" || !state.LastUpdateTime.IsZero() {
+		t.Errorf("state records an install that must not have happened: %+v", state)
+	}
+	if state.LastError != "" {
+		t.Errorf("unexpected error recorded: %s", state.LastError)
+	}
+
+	// The notification is one-shot per check.
+	if v, ok := sm.GetAvailableNotification(); !ok || v != "9.9.9" {
+		t.Errorf("GetAvailableNotification = (%q, %v), want (9.9.9, true)", v, ok)
+	}
+	if _, ok := sm.GetAvailableNotification(); ok {
+		t.Error("notification should be cleared after it is returned once")
+	}
+}
+
+// archName mirrors the asset naming used by the release archives.
+func archName() string {
+	if runtime.GOARCH == "amd64" {
+		return "x86_64"
+	}
+	return runtime.GOARCH
 }

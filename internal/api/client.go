@@ -354,12 +354,29 @@ func (c *Client) getToken() (string, error) {
 	return c.token, nil
 }
 
+// validateRequestPath refuses any path that could change the host the request
+// goes to once it is appended to the base URL. "@evil.example/x" turns the
+// base host into userinfo and "//evil.example/x" is protocol-relative; either
+// would carry the bearer token to a foreign host. The raw `canvas api` command
+// passes caller-supplied paths straight here and is exposed to AI agents over
+// MCP, so this is the one place the rule must hold.
+func validateRequestPath(path string) error {
+	if !strings.HasPrefix(path, "/") || strings.HasPrefix(path, "//") {
+		return fmt.Errorf("invalid request path %q: must begin with a single \"/\" so the request stays on the configured Canvas host", path)
+	}
+	return nil
+}
+
 // doRequest performs an HTTP request with rate limiting and retry logic
 func (c *Client) doRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
 	// Get current token (may trigger refresh if using token source)
 	token, err := c.getToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)
+	}
+
+	if err := validateRequestPath(path); err != nil {
+		return nil, err
 	}
 
 	// Build full URL with masquerade parameter if set
