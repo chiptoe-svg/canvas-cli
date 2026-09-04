@@ -30,6 +30,7 @@ type submissionDownloadRecord struct {
 	UserID         int64  `json:"user_id"`
 	WorkflowState  string `json:"workflow_state"`
 	SubmissionType string `json:"submission_type"`
+	Attempt        int    `json:"attempt,omitempty"`
 	AttachmentID   int64  `json:"attachment_id,omitempty"`
 	Filename       string `json:"filename,omitempty"`
 	Path           string `json:"path,omitempty"`
@@ -99,7 +100,13 @@ func runSubmissionsDownload(ctx context.Context, client *api.Client, opts *optio
 	}
 
 	submissionsService := api.NewSubmissionsService(client)
-	submissions, err := submissionsService.List(ctx, opts.CourseID, opts.AssignmentID, nil)
+	// include[]=submission_history is load-bearing, not extra detail. A
+	// submission object carries only the CURRENT attempt's attachments, and
+	// students routinely upload the parts of a multi-part assignment across
+	// separate attempts — so listing without the history silently reports
+	// earlier files as "no_attachment" and hands the grader an incomplete set.
+	submissions, err := submissionsService.List(ctx, opts.CourseID, opts.AssignmentID,
+		&api.ListSubmissionsOptions{Include: []string{"submission_history"}})
 	if err != nil {
 		logger.LogCommandError(ctx, "submissions.download", err, nil)
 		return fmt.Errorf("list submissions: %w", err)
@@ -114,7 +121,8 @@ func runSubmissionsDownload(ctx context.Context, client *api.Client, opts *optio
 	downloaded, skipped, failed := 0, 0, 0
 
 	for _, submission := range submissions {
-		if len(submission.Attachments) == 0 {
+		attachments := submissionAttachmentsAcrossAttempts(submission)
+		if len(attachments) == 0 {
 			manifest.Entries = append(manifest.Entries, submissionDownloadRecord{
 				SubmissionID: submission.ID, UserID: submission.UserID,
 				WorkflowState: submission.WorkflowState, SubmissionType: submission.SubmissionType,
@@ -123,14 +131,15 @@ func runSubmissionsDownload(ctx context.Context, client *api.Client, opts *optio
 			continue
 		}
 
-		for _, attachment := range submission.Attachments {
+		for _, item := range attachments {
+			attachment := item.attachment
 			filename := safeSubmissionAttachmentFilename(attachment)
 			userDir := filepath.Join(destination, fmt.Sprintf("user-%d", submission.UserID))
 			localPath := filepath.Join(userDir, fmt.Sprintf("attachment-%d-%s", attachment.ID, filename))
 			record := submissionDownloadRecord{
 				SubmissionID: submission.ID, UserID: submission.UserID,
 				WorkflowState: submission.WorkflowState, SubmissionType: submission.SubmissionType,
-				AttachmentID: attachment.ID, Filename: filename, Path: localPath,
+				Attempt: item.attempt, AttachmentID: attachment.ID, Filename: filename, Path: localPath,
 			}
 
 			if !opts.Overwrite {
@@ -200,6 +209,41 @@ func runSubmissionsDownload(ctx context.Context, client *api.Client, opts *optio
 		return fmt.Errorf("%d file download(s) failed; see %s", failed, manifestPath)
 	}
 	return nil
+}
+
+// attemptAttachment pairs a file with the attempt that carried it, so the
+// manifest can say which submission attempt a downloaded file came from.
+type attemptAttachment struct {
+	attempt    int
+	attachment api.Attachment
+}
+
+// submissionAttachmentsAcrossAttempts returns every distinct file a student
+// attached to this assignment, from the current attempt AND from each earlier
+// attempt in submission_history. Deduplicated by attachment id (Canvas repeats
+// a carried-forward file in every later attempt), keeping the earliest attempt
+// that introduced it, and ordered by attempt so the manifest reads
+// chronologically. A submission with no history behaves exactly as before.
+func submissionAttachmentsAcrossAttempts(submission api.Submission) []attemptAttachment {
+	var out []attemptAttachment
+	seen := make(map[int64]bool)
+
+	add := func(attempt int, attachments []api.Attachment) {
+		for _, attachment := range attachments {
+			if seen[attachment.ID] {
+				continue
+			}
+			seen[attachment.ID] = true
+			out = append(out, attemptAttachment{attempt: attempt, attachment: attachment})
+		}
+	}
+
+	for _, past := range submission.SubmissionHistory {
+		add(past.Attempt, past.Attachments)
+	}
+	add(submission.Attempt, submission.Attachments)
+
+	return out
 }
 
 func safeSubmissionAttachmentFilename(attachment api.Attachment) string {

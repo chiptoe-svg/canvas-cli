@@ -9,7 +9,10 @@ Download all files attached to an assignment's submissions.
 Files are organized by Canvas user ID and attachment ID, so identical student
 filenames never overwrite one another. The command writes a
 `submission-download-manifest.json` file that also records submissions with no
-attachment, such as text-entry and URL submissions. The manifest does not copy
+attachment, such as text-entry and URL submissions. Every attempt is covered:
+the command requests `submission_history`, so files a student uploaded on an
+earlier attempt are downloaded alongside the current ones, deduplicated by
+attachment ID, and each manifest entry records the attempt the file came from. The manifest does not copy
 student text-entry bodies.
 
 ### Synopsis
