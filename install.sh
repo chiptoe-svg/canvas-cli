@@ -13,7 +13,7 @@ set -eu
 
 REPO="chiptoe-svg/canvas-cli"
 BINARY="canvas"
-VERSION="${CANVAS_VERSION:-v1.13.0+audited.12}"
+VERSION="${CANVAS_VERSION:-v1.13.0+audited.13}"
 OPEN_AUTH=0
 
 die() { printf 'error: %s\n' "$1" >&2; exit 1; }
