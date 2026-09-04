@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
-// AutoUpdater handles automatic update checking and installation
+// AutoUpdater runs the periodic background check for a newer release and
+// leaves a notification. It never installs: installing replaces the running
+// binary with one verified only against a checksum file fetched from the
+// same place, so that stays an explicit `canvas update`.
 type AutoUpdater struct {
 	CurrentVersion string
 	CheckInterval  time.Duration
@@ -38,9 +42,8 @@ func NewAutoUpdater(currentVersion string, enabled bool, checkInterval time.Dura
 	}, nil
 }
 
-// RunUpdateCheck performs the update check and installation
-// This should be called at CLI startup
-// Returns messages to display to the user (if any)
+// RunUpdateCheck performs the background check (no download, no install)
+// and records the outcome for PrintNotifications. Called at CLI startup.
 func (a *AutoUpdater) RunUpdateCheck(ctx context.Context) {
 	if !a.Enabled {
 		return
@@ -56,11 +59,10 @@ func (a *AutoUpdater) RunUpdateCheck(ctx context.Context) {
 		return
 	}
 
-	// Run update in background with timeout
-	updateCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	checkCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	result := a.updater.CheckAndUpdate(updateCtx)
+	result, _ := a.updater.Check(checkCtx)
 
 	// Record the check (ignore error - update state is non-critical)
 	_ = a.stateManager.RecordCheck(result)
@@ -105,10 +107,16 @@ func (a *AutoUpdater) PrintNotifications() {
 		return
 	}
 
+	if version, ok := a.stateManager.GetAvailableNotification(); ok {
+		fmt.Fprintf(os.Stderr, "\n\033[33mA newer canvas-cli is available: v%s (you have v%s).\033[0m\n", version, strings.TrimPrefix(a.CurrentVersion, "v"))
+		fmt.Fprintf(os.Stderr, "  %s\n", InstallHint)
+		return
+	}
+
 	// Check for error notification
 	if errMsg, hasError := a.stateManager.GetLastError(); hasError {
-		fmt.Fprintf(os.Stderr, "\n\033[33m⚠ Auto-update failed: %s\033[0m\n", errMsg)
-		fmt.Fprintf(os.Stderr, "  You can manually update with: go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest\n")
+		fmt.Fprintf(os.Stderr, "\n\033[33m⚠ Update check failed: %s\033[0m\n", errMsg)
+		fmt.Fprintf(os.Stderr, "  %s\n", InstallHint)
 	}
 }
 

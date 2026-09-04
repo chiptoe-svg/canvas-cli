@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -190,5 +192,47 @@ func TestFilesQuotaCmd(t *testing.T) {
 			cmd := newFilesQuotaCmd()
 			cmdtest.RunCommandTest(t, cmd, tc)
 		})
+	}
+}
+
+// The server chooses the default filename. A leading-dot name such as
+// ".zshrc" downloaded into the working directory is a shell-config
+// overwrite; refuse it, and never truncate an existing file unless asked.
+func TestFilesDownloadCmd_RefusesUnsafeTargets(t *testing.T) {
+	fileInfo := func(name string) string {
+		return `{"id": 1, "display_name": "` + name + `", "filename": "` + name + `", "url": "https://files.example/1"}`
+	}
+	existing := filepath.Join(t.TempDir(), "report.pdf")
+	if err := os.WriteFile(existing, []byte("keep me"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []cmdtest.CommandTestCase{
+		{
+			Name: "server-supplied dotfile name is refused",
+			Args: []string{"1"},
+			MockResponses: map[string]cmdtest.MockResponse{
+				"/api/v1/accounts": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/files/1":  cmdtest.NewMockResponse(fileInfo(".zshrc")),
+			},
+			ExpectError: true,
+		},
+		{
+			Name: "existing destination is not overwritten without --overwrite",
+			Args: []string{"1", "--destination", existing},
+			MockResponses: map[string]cmdtest.MockResponse{
+				"/api/v1/accounts": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/files/1":  cmdtest.NewMockResponse(fileInfo("report.pdf")),
+			},
+			ExpectError: true,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.Name, func(t *testing.T) {
+			cmdtest.RunCommandTest(t, newFilesDownloadCmd(), tc)
+		})
+	}
+	if got, _ := os.ReadFile(existing); string(got) != "keep me" {
+		t.Errorf("existing file was modified: %q", got)
 	}
 }

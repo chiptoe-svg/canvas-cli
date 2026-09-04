@@ -17,6 +17,9 @@ type State struct {
 	UpdatedToVersion string    `json:"updated_to_version,omitempty"`
 	LastError        string    `json:"last_error,omitempty"`
 	LastErrorTime    time.Time `json:"last_error_time,omitempty"`
+	// AvailableVersion is a newer release found by the last background
+	// check, pending a one-time notification to the user.
+	AvailableVersion string `json:"available_version,omitempty"`
 }
 
 // StateManager handles loading and saving update state
@@ -92,6 +95,9 @@ func (m *StateManager) RecordCheck(result *UpdateResult) error {
 		state.UpdatedToVersion = result.ToVersion
 		state.LastError = ""
 		state.LastErrorTime = time.Time{}
+		state.AvailableVersion = ""
+	} else if result.Available {
+		state.AvailableVersion = result.ToVersion
 	}
 
 	if result.Error != nil {
@@ -123,6 +129,20 @@ func (m *StateManager) GetPendingNotification() (fromVersion, toVersion string, 
 	}
 
 	return "", "", false
+}
+
+// GetAvailableNotification returns a newer version found by the last
+// background check, once; it is cleared after being returned so the user is
+// told at most once per check interval.
+func (m *StateManager) GetAvailableNotification() (string, bool) {
+	state, err := m.Load()
+	if err != nil || state.AvailableVersion == "" {
+		return "", false
+	}
+	version := state.AvailableVersion
+	state.AvailableVersion = ""
+	_ = m.Save(state) // non-critical
+	return version, true
 }
 
 // GetLastError returns the last error if it occurred recently

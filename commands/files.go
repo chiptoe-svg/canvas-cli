@@ -201,6 +201,7 @@ Examples:
 	}
 
 	cmd.Flags().StringVar(&opts.Destination, "destination", "", "Destination file path (default: current directory with original filename)")
+	cmd.Flags().BoolVar(&opts.Overwrite, "overwrite", false, "Replace the destination file if it already exists")
 
 	return cmd
 }
@@ -613,7 +614,19 @@ func runFilesDownload(ctx context.Context, client *api.Client, opts *options.Fil
 		if clean == "" || clean == "." || clean == "/" || strings.ContainsAny(clean, "/\\") {
 			return fmt.Errorf("server returned an unsafe filename: %q", file.Filename)
 		}
+		// A leading dot lands the file among shell and tool configuration in
+		// the working directory (.zshrc, .gitconfig); the name is chosen by
+		// whoever uploaded the file, so require the user to pick one.
+		if strings.HasPrefix(clean, ".") {
+			return fmt.Errorf("server returned a hidden filename %q; pass --destination to choose where to save it", file.Filename)
+		}
 		destPath = clean
+	}
+
+	if !opts.Overwrite {
+		if _, err := os.Stat(destPath); err == nil {
+			return fmt.Errorf("%s already exists; pass --overwrite to replace it or --destination to choose another path", destPath)
+		}
 	}
 
 	fmt.Printf("Downloading %s...\n", file.DisplayName)
