@@ -1,6 +1,12 @@
 package options
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/jjuanrivvera/canvas-cli/internal/api"
+)
 
 // SubmissionsListOptions contains options for listing submissions
 type SubmissionsListOptions struct {
@@ -76,6 +82,10 @@ type SubmissionsGradeOptions struct {
 	Comment      string
 	Excuse       bool
 	PostedGrade  string
+	// Rubric rows, as repeated `<criterion_id>=<points>` flags, and their
+	// optional per-criterion comments as `<criterion_id>=<text>`.
+	Rubric        []string
+	RubricComment []string
 }
 
 // Validate validates the options
@@ -90,10 +100,66 @@ func (o *SubmissionsGradeOptions) Validate() error {
 		return fmt.Errorf("user-id is required and must be greater than 0")
 	}
 	// At least one grading parameter is required
-	if o.Score == 0 && o.Comment == "" && !o.Excuse && o.PostedGrade == "" {
-		return fmt.Errorf("at least one grading parameter is required: score, comment, excuse, or posted-grade")
+	if o.Score == 0 && o.Comment == "" && !o.Excuse && o.PostedGrade == "" && len(o.Rubric) == 0 {
+		return fmt.Errorf("at least one grading parameter is required: score, comment, excuse, posted-grade, or rubric")
+	}
+	if _, err := o.RubricAssessment(); err != nil {
+		return err
 	}
 	return nil
+}
+
+// RubricAssessment turns the repeated --rubric / --rubric-comment flags into
+// the per-criterion map Canvas expects on the submission update.
+//
+// Canvas accepts rubric rows on the same request as the score, which is the
+// only route that works everywhere: creating a rubric assessment directly
+// needs a rubric-association id, and Canvas exposes no endpoint that lists
+// associations, so on many instances that id cannot be discovered at all.
+//
+// `--rubric <criterion_id>=<points>` (points may be 0, or a decimal)
+// `--rubric-comment <criterion_id>=<text>` (text may contain '='; only the
+// first '=' splits, and the criterion must also carry a --rubric entry)
+func (o *SubmissionsGradeOptions) RubricAssessment() (map[string]api.RubricAssessmentParams, error) {
+	if len(o.Rubric) == 0 && len(o.RubricComment) == 0 {
+		return nil, nil
+	}
+	assessment := make(map[string]api.RubricAssessmentParams, len(o.Rubric))
+	for _, raw := range o.Rubric {
+		id, value, ok := strings.Cut(raw, "=")
+		id, value = strings.TrimSpace(id), strings.TrimSpace(value)
+		if !ok || id == "" || value == "" {
+			return nil, fmt.Errorf("--rubric %q must be <criterion-id>=<points>", raw)
+		}
+		if _, exists := assessment[id]; exists {
+			return nil, fmt.Errorf("--rubric names criterion %q twice", id)
+		}
+		points, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return nil, fmt.Errorf("--rubric %q: points must be a number", raw)
+		}
+		if points < 0 {
+			return nil, fmt.Errorf("--rubric %q: points cannot be negative", raw)
+		}
+		scored := points
+		assessment[id] = api.RubricAssessmentParams{Points: &scored}
+	}
+	for _, raw := range o.RubricComment {
+		id, text, ok := strings.Cut(raw, "=")
+		id = strings.TrimSpace(id)
+		if !ok || id == "" || strings.TrimSpace(text) == "" {
+			return nil, fmt.Errorf("--rubric-comment %q must be <criterion-id>=<text>", raw)
+		}
+		entry, exists := assessment[id]
+		if !exists {
+			// Sending a comment alone would blank that criterion's score on
+			// some instances; refuse rather than write a surprise.
+			return nil, fmt.Errorf("--rubric-comment names criterion %q, which has no --rubric entry", id)
+		}
+		entry.Comments = text
+		assessment[id] = entry
+	}
+	return assessment, nil
 }
 
 // SubmissionsBulkGradeOptions contains options for bulk grading submissions

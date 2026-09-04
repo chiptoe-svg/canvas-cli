@@ -46,11 +46,27 @@ Show the user the proposed total, the per-criterion breakdown, and the exact
 comment you intend to leave. Wait for their go-ahead. Then write.
 
 ```bash
-canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 --grade 14
-canvas submissions add-comment --course-id 123 --assignment-id 456 --user-id 789 --comment "..."
-canvas rubric-associations assess <association-id> --course-id 123 --assignment-id 456 --user-id 789   # when the rubric carries the points
+canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 \
+  --score 14 --rubric _1234=4 --rubric _5678=0 \
+  --rubric-comment _5678="no third review" --comment "..."      # score + rubric rows in ONE update
 canvas submissions get --course-id 123 --assignment-id 456 --user-id 789    # read back what landed
 ```
+
+**Rubric rows ride the submission update, not a rubric association.** Canvas
+accepts `rubric_assessment` on the same request as the score, and that is the
+only route that works everywhere: creating a rubric assessment on its own needs
+a rubric-association id, and Canvas exposes no endpoint that lists
+associations, so on many instances that id cannot be discovered at all. Take
+the criterion ids from the assignment's own rubric:
+
+```bash
+canvas assignments get 456 --course-id 123 -o json | jq '.rubric[] | {id,description,points}'
+```
+
+Pass one `--rubric <criterion-id>=<points>` per criterion, and pass the ones
+scored **zero** too — an omitted criterion keeps its previous value rather than
+going to zero. `--rubric-comment <criterion-id>=<text>` adds the per-row note.
+A rubric alone is a complete grade; Canvas totals it.
 
 "Graded" means the read-back shows the score and the comment. Not the write's
 own echo, not your intent. If a command exits non-zero, report its stderr

@@ -156,6 +156,10 @@ Examples:
 	cmd.Flags().StringVar(&opts.Comment, "comment", "", "Comment to add")
 	cmd.Flags().BoolVar(&opts.Excuse, "excuse", false, "Excuse the submission")
 	cmd.Flags().StringVar(&opts.PostedGrade, "posted-grade", "", "Posted grade (e.g., 'A', 'B+', 'Pass')")
+	cmd.Flags().StringArrayVar(&opts.Rubric, "rubric", nil,
+		"Rubric criterion score as <criterion-id>=<points>; repeat per criterion (criterion ids come from the assignment's rubric)")
+	cmd.Flags().StringArrayVar(&opts.RubricComment, "rubric-comment", nil,
+		"Per-criterion comment as <criterion-id>=<text>; the criterion must also have a --rubric entry")
 	mustMarkRequired(cmd, "course-id", "assignment-id", "user-id")
 
 	return cmd
@@ -435,6 +439,17 @@ func runSubmissionsGrade(ctx context.Context, client *api.Client, opts *options.
 	if opts.Excuse {
 		params.Excuse = true
 	}
+
+	// Rubric rows ride the SAME submission update as the score. Canvas's
+	// submission endpoint accepts rubric_assessment directly, which is the
+	// only route available everywhere: posting a rubric assessment on its own
+	// needs a rubric-association id, and Canvas exposes no endpoint that lists
+	// associations, so that id often cannot be discovered at all.
+	rubric, err := opts.RubricAssessment()
+	if err != nil {
+		return err
+	}
+	params.RubricAssessment = rubric
 
 	if dryRun {
 		// Dry run: render the PUT as curl, nothing to read back.

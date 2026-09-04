@@ -309,7 +309,10 @@ type SubmissionCommentParams struct {
 
 // RubricAssessmentParams holds parameters for rubric assessment
 type RubricAssessmentParams struct {
-	Points   float64
+	// Points is a pointer so a criterion scored ZERO is sent rather than
+	// dropped. Canvas leaves an omitted criterion at its previous value, so a
+	// float64 zero-value here silently turned "0 out of 4" into "unchanged".
+	Points   *float64
 	Rating   string
 	Comments string
 }
@@ -364,8 +367,8 @@ func buildGradeSubmissionBody(params *GradeSubmissionParams) map[string]interfac
 		assessment := make(map[string]interface{})
 		for criterionID, criterion := range params.RubricAssessment {
 			criterionData := make(map[string]interface{})
-			if criterion.Points > 0 {
-				criterionData["points"] = criterion.Points
+			if criterion.Points != nil {
+				criterionData["points"] = *criterion.Points
 			}
 			if criterion.Rating != "" {
 				criterionData["rating_id"] = criterion.Rating
@@ -436,8 +439,8 @@ func (s *SubmissionsService) BulkGrade(ctx context.Context, courseID, assignment
 			assessment := make(map[string]interface{})
 			for criterionID, criterion := range data.RubricAssessment {
 				criterionData := make(map[string]interface{})
-				if criterion.Points > 0 {
-					criterionData["points"] = criterion.Points
+				if criterion.Points != nil {
+					criterionData["points"] = *criterion.Points
 				}
 				if criterion.Rating != "" {
 					criterionData["rating_id"] = criterion.Rating
