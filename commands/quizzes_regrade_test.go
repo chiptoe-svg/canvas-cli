@@ -295,6 +295,7 @@ type regradeServer struct {
 	subPUTs      map[int64][]map[string]interface{}
 	listPages    []string
 	historyGETs  []string
+	capPerPage   int // when > 0, the server never returns more than this per page whatever was asked
 }
 
 func data(q int64, answer string, points float64) api.QuizSubmissionData {
@@ -370,6 +371,9 @@ func newRegradeServer(t *testing.T) *regradeServer {
 			rs.listPages = append(rs.listPages, r.URL.RawQuery)
 			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 			perPage, _ := strconv.Atoi(r.URL.Query().Get("per_page"))
+			if rs.capPerPage > 0 && perPage > rs.capPerPage {
+				perPage = rs.capPerPage
+			}
 			start := (page - 1) * perPage
 			out := []api.QuizSubmission{}
 			for i := start; i < start+perPage && i < len(rs.order); i++ {
@@ -987,6 +991,7 @@ func assertTableRow(t *testing.T, out string, cols ...string) {
 func TestRunQuizzesRegrade_ActivityLogEntry(t *testing.T) {
 	useTempHome(t)
 	logPath := useTempActivityLog(t)
+	t.Setenv(activity.EnvCaptureBodies, "true") // details.regrade rides with the bodies
 	withFastReadBack(t)
 	rs := newRegradeServer(t)
 	defer rs.Close()
@@ -1070,5 +1075,35 @@ func TestRunQuizzesRegrade_ActivityLogEntry(t *testing.T) {
 	}
 	if verified != detail.Summary.Verified {
 		t.Errorf("verification table has %d verified rows, summary says %d", verified, detail.Summary.Verified)
+	}
+}
+
+// A Canvas admin can cap per_page below what was asked. The first page then
+// comes back short without being the last one; the walk must continue to
+// the empty page instead of rescoring only the first page and reporting
+// success.
+func TestRunQuizzesRegrade_ServerCapsPageSize(t *testing.T) {
+	setRegradePerPage(t, 100)
+	withFastReadBack(t)
+	rs := newRegradeServer(t)
+	defer rs.Close()
+	rs.capPerPage = 2
+
+	var runErr error
+	out := captureStdout(func() {
+		runErr = runQuizzesRegrade(context.Background(), newRegradeClient(t, rs), regradeOpts("completed", false))
+	})
+	if runErr != nil {
+		t.Fatalf("runQuizzesRegrade: %v\n%s", runErr, out)
+	}
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	// 8 submissions at a capped 2 per page: four pages, then the empty fifth
+	if len(rs.listPages) != 5 {
+		t.Errorf("expected 5 list pages, got %d: %v", len(rs.listPages), rs.listPages)
+	}
+	// every complete submission was considered, not just the first page's
+	if len(rs.historyGETs) != 6 {
+		t.Errorf("expected all 6 complete submissions to be read, got %d: %v", len(rs.historyGETs), rs.historyGETs)
 	}
 }

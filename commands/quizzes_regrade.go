@@ -392,9 +392,15 @@ func correctAnswerIDs(answers []api.QuizAnswer) []int64 {
 
 // listAllQuizSubmissions pages through GET .../quizzes/:quiz_id/submissions.
 // The endpoint answers with a {"quiz_submissions": [...]} envelope, so the
-// generic array paginator does not apply; page until a short page arrives.
+// generic array paginator does not apply. It pages until an empty page: a
+// page shorter than what was asked for is not the end, because a Canvas
+// admin can cap per_page below the request, and stopping there would
+// silently rescore only the first page. A page that adds no new submission
+// also ends the walk, so a server that ignores the page parameter cannot
+// loop forever.
 func listAllQuizSubmissions(ctx context.Context, service *api.QuizSubmissionsService, courseID, quizID int64) ([]api.QuizSubmission, error) {
 	var all []api.QuizSubmission
+	seen := map[int64]bool{}
 	for page := 1; ; page++ {
 		batch, err := service.List(ctx, courseID, quizID, &api.ListQuizSubmissionsOptions{
 			Page:    page,
@@ -403,8 +409,16 @@ func listAllQuizSubmissions(ctx context.Context, service *api.QuizSubmissionsSer
 		if err != nil {
 			return nil, err
 		}
-		all = append(all, batch...)
-		if len(batch) < quizRegradePerPage {
+		added := 0
+		for _, s := range batch {
+			if seen[s.ID] {
+				continue
+			}
+			seen[s.ID] = true
+			all = append(all, s)
+			added++
+		}
+		if len(batch) == 0 || added == 0 {
 			return all, nil
 		}
 	}
