@@ -136,7 +136,6 @@ func TestSubmissionsExcuse_ResolutionForms(t *testing.T) {
 		{"10", "77"}, // quiz id → its assignment
 		{"Lovelace, Ada", "QUIZ"},
 		{"ada@example.edu", "quiz 3"},
-		{"lovel", "Quiz"},
 	} {
 		ec := newExcuseCanvas(t)
 		out, err := runExcuse(t, ec, "table", false, "", "--student", c.student, "--assignment", c.assignment, "--force")
@@ -155,13 +154,21 @@ func TestSubmissionsExcuse_RefusesAmbiguousOrUnknown(t *testing.T) {
 	defer ec.Close()
 
 	_, err := runExcuse(t, ec, "table", false, "", "--student", "smith", "--assignment", "quiz 3", "--force")
-	if err == nil || !strings.Contains(err.Error(), `--student: "smith" matches 2 students`) ||
+	if err == nil || !strings.Contains(err.Error(), `--student: no student is named exactly "smith"`) ||
 		!strings.Contains(err.Error(), "11 Ann Smith (Smith, Ann) <asmith>") || !strings.Contains(err.Error(), "12 Anne Smithers") {
 		t.Errorf("ambiguous student: %v", err)
 	}
 	_, err = runExcuse(t, ec, "table", false, "", "--student", "Ann Smith", "--assignment", "essay", "--force")
 	if err == nil || !strings.Contains(err.Error(), `--assignment: "essay" matches 2 assignments`) || !strings.Contains(err.Error(), "458 Essay 10") {
 		t.Errorf("ambiguous assignment: %v", err)
+	}
+	// part of a name is not enough for a write, even when only one student matches it
+	_, err = runExcuse(t, ec, "table", false, "", "--student", "lovel", "--assignment", "quiz 3", "--force")
+	if err == nil || !strings.Contains(err.Error(), `--student: no student is named exactly "lovel"`) || !strings.Contains(err.Error(), "10 Ada Lovelace") {
+		t.Errorf("partial student name: %v", err)
+	}
+	if puts := ec.puts(); len(puts) != 0 {
+		t.Errorf("partial name must not write: %v", puts)
 	}
 	_, err = runExcuse(t, ec, "table", false, "", "--student", "nobody", "--assignment", "quiz 3", "--force")
 	if err == nil || !strings.Contains(err.Error(), `no student matches "nobody" (3 searched)`) {
