@@ -22,14 +22,12 @@ func TestSkillFS(t *testing.T) {
 	// The grading reference is only reachable if SKILL.md points at it; an
 	// embedded file nothing links to is a file no agent ever reads.
 	assert.Contains(t, string(data), "references/grading-workflows.md")
-	assert.Contains(t, string(data), "references/pdf-review-workflows.md")
 
 	for _, ref := range []string{
 		"references/canvas-commands.md",
 		"references/auth-and-config.md",
 		"references/output-and-filtering.md",
 		"references/grading-workflows.md",
-		"references/pdf-review-workflows.md",
 	} {
 		_, err = fs.Stat(SkillFS, ref)
 		require.NoError(t, err, ref)

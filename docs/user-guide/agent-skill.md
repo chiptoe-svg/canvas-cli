@@ -70,4 +70,3 @@ Condensed references ship alongside it:
 - `references/auth-and-config.md` — auth methods, env vars, instances, context
 - `references/output-and-filtering.md` — formats, jq patterns, script hygiene
 - `references/grading-workflows.md` — proposal and read-back discipline for grading
-- `references/pdf-review-workflows.md` — local PDF preparation and authorized Spark extraction/review routing
