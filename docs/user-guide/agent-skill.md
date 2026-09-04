@@ -9,14 +9,8 @@ the commands, flags, and safety rules.
 
 ## Install the skill
 
-The cross-agent way (recommended) — detects every agent you have and stays up
-to date:
-
-```bash
-npx skills add jjuanrivvera/canvas-cli
-```
-
-Built into the CLI (no Node required) — writes the bundled skill directly:
+The skill is bundled in the CLI binary. Installing it from the CLI guarantees
+the skill matches the version you are running:
 
 ```bash
 canvas skills install                 # current project (./.claude/skills)
@@ -28,13 +22,6 @@ canvas skills print                   # print the SKILL.md
 
 Supported `--agent` values: `claude`, `cursor`, `windsurf`, `codex`, `gemini`,
 `copilot`, `opencode`. Use `--dir` to write to any custom skills directory.
-
-Native Claude Code plugin:
-
-```text
-/plugin marketplace add jjuanrivvera/canvas-cli
-/plugin install canvas-cli@canvas
-```
 
 ## Prerequisites
 

@@ -270,21 +270,12 @@ For full setup (Claude Desktop, Claude Code CLI, Cursor, VS Code, OpenCode, Code
 Canvas CLI ships an **agent skill** that teaches AI coding agents (Claude Code,
 Cursor, Codex, Gemini CLI, Windsurf, Copilot, …) how to drive it — commands,
 flags, safety rules (`--dry-run` previews), and common grading/content
-workflows. Install the skill across every agent you have with one command:
+workflows. The skill is bundled in the binary, so installing it from the CLI
+guarantees it matches the version you are running:
 
 ```bash
-npx skills add jjuanrivvera/canvas-cli
-```
-
-Or use one of the built-in / native paths:
-
-```bash
-canvas skills install --global              # write the bundled skill (no Node needed)
+canvas skills install --global              # write the bundled skill
 canvas skills install --agent cursor        # target a specific agent
-
-# Native Claude Code plugin:
-#   /plugin marketplace add jjuanrivvera/canvas-cli
-#   /plugin install canvas-cli@canvas
 ```
 
 The skill wraps this binary, so install the CLI (above) and authenticate first.
