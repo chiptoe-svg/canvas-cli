@@ -17,6 +17,7 @@ func TestSkillFS(t *testing.T) {
 	data, err := fs.ReadFile(SkillFS, "SKILL.md")
 	require.NoError(t, err)
 	assert.Contains(t, string(data), "name: canvas-cli")
+	assert.Contains(t, string(data), "canvas submissions download")
 
 	// The grading reference is only reachable if SKILL.md points at it; an
 	// embedded file nothing links to is a file no agent ever reads.

@@ -30,6 +30,29 @@ type SubmissionsGetOptions struct {
 	Include      []string
 }
 
+// SubmissionsDownloadOptions contains options for downloading every file
+// attached to an assignment's submissions.
+type SubmissionsDownloadOptions struct {
+	CourseID     int64
+	AssignmentID int64
+	Destination  string
+	Overwrite    bool
+}
+
+// Validate validates the options.
+func (o *SubmissionsDownloadOptions) Validate() error {
+	if o.CourseID <= 0 {
+		return fmt.Errorf("course-id is required and must be greater than 0")
+	}
+	if o.AssignmentID <= 0 {
+		return fmt.Errorf("assignment-id is required and must be greater than 0")
+	}
+	if o.Destination == "" {
+		return fmt.Errorf("destination is required")
+	}
+	return nil
+}
+
 // Validate validates the options
 func (o *SubmissionsGetOptions) Validate() error {
 	if o.CourseID <= 0 {
