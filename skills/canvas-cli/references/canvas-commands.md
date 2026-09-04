@@ -61,7 +61,7 @@ canvas update check | status
 | `conversations` | `reply`, `archive`, `star`, `mark-read`, `unread-count` |
 | `files` | `upload <path>`, `download <id>`, `quota` |
 | `calendar` | `reserve` (appointment slots) |
-| `rubrics` | `associate` |
+| `rubrics` | `create --criteria-file FILE`, `update ID --criteria-file FILE` (JSON: array of `{description, long_description, points, ratings:[{description, points}]}` or the `get -o json` object; update replaces every row), `associate` |
 | `outcomes` | `groups`, `link`, `unlink`, `results`, `alignments` |
 | `peer-reviews` | — |
 | `analytics` | `activity`, `assignments`, `students`, `user`, `department` |

@@ -120,9 +120,15 @@ func newRubricsCreateCmd() *cobra.Command {
 		Short: "Create a new rubric",
 		Long: `Create a new rubric in a course.
 
+Without --criteria-file the rubric is created empty and the rows must be added
+in the Canvas UI. With it, the criteria and their rating scales come from a JSON
+file (see --criteria-file for the format), so the rubric is ready to associate
+with an assignment immediately.
+
 Examples:
   canvas rubrics create --course-id 123 --title "Essay Rubric" --points 100
-  canvas rubrics create --course-id 123 --title "Discussion Rubric" --free-form`,
+  canvas rubrics create --course-id 123 --title "Discussion Rubric" --free-form
+  canvas rubrics create --course-id 123 --title "Essay Rubric" --criteria-file criteria.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -144,6 +150,7 @@ Examples:
 	cmd.Flags().Float64Var(&opts.PointsPossible, "points", 0, "Total points possible")
 	cmd.Flags().BoolVar(&opts.FreeFormCriterionComments, "free-form", false, "Allow free-form criterion comments")
 	cmd.Flags().BoolVar(&opts.HideScoreTotal, "hide-score-total", false, "Hide score total")
+	cmd.Flags().StringVar(&opts.CriteriaFile, "criteria-file", "", criteriaFileUsage)
 
 	return cmd
 }
@@ -156,9 +163,15 @@ func newRubricsUpdateCmd() *cobra.Command {
 		Short: "Update a rubric",
 		Long: `Update an existing rubric.
 
+--criteria-file replaces ALL of the rubric's criteria with the rows in the
+file; rows not in the file are removed. To edit in place, export the current
+rubric with 'canvas rubrics get 456 --course-id 123 -o json > rubric.json',
+edit the "data" array, and pass that file back.
+
 Examples:
   canvas rubrics update 456 --course-id 123 --title "Updated Title"
-  canvas rubrics update 456 --course-id 123 --points 150`,
+  canvas rubrics update 456 --course-id 123 --points 150
+  canvas rubrics update 456 --course-id 123 --criteria-file rubric.json`,
 		Args: ExactArgsWithUsage(1, "rubric-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rubricID, err := strconv.ParseInt(args[0], 10, 64)
@@ -192,6 +205,7 @@ Examples:
 	cmd.Flags().Float64Var(&opts.PointsPossible, "points", 0, "Total points possible")
 	cmd.Flags().BoolVar(&opts.FreeFormCriterionComments, "free-form", false, "Allow free-form criterion comments")
 	cmd.Flags().BoolVar(&opts.HideScoreTotal, "hide-score-total", false, "Hide score total")
+	cmd.Flags().StringVar(&opts.CriteriaFile, "criteria-file", "", criteriaFileUsage)
 
 	return cmd
 }
@@ -375,6 +389,14 @@ func runRubricsCreate(ctx context.Context, client *api.Client, opts *options.Rub
 		HideScoreTotal:            opts.HideScoreTotal,
 	}
 
+	if opts.CriteriaFile != "" {
+		criteria, err := loadRubricCriteria(opts.CriteriaFile)
+		if err != nil {
+			return err
+		}
+		params.Criteria = criteria
+	}
+
 	rubric, err := service.Create(ctx, opts.CourseID, params)
 	if err != nil {
 		logger.LogCommandError(ctx, "rubrics.create", err, map[string]interface{}{
@@ -411,6 +433,14 @@ func runRubricsUpdate(ctx context.Context, client *api.Client, opts *options.Rub
 	}
 	if opts.HideScoreTotalSet {
 		params.HideScoreTotal = &opts.HideScoreTotal
+	}
+
+	if opts.CriteriaFile != "" {
+		criteria, err := loadRubricCriteria(opts.CriteriaFile)
+		if err != nil {
+			return err
+		}
+		params.Criteria = criteria
 	}
 
 	rubric, err := service.Update(ctx, opts.CourseID, opts.RubricID, params)
