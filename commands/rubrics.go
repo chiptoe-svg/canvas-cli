@@ -166,7 +166,9 @@ func newRubricsUpdateCmd() *cobra.Command {
 --criteria-file replaces ALL of the rubric's criteria with the rows in the
 file; rows not in the file are removed. To edit in place, export the current
 rubric with 'canvas rubrics get 456 --course-id 123 -o json > rubric.json',
-edit the "data" array, and pass that file back.
+edit the "data" array, and pass that file back. Keep the "id" fields: Canvas
+ties existing rubric assessments to criterion ids, so a criterion sent without
+its id is treated as new and already-graded submissions lose that row's score.
 
 Examples:
   canvas rubrics update 456 --course-id 123 --title "Updated Title"
