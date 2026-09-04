@@ -372,6 +372,64 @@ func TestRubricsService_Update_NoCriteriaOmitsKey(t *testing.T) {
 	}
 }
 
+// In dry-run mode the client prints curl and answers with an empty body, so
+// the wrapped rubric responses carry no object. That must not be an error:
+// every other service returns a zero-value result in dry-run.
+func TestRubricsService_DryRun_WriteOpsSucceed(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		t.Errorf("dry-run must not send %s %s", r.Method, r.URL.Path)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "test-token", DryRun: true})
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	svc := NewRubricsService(client)
+	ctx := context.Background()
+	title := "T"
+
+	if r, err := svc.Create(ctx, 1, &CreateRubricParams{Title: "T", Criteria: sampleRubricCriteria()}); err != nil || r == nil {
+		t.Errorf("Create: got (%v, %v), want empty rubric and nil error", r, err)
+	}
+	if r, err := svc.Update(ctx, 1, 2, &UpdateRubricParams{Title: &title}); err != nil || r == nil {
+		t.Errorf("Update: got (%v, %v), want empty rubric and nil error", r, err)
+	}
+	if r, err := svc.Delete(ctx, 1, 2); err != nil || r == nil {
+		t.Errorf("Delete: got (%v, %v), want empty rubric and nil error", r, err)
+	}
+	if a, err := svc.Associate(ctx, 1, 2, &AssociateParams{AssociationType: "Assignment", AssociationID: 3}); err != nil || a == nil {
+		t.Errorf("Associate: got (%v, %v), want empty association and nil error", a, err)
+	}
+}
+
+// A live response with no rubric is still an error; dry-run tolerance must
+// not mask a broken server.
+func TestRubricsService_Create_MissingRubricStillErrors(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/accounts" {
+			handleVersionDetection(w)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(ClientConfig{BaseURL: server.URL, Token: "test-token"})
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	if _, err := NewRubricsService(client).Create(context.Background(), 1, &CreateRubricParams{Title: "T"}); err == nil {
+		t.Error("expected an error when the response has no rubric")
+	}
+}
+
 func sampleRubricCriteria() []RubricCriterion {
 	return []RubricCriterion{
 		{
