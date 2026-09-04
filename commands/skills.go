@@ -32,12 +32,8 @@ func init() {
 		Long: `Install the canvas-cli agent skill so AI coding agents know how to
 drive this CLI.
 
-The cross-agent way (recommended) is Vercel's installer, which detects every
-agent you have and is always up to date:
-
-  npx skills add jjuanrivvera/canvas-cli
-
-This built-in command writes the bundled skill directly, without Node:
+This command writes the skill bundled in this binary, so the installed skill
+always matches the CLI version you are running:
 
   canvas skills install                 # Claude Code (project ./.claude/skills)
   canvas skills install --global        # Claude Code (~/.claude/skills)
@@ -90,7 +86,6 @@ func newSkillsInstallCmd() *cobra.Command {
 				}
 			}
 			fmt.Fprintf(out, "Installed canvas-cli skill to %s\n", target)
-			fmt.Fprintln(out, "Tip: for every agent at once, use `npx skills add jjuanrivvera/canvas-cli`.")
 			return nil
 		},
 	}

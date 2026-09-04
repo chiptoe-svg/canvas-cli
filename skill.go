@@ -1,7 +1,7 @@
 // Package canvascli embeds the agent-skill assets (SKILL.md + references) into
 // the binary so `canvas skills install` can write them into an AI agent's
 // skills directory. The same files under skills/canvas-cli/ are what
-// `npx skills add jjuanrivvera/canvas-cli` and the Claude Code plugin consume.
+// `canvas skills install` consumes.
 package canvascli
 
 import (
