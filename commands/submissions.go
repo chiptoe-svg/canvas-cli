@@ -461,7 +461,7 @@ func runSubmissionsGrade(ctx context.Context, client *api.Client, opts *options.
 	}
 
 	// Grade the submission and read it back
-	rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, opts.AssignmentID, opts.UserID, params)
+	rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, opts.AssignmentID, opts.UserID, params, false)
 	if err != nil {
 		logger.LogCommandError(ctx, "submissions.grade", err, map[string]interface{}{
 			"course_id":     opts.CourseID,
@@ -586,7 +586,7 @@ func runSubmissionsBulkGrade(ctx context.Context, client *api.Client, opts *opti
 			}
 		}
 
-		rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, grade.AssignmentID, grade.UserID, params)
+		rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, grade.AssignmentID, grade.UserID, params, true)
 		if err != nil {
 			printInfo(" ❌ Error: %v\n", err)
 			errorCount++
@@ -736,7 +736,7 @@ func runSubmissionsAddComment(ctx context.Context, client *api.Client, opts *opt
 		return nil
 	}
 
-	rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, opts.AssignmentID, opts.UserID, params)
+	rb, err := gradeAndReadBack(ctx, submissionsService, opts.CourseID, opts.AssignmentID, opts.UserID, params, false)
 	if err != nil {
 		logger.LogCommandError(ctx, "submissions.add-comment", err, map[string]interface{}{
 			"course_id":     opts.CourseID,

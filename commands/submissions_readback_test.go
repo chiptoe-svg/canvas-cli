@@ -391,3 +391,96 @@ func TestVerifyGradeReadBack(t *testing.T) {
 		t.Errorf("rounding tolerance: %v", m)
 	}
 }
+
+// A rubric-only grade has no posted grade, excuse, or comment to compare, so
+// without checking the rubric rows the read-back would verify an empty
+// request. Every requested criterion must read back as asked.
+func TestVerifyGradeReadBack_Rubric(t *testing.T) {
+	eight, four := 8.0, 4.0
+	req := gradeRequest{Rubric: map[string]rubricCriterionRequest{"_1": {Points: &eight}, "_2": {Points: &four, Rating: "r_low"}}}
+
+	// the false-verified case: Canvas returned no rubric at all
+	if _, m := verifyGradeReadBack(nil, &api.Submission{Score: 12}, req); len(m) != 2 {
+		t.Errorf("rubric absent on read-back must fail for both criteria: %v", m)
+	}
+	ok := &api.Submission{Rubric: api.RubricAssessmentResult{"_1": {Points: 8}, "_2": {Points: 4, RatingID: "r_low"}}}
+	if _, m := verifyGradeReadBack(nil, ok, req); len(m) != 0 {
+		t.Errorf("matching rubric: %v", m)
+	}
+	wrong := &api.Submission{Rubric: api.RubricAssessmentResult{"_1": {Points: 8}, "_2": {Points: 3, RatingID: "r_mid"}}}
+	if _, m := verifyGradeReadBack(nil, wrong, req); len(m) != 2 || !strings.Contains(m[0]+m[1], "3 points") {
+		t.Errorf("points and rating differences must both be reported: %v", m)
+	}
+	// rounding tolerance applies to rubric points too
+	third := 100.0 / 3
+	if _, m := verifyGradeReadBack(nil, &api.Submission{Rubric: api.RubricAssessmentResult{"_1": {Points: 33.33}}}, gradeRequest{Rubric: map[string]rubricCriterionRequest{"_1": {Points: &third}}}); len(m) != 0 {
+		t.Errorf("rubric rounding tolerance: %v", m)
+	}
+}
+
+// gradeAndReadBack must not post a comment that is already on the
+// submission; the grade still goes through and the row still verifies.
+func TestGradeAndReadBack_DoesNotRepostExistingComment(t *testing.T) {
+	var putBodies []map[string]interface{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/api/v1/accounts":
+			fmt.Fprint(w, `[]`)
+		case r.Method == http.MethodPut:
+			var body map[string]interface{}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			putBodies = append(putBodies, body)
+			fmt.Fprint(w, `{"id": 1, "user_id": 7, "score": 9, "grade": "9"}`)
+		default:
+			fmt.Fprint(w, `{"id": 1, "user_id": 7, "score": 9, "grade": "9", "entered_score": 9,
+				"submission_comments": [{"id": 55, "comment": "Nice work", "author_id": 3}]}`)
+		}
+	}))
+	defer server.Close()
+	client, err := api.NewClient(api.ClientConfig{BaseURL: server.URL, Token: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := api.NewSubmissionsService(client)
+
+	rb, err := gradeAndReadBack(context.Background(), svc, 1, 2, 7, &api.GradeSubmissionParams{
+		PostedGrade: "9", Comment: &api.SubmissionCommentParams{TextComment: "Nice work"},
+	}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !rb.CommentExisted || rb.Comment == nil || rb.Comment.ID != 55 {
+		t.Errorf("existing comment not recognised: existed=%v comment=%+v", rb.CommentExisted, rb.Comment)
+	}
+	if !rb.Verified {
+		t.Errorf("row should verify, mismatches: %v", rb.Mismatches)
+	}
+	if len(putBodies) != 1 {
+		t.Fatalf("expected exactly one PUT (the grade), got %d", len(putBodies))
+	}
+	if _, has := putBodies[0]["comment"]; has {
+		t.Errorf("comment must not be re-posted, body: %v", putBodies[0])
+	}
+
+	// comment-only request against an existing comment: nothing to write at all
+	putBodies = nil
+	rb, err = gradeAndReadBack(context.Background(), svc, 1, 2, 7, &api.GradeSubmissionParams{
+		Comment: &api.SubmissionCommentParams{TextComment: "Nice work"},
+	}, true)
+	if err != nil || !rb.Verified || !rb.CommentExisted || len(putBodies) != 0 {
+		t.Errorf("comment-only re-run must write nothing: err=%v verified=%v existed=%v puts=%d", err, rb.Verified, rb.CommentExisted, len(putBodies))
+	}
+
+	// without the flag (a single grade / add-comment) the comment is posted as asked
+	putBodies = nil
+	rb, err = gradeAndReadBack(context.Background(), svc, 1, 2, 7, &api.GradeSubmissionParams{
+		PostedGrade: "9", Comment: &api.SubmissionCommentParams{TextComment: "Nice work"},
+	}, false)
+	if err != nil || rb.CommentExisted || len(putBodies) != 1 {
+		t.Fatalf("explicit comment must be posted: err=%v existed=%v puts=%d", err, rb.CommentExisted, len(putBodies))
+	}
+	if _, has := putBodies[0]["comment"]; !has {
+		t.Errorf("comment missing from explicit write: %v", putBodies[0])
+	}
+}

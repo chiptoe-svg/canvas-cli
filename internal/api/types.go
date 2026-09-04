@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -175,40 +176,40 @@ type Assignment struct {
 
 // Submission represents a Canvas submission
 type Submission struct {
-	ID                            int64               `json:"id"`
-	Body                          string              `json:"body"`
-	URL                           string              `json:"url"`
-	Grade                         string              `json:"grade"`
-	Score                         float64             `json:"score"`
-	SubmittedAt                   time.Time           `json:"submitted_at"`
-	AssignmentID                  int64               `json:"assignment_id"`
-	UserID                        int64               `json:"user_id"`
-	SubmissionType                string              `json:"submission_type"`
-	WorkflowState                 string              `json:"workflow_state"`
-	GradeMatchesCurrentSubmission bool                `json:"grade_matches_current_submission"`
-	GradedAt                      time.Time           `json:"graded_at"`
-	GraderID                      int64               `json:"grader_id"`
-	Attempt                       int                 `json:"attempt"`
-	CachedDueDate                 time.Time           `json:"cached_due_date"`
-	ExcusedTLN                    bool                `json:"excused"`
-	LatePolicyStatus              string              `json:"late_policy_status"`
-	PointsDeducted                float64             `json:"points_deducted"`
-	GradingPeriodID               int64               `json:"grading_period_id"`
-	ExtraAttempts                 int                 `json:"extra_attempts"`
-	PostedAt                      time.Time           `json:"posted_at"`
-	Late                          bool                `json:"late"`
-	Missing                       bool                `json:"missing"`
-	SecondsLate                   int                 `json:"seconds_late"`
-	EnteredGrade                  string              `json:"entered_grade"`
-	EnteredScore                  float64             `json:"entered_score"`
-	PreviewURL                    string              `json:"preview_url"`
-	AnonymousID                   string              `json:"anonymous_id"`
-	User                          *User               `json:"user,omitempty"`
-	Attachments                   []Attachment        `json:"attachments,omitempty"`
-	SubmissionComments            []SubmissionComment `json:"submission_comments,omitempty"`
-	Assignment                    *Assignment         `json:"assignment,omitempty"`
-	Course                        *Course             `json:"course,omitempty"`
-	Rubric                        []RubricAssessment  `json:"rubric_assessment,omitempty"`
+	ID                            int64                  `json:"id"`
+	Body                          string                 `json:"body"`
+	URL                           string                 `json:"url"`
+	Grade                         string                 `json:"grade"`
+	Score                         float64                `json:"score"`
+	SubmittedAt                   time.Time              `json:"submitted_at"`
+	AssignmentID                  int64                  `json:"assignment_id"`
+	UserID                        int64                  `json:"user_id"`
+	SubmissionType                string                 `json:"submission_type"`
+	WorkflowState                 string                 `json:"workflow_state"`
+	GradeMatchesCurrentSubmission bool                   `json:"grade_matches_current_submission"`
+	GradedAt                      time.Time              `json:"graded_at"`
+	GraderID                      int64                  `json:"grader_id"`
+	Attempt                       int                    `json:"attempt"`
+	CachedDueDate                 time.Time              `json:"cached_due_date"`
+	ExcusedTLN                    bool                   `json:"excused"`
+	LatePolicyStatus              string                 `json:"late_policy_status"`
+	PointsDeducted                float64                `json:"points_deducted"`
+	GradingPeriodID               int64                  `json:"grading_period_id"`
+	ExtraAttempts                 int                    `json:"extra_attempts"`
+	PostedAt                      time.Time              `json:"posted_at"`
+	Late                          bool                   `json:"late"`
+	Missing                       bool                   `json:"missing"`
+	SecondsLate                   int                    `json:"seconds_late"`
+	EnteredGrade                  string                 `json:"entered_grade"`
+	EnteredScore                  float64                `json:"entered_score"`
+	PreviewURL                    string                 `json:"preview_url"`
+	AnonymousID                   string                 `json:"anonymous_id"`
+	User                          *User                  `json:"user,omitempty"`
+	Attachments                   []Attachment           `json:"attachments,omitempty"`
+	SubmissionComments            []SubmissionComment    `json:"submission_comments,omitempty"`
+	Assignment                    *Assignment            `json:"assignment,omitempty"`
+	Course                        *Course                `json:"course,omitempty"`
+	Rubric                        RubricAssessmentResult `json:"rubric_assessment,omitempty"`
 	// SubmissionHistory is populated by include[]=submission_history: one
 	// Submission per attempt, oldest first, each carrying that attempt's
 	// score and (for classic quizzes) its SubmissionData.
@@ -397,6 +398,45 @@ type RubricAssessment struct {
 	Points      float64 `json:"points"`
 	Comments    string  `json:"comments"`
 	RatingID    string  `json:"rating_id"`
+}
+
+// RubricAssessmentResult is a submission's rubric_assessment as Canvas
+// returns it with include[]=rubric_assessment: a hash keyed by criterion id.
+// An array of entries carrying criterion_id (the shape some fixtures use)
+// decodes to the same map.
+type RubricAssessmentResult map[string]RubricAssessment
+
+// UnmarshalJSON accepts either the keyed hash or an array of entries.
+func (r *RubricAssessmentResult) UnmarshalJSON(b []byte) error {
+	trimmed := bytes.TrimSpace(b)
+	if len(trimmed) == 0 || string(trimmed) == "null" {
+		*r = nil
+		return nil
+	}
+	if trimmed[0] == '[' {
+		var entries []RubricAssessment
+		if err := json.Unmarshal(trimmed, &entries); err != nil {
+			return err
+		}
+		out := make(RubricAssessmentResult, len(entries))
+		for _, e := range entries {
+			out[e.CriterionID] = e
+		}
+		*r = out
+		return nil
+	}
+	var m map[string]RubricAssessment
+	if err := json.Unmarshal(trimmed, &m); err != nil {
+		return err
+	}
+	for id, e := range m {
+		if e.CriterionID == "" {
+			e.CriterionID = id
+			m[id] = e
+		}
+	}
+	*r = m
+	return nil
 }
 
 // AssignmentOverride represents an assignment override
