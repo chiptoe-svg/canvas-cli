@@ -63,7 +63,7 @@ type NoMatchError struct {
 }
 
 func (e *NoMatchError) Error() string {
-	return fmt.Sprintf("no %s matches %q (%d searched); give an id, the exact name, or a substring that matches one %s", e.What, e.Query, e.Total, e.What)
+	return fmt.Sprintf("no %s matches %q (%d searched); give an id or the exact name", e.What, e.Query, e.Total)
 }
 
 // AmbiguousError is returned when the query matches more than one object.
@@ -83,47 +83,76 @@ func (e *AmbiguousError) Error() string {
 	return fmt.Sprintf("%q matches %d %ss; give an id or a more specific name:\n  %s%s", e.Query, len(e.Candidates), e.What, strings.Join(shown, "\n  "), more)
 }
 
-// FindStudent picks exactly one student for query.
+// FindStudent picks exactly one student for query. The result names the
+// student a write is applied to, so only an exact match counts: the Canvas
+// id, or the full name, sortable name, short name, login id or SIS id
+// (case-insensitive). A query that only matches part of a name is refused
+// with the candidates listed — "lee" must not quietly become whichever Lee
+// happens to be enrolled. A numeric query that is one student's Canvas id
+// and another's SIS or login id is refused as ambiguous.
 func FindStudent(query string, students []Student) (*Student, error) {
 	q := strings.TrimSpace(query)
 	if q == "" {
 		return nil, fmt.Errorf("student is required")
 	}
+	lq := strings.ToLower(q)
+	var exact []int
 	if id, err := strconv.ParseInt(q, 10, 64); err == nil {
 		for i := range students {
-			if students[i].ID == id {
-				return &students[i], nil
+			s := &students[i]
+			if s.ID == id || equalFold(lq, s.LoginID, s.SISUserID) {
+				exact = append(exact, i)
 			}
 		}
-		return nil, &NoMatchError{What: "student", Query: query, Total: len(students)}
-	}
-	lq := strings.ToLower(q)
-	var exact, partial []int
-	for i := range students {
-		s := &students[i]
-		switch {
-		case equalFold(lq, s.Name, s.SortableName, s.ShortName, s.LoginID, s.SISUserID):
-			exact = append(exact, i)
-		case containsFold(lq, s.Name, s.SortableName):
-			partial = append(partial, i)
+	} else {
+		for i := range students {
+			s := &students[i]
+			if equalFold(lq, s.Name, s.SortableName, s.ShortName, s.LoginID, s.SISUserID) {
+				exact = append(exact, i)
+			}
 		}
 	}
-	pick := exact
-	if len(pick) == 0 {
-		pick = partial
-	}
-	switch len(pick) {
-	case 0:
-		return nil, &NoMatchError{What: "student", Query: query, Total: len(students)}
+	switch len(exact) {
 	case 1:
-		return &students[pick[0]], nil
+		return &students[exact[0]], nil
+	case 0:
+		var partial []string
+		for i := range students {
+			s := &students[i]
+			if containsFold(lq, s.Name, s.SortableName) {
+				partial = append(partial, describeStudent(s))
+			}
+		}
+		if len(partial) > 0 {
+			sort.Strings(partial)
+			return nil, &PartialMatchError{What: "student", Query: query, Candidates: partial}
+		}
+		return nil, &NoMatchError{What: "student", Query: query, Total: len(students)}
 	}
 	var lines []string
-	for _, i := range pick {
+	for _, i := range exact {
 		lines = append(lines, describeStudent(&students[i]))
 	}
 	sort.Strings(lines)
 	return nil, &AmbiguousError{What: "student", Query: query, Candidates: lines}
+}
+
+// PartialMatchError: the query matched part of one or more names but none
+// exactly. For a write that is not enough; the caller must give the full
+// name or an id.
+type PartialMatchError struct {
+	What       string
+	Query      string
+	Candidates []string
+}
+
+func (e *PartialMatchError) Error() string {
+	shown, more := e.Candidates, ""
+	if len(shown) > MaxCandidates {
+		more = fmt.Sprintf("\n  … and %d more", len(shown)-MaxCandidates)
+		shown = shown[:MaxCandidates]
+	}
+	return fmt.Sprintf("no %s is named exactly %q; give the full name, login or id of the one you mean:\n  %s%s", e.What, e.Query, strings.Join(shown, "\n  "), more)
 }
 
 // FindAssignment picks exactly one assignment for query. A numeric query

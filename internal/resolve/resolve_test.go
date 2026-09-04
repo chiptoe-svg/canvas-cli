@@ -18,6 +18,7 @@ var roster = []Student{
 	{ID: 12, Name: "Anne Smithers", SortableName: "Smithers, Anne", LoginID: "asmithers"},
 	{ID: 13, Name: "Bo Li", SortableName: "Li, Bo"},
 	{ID: 14, Name: "Bo Lin", SortableName: "Lin, Bo"},
+	{ID: 15, Name: "Cy Ng", SortableName: "Ng, Cy", SISUserID: "11"}, // SIS id collides with Ann Smith's Canvas id
 }
 
 func TestFindStudent(t *testing.T) {
@@ -33,12 +34,16 @@ func TestFindStudent(t *testing.T) {
 		{"ADA", 10, ""},             // short name, exact
 		{"ada@example.edu", 10, ""}, // login id
 		{"S001", 10, ""},            // SIS id
-		{"lovel", 10, ""},           // unique substring
 		{"Ann Smith", 11, ""},       // exact beats the substring in "Anne Smithers"
 		{"Bo Li", 13, ""},           // exact beats "Bo Lin"
-		{"smith", 0, `"smith" matches 2 students`},
-		{"bo", 0, `"bo" matches 2 students`},
-		{"99", 0, `no student matches "99" (5 searched)`},
+		// a write needs an exact match: part of a name is refused, with the
+		// candidates listed, even when only one student matches it
+		{"lovel", 0, `no student is named exactly "lovel"`},
+		{"smith", 0, `no student is named exactly "smith"`},
+		{"bo", 0, `no student is named exactly "bo"`},
+		// "11" is Ann Smith's Canvas id and Cy Ng's SIS id: refused, not guessed
+		{"11", 0, `"11" matches 2 students`},
+		{"99", 0, `no student matches "99" (6 searched)`},
 		{"zzz", 0, `no student matches "zzz"`},
 		{"", 0, "student is required"},
 	}
@@ -59,14 +64,19 @@ func TestFindStudent(t *testing.T) {
 			}
 		})
 	}
-	// Ambiguity lists the candidates, sorted, with sortable name and login.
+	// A partial name lists the candidates, sorted, with sortable name and login.
 	_, err := FindStudent("smith", roster)
+	var partial *PartialMatchError
+	if !errors.As(err, &partial) || len(partial.Candidates) != 2 || partial.Candidates[0] != "11 Ann Smith (Smith, Ann) <asmith>" || partial.Candidates[1] != "12 Anne Smithers (Smithers, Anne) <asmithers>" {
+		t.Errorf("partial = %v", err)
+	}
+	// Two exact matches (a Canvas id that is also another student's SIS id) are ambiguous.
 	var amb *AmbiguousError
-	if !errors.As(err, &amb) || len(amb.Candidates) != 2 || amb.Candidates[0] != "11 Ann Smith (Smith, Ann) <asmith>" || amb.Candidates[1] != "12 Anne Smithers (Smithers, Anne) <asmithers>" {
+	if _, err := FindStudent("11", roster); !errors.As(err, &amb) || len(amb.Candidates) != 2 {
 		t.Errorf("ambiguous = %v", err)
 	}
 	var none *NoMatchError
-	if _, err := FindStudent("zzz", roster); !errors.As(err, &none) || none.Total != 5 {
+	if _, err := FindStudent("zzz", roster); !errors.As(err, &none) || none.Total != 6 {
 		t.Errorf("no match = %v", err)
 	}
 }
