@@ -45,25 +45,6 @@ type SubmissionsDownloadOptions struct {
 	Overwrite    bool
 }
 
-// SubmissionsPreparePDFsOptions contains options for preparing already-downloaded
-// submission PDFs for local review. It never contacts Canvas.
-type SubmissionsPreparePDFsOptions struct {
-	Folder    string
-	Output    string
-	Overwrite bool
-}
-
-// Validate validates the options.
-func (o *SubmissionsPreparePDFsOptions) Validate() error {
-	if o.Folder == "" {
-		return fmt.Errorf("folder is required")
-	}
-	if o.Output == "" {
-		return fmt.Errorf("output is required")
-	}
-	return nil
-}
-
 // Validate validates the options.
 func (o *SubmissionsDownloadOptions) Validate() error {
 	if o.CourseID <= 0 {
