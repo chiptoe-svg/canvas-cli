@@ -36,7 +36,7 @@ canvas files download <file-id> --output ./work/
 composition is part of what is being graded, read the PDF visually rather than
 relying on text extraction — extraction silently drops exactly the evidence a
 design critique depends on. Text extraction is fine for prose-only components,
-and converting those once locally (any PDF-to-text service) is much cheaper
+and converting those once locally (a local tool such as `pdftotext`; never an online converter) is much cheaper
 than re-reading page images on every turn. Cache the converted text next to the
 file so a second pass costs nothing.
 

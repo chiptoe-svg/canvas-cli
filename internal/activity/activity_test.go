@@ -472,3 +472,34 @@ func TestFilterAndParseSince(t *testing.T) {
 		}
 	}
 }
+
+// A log path straight under $HOME must not get the home directory chmodded
+// to 0700; the file is still tightened and the operator is told to move it.
+func TestPrepareLeavesHomeDirectoryPermissionsAlone(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file mode bits are not enforced on Windows")
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	_ = os.Chmod(home, 0o755)
+	path := filepath.Join(home, "activity.jsonl")
+
+	notes, err := Prepare(Config{Path: path})
+	if err != nil {
+		t.Fatalf("Prepare: %v", err)
+	}
+	info, err := os.Stat(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o755 {
+		t.Errorf("home directory mode changed to %04o", got)
+	}
+	if len(notes) == 0 || !strings.Contains(notes[0], "home directory") {
+		t.Errorf("expected a note about the home directory, got %q", notes)
+	}
+	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
+		t.Errorf("log file should still be 0600, got %v %v", info, err)
+	}
+}
