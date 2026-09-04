@@ -107,7 +107,7 @@ func (p Preparer) Classify(ctx context.Context, path string) Signals {
 	if err != nil {
 		failures = append(failures, commandFailure("pdffonts", fonts, err))
 	} else {
-		signals.EmbeddedFontCount = countRows(fonts.Stdout, `^\s*\d+\s+`)
+		signals.EmbeddedFontCount = countEmbeddedFonts(fonts.Stdout)
 	}
 
 	images, err := p.runner().Run(ctx, "pdfimages", "-list", path)
@@ -168,6 +168,45 @@ func (p Preparer) ExtractPageImages(ctx context.Context, pdfPath, destination st
 		return PageImages{}, fmt.Errorf("render PDF pages: pdftoppm produced no images")
 	}
 	return PageImages{Source: RenderedPageImages, Paths: rendered}, nil
+}
+
+// pdffonts prints two header lines, then one row per font whose columns end
+// with `emb sub uni objectID generation`:
+//
+//	name                       type       encoding   emb sub uni object ID
+//	-------------------------- ---------- ---------- --- --- --- ---------
+//	AAAAAB+Monaco              TrueType   MacRoman   yes yes no        6  0
+//
+// Rows start with the font NAME, never a number — an earlier `^\s*\d+` match
+// therefore counted zero fonts for every real PDF, which silently made the
+// text-heavy classification unreachable. Count the rows whose `emb` column
+// says yes; if the tail pattern ever stops matching (a pdffonts format
+// change), fall back to the number of non-header rows so the signal degrades
+// to "some fonts" rather than to a false zero.
+func countEmbeddedFonts(stdout string) int {
+	lines := strings.Split(stdout, "\n")
+	start := 0
+	for i, line := range lines {
+		if strings.HasPrefix(strings.TrimSpace(line), "---") {
+			start = i + 1
+			break
+		}
+	}
+	tail := regexp.MustCompile(`(?i)\b(yes|no)\s+(yes|no)\s+(yes|no)\s+\d+\s+\d+\s*$`)
+	embedded, rows := 0, 0
+	for _, line := range lines[start:] {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		rows++
+		if match := tail.FindStringSubmatch(line); match != nil && strings.EqualFold(match[1], "yes") {
+			embedded++
+		}
+	}
+	if embedded == 0 && rows > 0 && !tail.MatchString(stdout) {
+		return rows
+	}
+	return embedded
 }
 
 func countRows(value, expression string) int {

@@ -19,6 +19,32 @@ output. The manifest, raw responses, extracted text, and staged images may all
 be FERPA-sensitive records; store them in a restricted local directory and do
 not paste their contents into chat unless the instructor asks.
 
+## Ask which model reads the work — every batch
+
+Two different destinations can do this work, and they are not interchangeable
+from a privacy standpoint. **Ask the instructor which one, and wait for an
+answer.** Never pick for them, and never carry an answer over from a previous
+batch.
+
+- **Local (Clemson Spark)** — Docling and Qwen on the campus hosts below. The
+  files never leave Clemson infrastructure, nothing is billed per page, and a
+  large batch is limited only by the box. This is the default for student work,
+  and the right answer whenever the instructor has no preference.
+- **The model you are already running (e.g. OpenAI)** — reading the page images
+  directly in this conversation. Convenient, often stronger on messy handwriting
+  and on judging visual design, but it sends student work to a third party and
+  is billed per page.
+
+Put the choice to them plainly: which service, for which files, and why it
+matters. For example: "This is 22 submissions, about 60 pages. I can run them
+through Spark on campus, where the files stay on Clemson systems, or read them
+myself, which handles rough handwriting better but sends student work to
+OpenAI. Which do you want?"
+
+If they choose the remote path, that authorization covers **this batch only**
+and does not extend to the next assignment. Record the choice next to the
+manifest. If they are unsure or do not answer, use the local path.
+
 ## Prepare first
 
 Download every submission attempt only after confirming the Canvas course,

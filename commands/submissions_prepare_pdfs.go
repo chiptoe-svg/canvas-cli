@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -35,7 +36,7 @@ type submissionPDFManifest struct {
 	SchemaVersion int                   `json:"schema_version"`
 	GeneratedAt   time.Time             `json:"generated_at"`
 	SourceFolder  string                `json:"source_folder"`
-	Entries       []submissionPDFRecord `json:"entries"`
+	Entries       []submissionPDFRecord `json:"entries,omitempty"`
 }
 
 func newSubmissionsPreparePDFsCmd() *cobra.Command {
@@ -68,7 +69,26 @@ Examples:
 	return cmd
 }
 
+// The command shells out to Poppler. Without it every PDF fails one by one
+// with a low-level exec error; say so once, up front, with the fix.
+func requirePopplerTools() error {
+	var missing []string
+	for _, tool := range []string{"pdfinfo", "pdftotext", "pdffonts", "pdfimages", "pdftoppm"} {
+		if _, err := exec.LookPath(tool); err != nil {
+			missing = append(missing, tool)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("missing local PDF tools (%s): install Poppler — `brew install poppler` on macOS, `apt install poppler-utils` on Debian/Ubuntu",
+			strings.Join(missing, ", "))
+	}
+	return nil
+}
+
 func runSubmissionsPreparePDFs(ctx context.Context, opts *options.SubmissionsPreparePDFsOptions, preparer pdfprep.Preparer) error {
+	if err := requirePopplerTools(); err != nil {
+		return err
+	}
 	root, err := filepath.Abs(opts.Folder)
 	if err != nil {
 		return fmt.Errorf("resolve folder: %w", err)
@@ -200,13 +220,28 @@ func fileSHA256(path string) (string, error) {
 	return hex.EncodeToString(digest.Sum(nil)), nil
 }
 
+// The manifest is JSON Lines, as its name says: a header record first, then one
+// compact record per PDF. It was written as a single indented document, which
+// meant `.jsonl` consumers — `jq -c`, a streaming reader, anything that reads a
+// record per line — got one unparsable blob. One record per line also lets a
+// long batch be read while it is still being written.
 func writeSubmissionPDFManifest(path string, manifest submissionPDFManifest) error {
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600) // #nosec G304 -- path is under the user-selected output directory.
 	if err != nil {
 		return err
 	}
 	defer file.Close()
+
 	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(manifest)
+	header := manifest
+	header.Entries = nil
+	if err := encoder.Encode(header); err != nil {
+		return err
+	}
+	for _, entry := range manifest.Entries {
+		if err := encoder.Encode(entry); err != nil {
+			return err
+		}
+	}
+	return nil
 }

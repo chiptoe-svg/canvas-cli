@@ -281,7 +281,9 @@ instructor specifically approves `--overwrite`.
 For a batch of downloaded student PDFs that needs text extraction or handwriting
 review, first run `submissions prepare-pdfs`. Then read
 `references/pdf-review-workflows.md` before choosing Docling or Qwen, sending
-any student work to Spark, or proposing a grade. The reference distinguishes
+any student work anywhere, or proposing a grade. Ask the instructor which
+service reads the work — the local campus models, or the model you are already
+running (which sends student files to a third party) — and wait for the answer. The reference distinguishes
 the local preparation command from the separately authorized network step and
 keeps model output as evidence, not an automatic grade.
 

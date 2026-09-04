@@ -25,7 +25,7 @@ func TestClassifyUsesLocalSignals(t *testing.T) {
 		case "pdftotext":
 			return CommandResult{Stdout: strings.Repeat("a", 1200)}, nil
 		case "pdffonts":
-			return CommandResult{Stdout: "   1 Helvetica\n   2 Times\n"}, nil
+			return CommandResult{Stdout: realPdfFontsOutput}, nil
 		case "pdfimages":
 			return CommandResult{Stdout: "   0   1 image\n"}, nil
 		default:
@@ -38,7 +38,9 @@ func TestClassifyUsesLocalSignals(t *testing.T) {
 	if signals.Classification != TextHeavy {
 		t.Fatalf("classification = %q, want %q", signals.Classification, TextHeavy)
 	}
-	if signals.Pages != 2 || signals.TextCharactersPerPage != 600 || signals.EmbeddedFontCount != 2 {
+	// One of the two fonts in the real fixture is embedded (emb=yes); the field
+	// counts EMBEDDED fonts, not fonts.
+	if signals.Pages != 2 || signals.TextCharactersPerPage != 600 || signals.EmbeddedFontCount != 1 {
 		t.Fatalf("unexpected signals: %#v", signals)
 	}
 }
@@ -132,5 +134,40 @@ func TestExtractPageImagesRendersWhenEmbeddedImagesDoNotMatchPages(t *testing.T)
 	}
 	if filepath.Base(images.Paths[0]) != "rendered-001.png" {
 		t.Fatalf("first rendered page = %q", images.Paths[0])
+	}
+}
+
+
+// VERBATIM `pdffonts` output from Poppler 25.x. The fixture it replaced was
+// invented — rows beginning with a number — and the code matched that
+// invention, so the font count was always zero against a real PDF and the
+// text-heavy classification could never be reached. Pin the real shape: rows
+// begin with the font NAME, and the embedded flag is the `emb` column.
+const realPdfFontsOutput = `name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+AAAAAB+Monaco                        TrueType          MacRoman         yes yes no        6  0
+Helvetica                            Type 1            WinAnsi          no  no  no        9  0
+`
+
+func TestCountEmbeddedFonts(t *testing.T) {
+	if got := countEmbeddedFonts(realPdfFontsOutput); got != 1 {
+		t.Fatalf("countEmbeddedFonts(real output) = %d, want 1 (only the emb=yes row)", got)
+	}
+	if got := countEmbeddedFonts(""); got != 0 {
+		t.Errorf("countEmbeddedFonts(empty) = %d, want 0", got)
+	}
+	// Degrade to a row count rather than a false zero if the format changes.
+	unknown := "name  type\n----  ----\nSomeFont  Type1\nOther  TrueType\n"
+	if got := countEmbeddedFonts(unknown); got != 2 {
+		t.Errorf("countEmbeddedFonts(unrecognized format) = %d, want 2 rows", got)
+	}
+}
+
+// The whole point of the signal: a printed, text-rich PDF must reach
+// text-heavy, which requires a non-zero font count.
+func TestClassify_TextHeavyIsReachable(t *testing.T) {
+	got := classify(Signals{Pages: 4, TextCharacters: 16320, TextCharactersPerPage: 4080, EmbeddedFontCount: 1})
+	if got != TextHeavy {
+		t.Fatalf("classification = %q, want %q", got, TextHeavy)
 	}
 }
