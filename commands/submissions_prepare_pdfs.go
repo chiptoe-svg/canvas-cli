@@ -85,7 +85,7 @@ func requirePopplerTools() error {
 		}
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("missing local PDF tools (%s): install Poppler — `brew install poppler` on macOS, `apt install poppler-utils` on Debian/Ubuntu",
+		return fmt.Errorf("missing local PDF tools (%s): install Poppler — `brew install poppler` on macOS, `apt install poppler-utils` on Debian/Ubuntu, `scoop install poppler` on Windows",
 			strings.Join(missing, ", "))
 	}
 	return nil

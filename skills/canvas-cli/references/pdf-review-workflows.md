@@ -19,6 +19,21 @@ output. The manifest, raw responses, extracted text, and staged images may all
 be FERPA-sensitive records; store them in a restricted local directory and do
 not paste their contents into chat unless the instructor asks.
 
+## If the local PDF tools are missing, offer to install them
+
+`prepare-pdfs` needs Poppler (`pdfinfo`, `pdftotext`, `pdffonts`, `pdfimages`,
+`pdftoppm`). If it reports them missing, do not stop at the error and do not
+install silently. Say what is missing, say what the fix is, and ask:
+
+> "This needs Poppler, a small local PDF toolkit. I can install it with
+> `brew install poppler` — want me to?"
+
+On approval run it and re-run the command. It needs no administrator rights on
+a Mac with Homebrew, installs nothing into Canvas, and sends nothing anywhere.
+The equivalents are `apt install poppler-utils` on Debian or Ubuntu and
+`scoop install poppler` on Windows. If Homebrew itself is missing, say so and
+point at https://brew.sh rather than installing a package manager unasked.
+
 ## Ask which model reads the work — every batch
 
 Two different destinations can do this work, and they are not interchangeable
