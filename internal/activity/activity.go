@@ -597,22 +597,43 @@ func Prepare(cfg Config) ([]string, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("create %s: %w", dir, err)
 	}
-	n, err := tighten(dir, 0o700, false)
-	if err != nil {
-		return nil, err
+	// A log placed directly in the home directory would have the home
+	// directory itself tightened to 0700, which is far outside this tool's
+	// remit. Leave it alone and say so; the file itself is still tightened.
+	if isHomeDir(dir) {
+		notes = append(notes, fmt.Sprintf("%s is the home directory; not changing its permissions — put the log in a directory of its own", dir))
+	} else {
+		n, err := tighten(dir, 0o700, false)
+		if err != nil {
+			return nil, err
+		}
+		notes = append(notes, n...)
 	}
-	notes = append(notes, n...)
 
 	f, err := os.OpenFile(cfg.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) // #nosec G304 -- operator-configured log path
 	if err != nil {
 		return nil, fmt.Errorf("open %s for append: %w", cfg.Path, err)
 	}
 	_ = f.Close()
-	n, err = tighten(cfg.Path, 0o600, true)
+	fileNotes, err := tighten(cfg.Path, 0o600, true)
 	if err != nil {
 		return nil, err
 	}
-	return append(notes, n...), nil
+	return append(notes, fileNotes...), nil
+}
+
+// isHomeDir reports whether dir is the current user's home directory.
+func isHomeDir(dir string) bool {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return false
+	}
+	a, errA := filepath.EvalSymlinks(filepath.Clean(dir))
+	b, errB := filepath.EvalSymlinks(filepath.Clean(home))
+	if errA != nil || errB != nil {
+		return filepath.Clean(dir) == filepath.Clean(home)
+	}
+	return a == b
 }
 
 // tighten chmods path down to max when it is owned by the current user and
