@@ -108,7 +108,7 @@ func NormalizeSubmission(submission *Submission) *Submission {
 	}
 
 	if submission.Rubric == nil {
-		submission.Rubric = []RubricAssessment{}
+		submission.Rubric = RubricAssessmentResult{}
 	}
 
 	return submission

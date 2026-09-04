@@ -202,7 +202,7 @@ func TestNormalizeSubmission(t *testing.T) {
 				UserID:             1,
 				Attachments:        []Attachment{},
 				SubmissionComments: []SubmissionComment{},
-				Rubric:             []RubricAssessment{},
+				Rubric:             RubricAssessmentResult{},
 			},
 		},
 	}
