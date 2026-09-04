@@ -206,7 +206,12 @@ enables the log and sets its path; `CANVAS_ACTIVITY_WRITES_ONLY`,
 
 - **The log records writes; reads and dry-runs leave no entry unless
   `writes_only` is turned off** (`configure --writes-only=false` or
-  `CANVAS_ACTIVITY_WRITES_ONLY=0`). A write whose response was lost (timeout,
+  `CANVAS_ACTIVITY_WRITES_ONLY=0`). Each entry carries the command line with
+  secrets and free-text values redacted — the value of `--comment`,
+  `--rubric-comment`, `--text`, `--message`, `--body` and `--student` is
+  replaced by `[REDACTED]` — plus the method, path and outcome of every
+  request. Ids, scores and switches are kept, so the log says who was
+  graded and what score was posted, not what the feedback said. A write whose response was lost (timeout,
   connection dropped) is always logged, with `"outcome": "unknown"` on the
   request and `"verification_required": true` on the entry, because Canvas
   may have applied it; other writes carry `"outcome": "ok"` or `"rejected"`.
@@ -217,9 +222,11 @@ enables the log and sets its path; `CANVAS_ACTIVITY_WRITES_ONLY`,
   access_code, api_key — at any depth) and Canvas-shaped tokens or Bearer
   credentials inside strings are redacted. File- and stdin-driven commands
   (`submissions bulk-grade`, `assignments|users create|update --json-file`)
-  also record their parsed input under `details.input`. This mode stores
-  student-directed text; it is meant for operator audit logs, so keep the
-  file where only the operator can read it.
+  also record their parsed input under `details.input`, and `quizzes
+  regrade` its per-student verification table under `details`; with
+  `capture_bodies` off, `details` is not written at all. This mode stores
+  student-directed text and names; it is meant for operator audit logs, so
+  keep the file where only the operator can read it.
 - **`required`** is audited mode: before the first write of an invocation the
   log is prepared (directory created 0700, file created 0600, owned by you,
   writable), and if that fails the write is refused with

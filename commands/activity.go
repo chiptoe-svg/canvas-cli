@@ -216,7 +216,12 @@ func logActivity(cmd *cobra.Command, runErr error, start time.Time, recorder *ac
 		DurationMs: time.Since(start).Milliseconds(),
 		Requests:   requests,
 		Touched:    touchedFromCommand(cmd, recorder),
-		Details:    recorder.Details(),
+	}
+	// Details hold parsed inputs (CSV rows with comments, per-student score
+	// tables): student text and names. They are stored only alongside the
+	// request bodies, under capture_bodies, as the README describes.
+	if cfg.CaptureBodies {
+		entry.Details = recorder.Details()
 	}
 	entry.VerificationRequired = entry.HasUnknownWrites()
 	if runErr != nil {

@@ -88,8 +88,9 @@ func TestLogActivity_WritesEntry(t *testing.T) {
 	if strings.Join(got, " ") != want {
 		t.Errorf("touched = %v, want %s", got, want)
 	}
-	if e.Details["regrade"] == nil {
-		t.Errorf("details missing: %+v", e.Details)
+	// details (per-student score tables) ride only with capture_bodies
+	if e.Details != nil {
+		t.Errorf("details must not be written without capture_bodies: %+v", e.Details)
 	}
 	raw, _ := os.ReadFile(path)
 	if strings.Contains(string(raw), "7~AbCd") {

@@ -64,6 +64,10 @@ func TestRedactArgs(t *testing.T) {
 		{"authorization header", []string{"api", "GET", "/x", "-H", "Authorization: Bearer abc.def"}, []string{"api", "GET", "/x", "-H", "Authorization: Bearer " + Redacted}},
 		{"show-token flag is a switch, not a value", []string{"--dry-run", "--show-token", "courses", "list"}, []string{"--dry-run", "--show-token", Redacted, "list"}},
 		{"ordinary ids untouched", []string{"quizzes", "regrade", "456", "--course-id", "123", "--question", "789"}, []string{"quizzes", "regrade", "456", "--course-id", "123", "--question", "789"}},
+		// student-directed text and student names are not for the log; ids and scores are
+		{"comment text redacted, score kept", []string{"submissions", "grade", "--user-id", "10", "--score", "95", "--comment", "Great work, Ada"}, []string{"submissions", "grade", "--user-id", "10", "--score", "95", "--comment", Redacted}},
+		{"student name in equals form", []string{"submissions", "excuse", "--student=Ada Lovelace", "--assignment", "456"}, []string{"submissions", "excuse", "--student=" + Redacted, "--assignment", "456"}},
+		{"rubric comment and message", []string{"--rubric-comment", "_1=vague", "--message", "see me"}, []string{"--rubric-comment", Redacted, "--message", Redacted}},
 		{"empty", nil, []string{}},
 	}
 	for _, tt := range tests {
