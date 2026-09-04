@@ -343,6 +343,12 @@ func TestAppendReadAndRotation(t *testing.T) {
 }
 
 func TestPrepareTightensPermissions(t *testing.T) {
+	// Every assertion here is a mode-bit assertion, and Windows reports 0666 /
+	// 0777 whatever chmod asked. Nothing about the behaviour is observable
+	// there, so the test has nothing to check rather than something to fail.
+	if runtime.GOOS == "windows" {
+		t.Skip("file mode bits are not enforced on Windows")
+	}
 	dir := filepath.Join(t.TempDir(), "logs")
 	path := filepath.Join(dir, "activity.jsonl")
 	if err := os.Mkdir(dir, 0o755); err != nil {
