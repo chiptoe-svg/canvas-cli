@@ -433,12 +433,13 @@ func TestRubricsService_Create_MissingRubricStillErrors(t *testing.T) {
 func sampleRubricCriteria() []RubricCriterion {
 	return []RubricCriterion{
 		{
+			ID:                "_1234",
 			Description:       "Thesis",
 			LongDescription:   "Clear claim",
 			Points:            10,
 			CriterionUseRange: true,
 			Ratings: []RubricRating{
-				{Description: "Excellent", Points: 10},
+				{ID: "_r1", Description: "Excellent", Points: 10},
 				{Description: "Weak", LongDescription: "Vague", Points: 4},
 			},
 		},
@@ -468,8 +469,20 @@ func assertRubricCriteriaBody(t *testing.T, body map[string]interface{}) {
 	if first["criterion_use_range"] != true {
 		t.Errorf("expected criterion_use_range true, got %v", first["criterion_use_range"])
 	}
+	// Ids from a `rubrics get` round-trip must be forwarded: Canvas keys
+	// existing rubric assessments by criterion id and regenerates ids for
+	// criteria submitted without one, which orphans graded work.
+	if first["id"] != "_1234" {
+		t.Errorf("expected criterion id to be forwarded, got %v", first["id"])
+	}
 	ratings := first["ratings"].(map[string]interface{})
+	if excellent := ratings["0"].(map[string]interface{}); excellent["id"] != "_r1" {
+		t.Errorf("expected rating id to be forwarded, got %v", excellent["id"])
+	}
 	weak := ratings["1"].(map[string]interface{})
+	if _, present := weak["id"]; present {
+		t.Errorf("a rating without an id must not send one, got %v", weak["id"])
+	}
 	if weak["description"] != "Weak" || weak["long_description"] != "Vague" || weak["points"] != 4.0 {
 		t.Errorf("unexpected rating: %v", weak)
 	}
@@ -479,6 +492,9 @@ func assertRubricCriteriaBody(t *testing.T, body map[string]interface{}) {
 	}
 	if _, present := second["criterion_use_range"]; present {
 		t.Errorf("criterion_use_range should be omitted when false")
+	}
+	if _, present := second["id"]; present {
+		t.Errorf("a criterion without an id must not send one, got %v", second["id"])
 	}
 	if _, present := second["ratings"]; present {
 		t.Errorf("ratings should be omitted when empty")

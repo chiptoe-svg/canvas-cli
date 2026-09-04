@@ -242,6 +242,12 @@ func encodeRubricCriteria(criteria []RubricCriterion) map[string]interface{} {
 			"long_description": c.LongDescription,
 			"points":           c.Points,
 		}
+		// Ids come from a `rubrics get` round-trip. Canvas keys existing
+		// rubric assessments by criterion id and mints new ids for criteria
+		// sent without one, so forwarding them keeps graded work attached.
+		if c.ID != "" {
+			criterionData["id"] = c.ID
+		}
 		if c.CriterionUseRange {
 			criterionData["criterion_use_range"] = true
 		}
@@ -249,11 +255,15 @@ func encodeRubricCriteria(criteria []RubricCriterion) map[string]interface{} {
 		if len(c.Ratings) > 0 {
 			ratings := make(map[string]interface{}, len(c.Ratings))
 			for j, r := range c.Ratings {
-				ratings[strconv.Itoa(j)] = map[string]interface{}{
+				ratingData := map[string]interface{}{
 					"description":      r.Description,
 					"long_description": r.LongDescription,
 					"points":           r.Points,
 				}
+				if r.ID != "" {
+					ratingData["id"] = r.ID
+				}
+				ratings[strconv.Itoa(j)] = ratingData
 			}
 			criterionData["ratings"] = ratings
 		}
