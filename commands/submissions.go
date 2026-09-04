@@ -30,6 +30,7 @@ func init() {
 	rootCmd.AddCommand(submissionsCmd)
 	submissionsCmd.AddCommand(newSubmissionsListCmd())
 	submissionsCmd.AddCommand(newSubmissionsGetCmd())
+	submissionsCmd.AddCommand(newSubmissionsDownloadCmd())
 	submissionsCmd.AddCommand(newSubmissionsGradeCmd())
 	submissionsCmd.AddCommand(newSubmissionsBulkGradeCmd())
 	submissionsCmd.AddCommand(newSubmissionsCommentsCmd())

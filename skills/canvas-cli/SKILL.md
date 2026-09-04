@@ -79,7 +79,7 @@ canvas assignments list --course-id 123 --filter "Quiz 1"                       
 | Area | Resources |
 |---|---|
 | Teaching | `courses`, `assignments`, `assignment-groups`, `modules`, `pages`, `quizzes` (incl. `reports`, `statistics`, `question-groups`, `ip-filters`), `discussions`, `announcements`, `rubrics`, `rubric-associations`, `outcomes`, `overrides`, `peer-reviews`, `polls` |
-| Grading | `submissions` (`grade`, `bulk-grade`, `add-comment`), `grades`, `grading-periods`, `grading-standards`, `grading-period-sets`, `live-assessments` |
+| Grading | `submissions` (`list`, `get`, `download`, `grade`, `bulk-grade`, `add-comment`), `grades`, `grading-periods`, `grading-standards`, `grading-period-sets`, `live-assessments` |
 | People | `users`, `enrollments`, `sections`, `groups` (`memberships`, `categories`), `conversations`, `comm-channels`, `observees`, `appointment-groups` |
 | Content & files | `files`, `folders`, `calendar`, `content-migrations`, `content-exports`, `content-shares`, `blueprint`, `course-pacing`, `blackout-dates`, `media`, `eportfolios` |
 | Personal | `favorites`, `bookmarks`, `course-nicknames`, `planner`, `history` |
@@ -216,6 +216,43 @@ canvas submissions list --course-id 123 --assignment-id 456 --workflow-state sub
 canvas submissions grade --course-id 123 --assignment-id 456 --user-id 789 \
   --score 95 --comment "Great work"
 ```
+
+## Workflow: download every submitted file for an assignment
+
+`canvas submissions download` is **read-only in Canvas**: it lists the
+assignment's submissions and downloads their attached files. It does create a
+local copy of student work, so treat the destination as restricted student data.
+Use it only with the instructor's explicit approval, choose a private local
+directory, and do not upload the downloaded folder to an unapproved service.
+
+First resolve the course and assignment IDs, then confirm the destination and
+the scope with the instructor. A read-only listing is useful for confirming the
+assignment before downloading:
+
+```bash
+canvas submissions list --course-id 123 --assignment-id 456 --columns id,user_id,workflow_state,submission_type --no-cache
+canvas submissions download --course-id 123 --assignment-id 456 \
+  --destination ./assignment-456-submissions --no-cache
+```
+
+Files are stored below `user-<Canvas user ID>/` and include the attachment ID,
+so duplicate student filenames do not collide. The command writes
+`submission-download-manifest.json` at the destination. The manifest records
+text-entry and URL submissions as `no_attachment`, but deliberately does not
+copy their body text.
+
+Rerunning the command skips already-downloaded files, making it safe to resume
+after an interruption. `--overwrite` replaces local student files, so obtain
+specific approval before using it:
+
+```bash
+canvas submissions download --course-id 123 --assignment-id 456 \
+  --destination ./assignment-456-submissions --overwrite --no-cache
+```
+
+Report the final downloaded/skipped/failed counts and the manifest path. If any
+file failed, do not call the download complete; inspect the manifest and retry
+only the failed work.
 
 `grade`, `add-comment` and `bulk-grade` read the submission back after the
 write and print the evidence: `grade: 88 → 95`, the new comment's id, author
