@@ -24,7 +24,10 @@ go test -run TestName ./...         # one test
 make fmt                # gofmt
 make lint               # golangci-lint
 make vet                # go vet
-make check              # everything CI runs — run this before you push
+make check              # go vet, golangci-lint, gofmt, gosec if installed,
+                        # go test -race, and the integration tests.
+                        # CI adds govulncheck, gosec, the ≥80% coverage
+                        # gate, and goreleaser check. Run before you push.
 
 make setup-hooks        # pre-commit hook: gofmt, golangci-lint, go vet, go test -short -race
 ```

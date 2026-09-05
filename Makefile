@@ -58,8 +58,8 @@ check: vet lint
 	if [ -n "$$unformatted" ]; then echo "✗ Needs gofmt:"; echo "$$unformatted"; exit 1; fi
 	@echo "✓ Formatting clean"
 	@if command -v gosec > /dev/null; then \
-		echo "Running gosec..."; gosec -quiet ./... && echo "✓ Gosec clean"; \
-	else echo "⚠ gosec not installed — skipping (CI enforces it)"; fi
+		echo "Running gosec..."; gosec -quiet -severity high -confidence medium ./... && echo "✓ Gosec clean"; \
+	else echo "⚠ gosec not installed — skipping (CI enforces it: gosec v2.29.0 -severity high -confidence medium)"; fi
 	@echo "Running tests (-race)..."
 	@go test -race ./...
 	@echo "✓ Tests pass"
