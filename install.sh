@@ -47,7 +47,7 @@ else die "need sha256sum or shasum to verify the download"; fi
 os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 case "$os" in
   linux | darwin) ;;
-  *) die "unsupported OS: $os (this installer covers Linux and macOS; download a binary from https://github.com/${REPO}/releases otherwise)" ;;
+  *) die "unsupported OS: $os (this installer covers Linux and macOS; see the README for a verified manual download)" ;;
 esac
 arch="$(uname -m)"
 case "$arch" in

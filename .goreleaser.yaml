@@ -21,10 +21,11 @@ builds:
     flags:
       - -trimpath
     mod_timestamp: "{{ .CommitTimestamp }}"
+    # macOS and Linux only: the installer and the README cover those two, and
+    # no CI job builds or tests Windows.
     goos:
       - linux
       - darwin
-      - windows
     goarch:
       - amd64
       - arm64
@@ -33,18 +34,11 @@ builds:
       - -X main.Version={{.Version}}
       - -X main.Commit={{.Commit}}
       - -X main.BuildDate={{.CommitDate}}
-    ignore:
-      - goos: windows
-        goarch: arm64
 
 archives:
   - id: default
     formats:
       - tar.gz
-    format_overrides:
-      - goos: windows
-        formats:
-          - zip
     name_template: >-
       {{ .ProjectName }}_
       {{- .Os }}_

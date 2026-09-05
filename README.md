@@ -52,7 +52,7 @@ Builds use `-trimpath` and take the build date from the commit, so the tag plus
 the Go version in [`go.mod`](go.mod) reproduce the released bytes exactly:
 
 ```bash
-TAG=v1.13.0+audited.1     # the tag you are checking
+TAG=v1.13.0+audited.15    # the release you installed: see canvas version
 git clone --depth 1 --branch "$TAG" https://github.com/chiptoe-svg/canvas-cli.git
 cd canvas-cli
 CGO_ENABLED=0 GOTOOLCHAIN=go1.25.13 go build -trimpath \

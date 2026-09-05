@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-# CodeRabbit config — jjuanrivvera Go CLI (cliwright standard).
+# CodeRabbit config — chiptoe-svg/canvas-cli, the faculty edition of the Canvas Go CLI.
 # make verify is the hard gate; CodeRabbit is the second opinion (design, readability, edge cases).
 reviews:
   profile: chill
