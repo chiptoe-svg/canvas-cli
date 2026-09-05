@@ -17,7 +17,7 @@
 - `go test -short -race ./...` must pass at the end of every task. Coverage gate stays at 80 % (`go tool cover -func` total); never lower the gate.
 - gofmt, `go vet ./...`, and `go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...` clean at the end of every task.
 - Faculty-facing surface after the trim, sorted (this is the source of truth for Task 1):
-  `activity agent alias analytics announcements api appointment-groups assignment-groups assignments auth cache calendar collaborations completion config content-exports content-migrations content-shares context conversations course-features courses discussions doctor enrollments files folders grades grading-periods grading-standards groups help modules outcomes overrides pages peer-reviews quizzes rubric-associations rubrics schedule sections skills submissions update users version`
+  `activity agent alias analytics announcements api appointment-groups assignment-groups assignments auth cache calendar collaborations completion config content-exports content-migrations content-shares context conversations course-extensions course-features courses discussions doctor enrollments files folders grades grading-periods grading-standards groups help modules outcomes overrides pages peer-reviews quizzes rubric-associations rubrics schedule sections skills submissions update users version`
 - `users` subcommands: `activity-stream get list me missing-submissions profile search todo upcoming-events`. `api` subcommands: `get`.
 - Module path after Task 8: `github.com/chiptoe-svg/canvas-cli`.
 - Binary name stays `canvas`; install URL stays `https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh`.
@@ -53,7 +53,7 @@ var facultySurface = []string{
 	"appointment-groups", "assignment-groups", "assignments", "auth", "cache",
 	"calendar", "collaborations", "completion", "config", "content-exports",
 	"content-migrations", "content-shares", "context", "conversations",
-	"course-features", "courses", "discussions", "doctor", "enrollments",
+	"course-extensions", "course-features", "courses", "discussions", "doctor", "enrollments",
 	"files", "folders", "grades", "grading-periods", "grading-standards",
 	"groups", "help", "modules", "outcomes", "overrides", "pages",
 	"peer-reviews", "quizzes", "rubric-associations", "rubrics", "schedule",
@@ -539,7 +539,7 @@ func TestSkillMentionsOnlyFacultyCommands(t *testing.T) {
 	for _, name := range strings.Fields(`activity agent alias analytics announcements api
 		appointment-groups assignment-groups assignments auth cache calendar collaborations
 		completion config content-exports content-migrations content-shares context conversations
-		course-features courses discussions doctor enrollments files folders grades grading-periods
+		course-extensions course-features courses discussions doctor enrollments files folders grades grading-periods
 		grading-standards groups help modules outcomes overrides pages peer-reviews quizzes
 		rubric-associations rubrics schedule sections skills submissions update users version`) {
 		allowed[name] = true
@@ -776,4 +776,4 @@ Add a row to the release ledger of `canvas-cli-trust-review.html` for audited.15
 
 **Placeholders.** The Task 2 and Task 12 commit messages say "paste the group list" — the list is the file list in Task 2 Step 1, rendered as group names; that is a copy step, not a design gap. No TBDs remain.
 
-**Type consistency.** `commandNames` and `findCommand` are defined in Task 1 and used in Tasks 3 and 5. `facultySurface` in Task 1 matches the Global Constraints list and the allowed set in Task 11's test (same 47 names). Module path in Task 8 matches Tasks 10–12.
+**Type consistency.** `commandNames` and `findCommand` are defined in Task 1 and used in Tasks 3 and 5. `facultySurface` in Task 1 matches the Global Constraints list and the allowed set in Task 11's test (same 48 names). Module path in Task 8 matches Tasks 10–12.

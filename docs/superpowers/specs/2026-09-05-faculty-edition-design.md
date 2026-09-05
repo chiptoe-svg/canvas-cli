@@ -50,6 +50,7 @@ the same update path. Nothing changes on their side except a shorter `--help`.
 | `analytics`, `outcomes`, `peer-reviews` | unchanged |
 | `content-shares` | Direct Share of assignments, quizzes and modules with co-instructors; user-level |
 | `collaborations`, `course-features` | course-level, instructor-operable; kept at the owner's request |
+| `course-extensions` | quiz and assignment extensions for one student (accommodations); instructor-level. Missed in the first inventory, ruled in during execution |
 | `content-exports`, `content-migrations` | course copy and import; their `get` commands report job progress |
 | `schedule`, `activity` | fork features, unchanged |
 | `context`, `alias`, `cache`, `completion` | conveniences, unchanged |
