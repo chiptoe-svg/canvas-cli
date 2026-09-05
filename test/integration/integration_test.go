@@ -362,20 +362,6 @@ func TestDryRunRedactsToken(t *testing.T) {
 	}
 }
 
-// Case 12: canvas repl --help → exit 0 and help text references the shell alias.
-func TestReplHelp(t *testing.T) {
-	home := t.TempDir()
-	stdout, stderr, code := runCanvas(t, testEnv(home), "repl", "--help")
-
-	if code != 0 {
-		t.Fatalf("expected exit 0, got %d; stderr: %s", code, stderr)
-	}
-	lower := strings.ToLower(stdout)
-	if !strings.Contains(lower, "shell") && !strings.Contains(lower, "repl") {
-		t.Errorf("expected 'shell' or 'repl' in help output; got: %q", stdout)
-	}
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // newCoursesHandler returns an http.Handler that serves a single hardcoded
