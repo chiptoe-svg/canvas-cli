@@ -15,6 +15,12 @@ builds:
     binary: canvas
     env:
       - CGO_ENABLED=0
+    # Reproducible builds: no build-path embedding, and the build date is the
+    # commit date rather than the wall clock, so anyone can rebuild the tag
+    # with the same Go toolchain and get a byte-identical binary.
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
     goos:
       - linux
       - darwin
@@ -26,7 +32,7 @@ builds:
       - -s -w
       - -X main.Version={{.Version}}
       - -X main.Commit={{.Commit}}
-      - -X main.BuildDate={{.Date}}
+      - -X main.BuildDate={{.CommitDate}}
     ignore:
       - goos: windows
         goarch: arm64
@@ -49,24 +55,6 @@ archives:
       - README.md
       - LICENSE
 
-dockers:
-  - id: canvas
-    ids:
-      - canvas
-    goos: linux
-    goarch: amd64
-    dockerfile: Dockerfile.goreleaser
-    image_templates:
-      - "ghcr.io/jjuanrivvera/canvas-cli:{{ .Version }}"
-      - "ghcr.io/jjuanrivvera/canvas-cli:v{{ .Major }}"
-      - "ghcr.io/jjuanrivvera/canvas-cli:latest"
-    build_flag_templates:
-      - "--label=org.opencontainers.image.title=canvas-cli"
-      - "--label=org.opencontainers.image.description=A powerful command-line interface for Canvas LMS"
-      - "--label=org.opencontainers.image.source=https://github.com/chiptoe-svg/canvas-cli"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.licenses=MIT"
-
 checksum:
   name_template: 'checksums.txt'
   algorithm: sha256
@@ -75,11 +63,12 @@ sboms:
   - id: archive
     artifacts: archive
 
-# Keyless signing of the checksums file (Sigstore/Fulcio/Rekor). Verify with:
+# Keyless signing of the checksums file (Sigstore/Fulcio/Rekor). The signer
+# identity is THIS repository's release workflow at the tagged ref. Verify with:
 #   cosign verify-blob --certificate checksums.txt.pem \
 #     --signature checksums.txt.sig \
 #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-#     --certificate-identity-regexp 'https://github.com/chiptoe-svg/canvas-cli.*' \
+#     --certificate-identity-regexp '^https://github.com/chiptoe-svg/canvas-cli/\.github/workflows/release\.yml@refs/tags/v' \
 #     checksums.txt
 signs:
   - cmd: cosign
@@ -122,37 +111,27 @@ changelog:
 
 release:
   github:
-    owner: jjuanrivvera
+    owner: chiptoe-svg
     name: canvas-cli
   draft: false
   prerelease: auto
   name_template: "v{{.Version}}"
   header: |
-    ## Canvas CLI v{{.Version}}
-
-    ### Installation
-
-    **Quick install (macOS/Linux)**
+    **Install or update (macOS/Linux)**
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/jjuanrivvera/canvas-cli/main/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh | sh
     ```
-
-    **Homebrew (macOS/Linux)**
+    The installer checks the archive against `checksums.txt`. To also verify the
+    Sigstore signature on `checksums.txt` (requires `cosign`):
     ```bash
-    brew tap jjuanrivvera/canvas-cli
-    brew install canvas-cli
+    cosign verify-blob --certificate checksums.txt.pem --signature checksums.txt.sig \
+      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      --certificate-identity-regexp '^https://github.com/chiptoe-svg/canvas-cli/\.github/workflows/release\.yml@refs/tags/v' \
+      checksums.txt
     ```
-
-    **Go**
-    ```bash
-    go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@v{{.Version}}
-    ```
-
-    **Binary Download**
-    Download the appropriate archive for your platform below.
-
-  # Ship a pinned copy of the install script with every release, alongside the
-  # always-current one on main (raw.githubusercontent.com/.../main/install.sh).
+    Builds are reproducible: check out this tag, then
+    `CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.Version={{.Version}} -X main.Commit={{.FullCommit}} -X main.BuildDate={{.CommitDate}}" ./cmd/canvas`
+    with the Go version in `go.mod` produces the same bytes as the archive here.
   extra_files:
     - glob: ./install.sh
 
@@ -160,33 +139,3 @@ release:
 # pre-built binary and match the rest of the fleet. NOTE: this switches the tap artifact from a
 # Formula to a Cask — delete the stale Formula/canvas-cli.rb from homebrew-canvas-cli after the
 # first cask release, or brew sees a formula+cask name collision.
-homebrew_casks:
-  - name: canvas-cli
-    binaries: [canvas]
-    repository:
-      owner: jjuanrivvera
-      name: homebrew-canvas-cli
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/chiptoe-svg/canvas-cli"
-    description: "A powerful command-line interface for Canvas LMS"
-    # Strip the macOS quarantine xattr so the unsigned CLI binary runs without a Gatekeeper prompt.
-    hooks:
-      post:
-        install: |
-          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/canvas"]
-
-scoops:
-  # The bucket repo (scoop-canvas-cli) must already exist; GoReleaser pushes the manifest
-  # to it with the cross-repo token but won't create it.
-  - repository:
-      owner: jjuanrivvera
-      name: scoop-canvas-cli
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/chiptoe-svg/canvas-cli"
-    description: "A powerful command-line interface for Canvas LMS"
-    license: MIT
-    commit_author:
-      name: goreleaserbot
-      email: bot@goreleaser.com
