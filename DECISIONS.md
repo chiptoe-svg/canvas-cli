@@ -41,3 +41,43 @@ handling — with no network, host-permission, or real-credential dependency.
   testability refactor only.
 
 Ref: [#28](https://github.com/chiptoe-svg/canvas-cli/issues/28)
+
+## 2. Faculty edition: delete, not build-tag
+
+**Context.** This fork narrows Canvas CLI to what an instructor managing and
+grading their own courses can do with a standard teacher token. Roughly half of
+the upstream command groups — account administration, provisioning, SIS import,
+developer keys, cross-instance sync, and the personal/consumer surfaces — have
+no place in that tool. The obvious cheap option was to keep the code and gate it
+behind a build tag or a hidden-command flag, preserving the ability to rebuild
+the full CLI from one tree.
+
+**Decision.** Delete it. The command files, their option structs, their tests,
+and every `internal/api` service left with no command caller are removed from
+the tree, and `commands/surface_test.go` asserts the exact remaining list of
+top-level commands as a test. Design record:
+[`docs/superpowers/specs/2026-09-05-faculty-edition-design.md`](docs/superpowers/specs/2026-09-05-faculty-edition-design.md).
+
+**Alternatives considered.**
+- *Build tags (`//go:build !faculty`).* Rejected. The claim this edition makes
+  to the people installing it is "the binary cannot do admin things" — and a
+  build tag makes that claim contingent on a build flag nobody re-checks. It
+  also doubles the test matrix, leaves dead code that lint and coverage still
+  have to carry, and keeps the reproducible-build story ambiguous: two binaries
+  from one tag is one binary too many.
+- *Hidden commands (`cmd.Hidden = true`).* Rejected outright — hidden is not
+  removed. The endpoints stay reachable by anyone who types the name, so it
+  changes the documentation and nothing else.
+- *A separate wrapper repository.* Rejected: it would have to track upstream
+  forever to get security fixes, and the audited-release story needs one tree
+  whose contents are what was reviewed.
+
+**Consequences.**
+- The scope is reviewable: `facultySurface` in `commands/surface_test.go` is the
+  whole list, and adding a command means editing it in the same commit.
+- Restoring a removed group means reverting a specific commit on this branch;
+  the history has it, the binary does not.
+- Merging upstream changes is manual rather than automatic. Accepted — the
+  audited-release model requires reading the diff anyway.
+- The spec contract test still covers every path the surviving services call,
+  so the trim did not weaken the API-path guard.

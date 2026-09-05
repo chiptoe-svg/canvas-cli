@@ -1,319 +1,198 @@
-<p align="center">
-  <img src="docs/assets/images/logo.svg" alt="Canvas CLI" width="280">
-</p>
+# Canvas CLI — faculty edition
 
-<p align="center">
-  <a href="https://github.com/chiptoe-svg/canvas-cli/actions/workflows/ci.yml"><img src="https://github.com/chiptoe-svg/canvas-cli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/chiptoe-svg/canvas-cli/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-%E2%89%A580%25-brightgreen" alt="Coverage"></a>
-  <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
-  <a href="https://github.com/chiptoe-svg/canvas-cli/releases"><img src="https://img.shields.io/github/v/release/chiptoe-svg/canvas-cli" alt="Release"></a>
-  <a href="https://pkg.go.dev/github.com/chiptoe-svg/canvas-cli"><img src="https://pkg.go.dev/badge/github.com/chiptoe-svg/canvas-cli.svg" alt="Go Reference"></a>
-  <a href="https://deepwiki.com/jjuanrivvera/canvas-cli"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
-  <a href="https://cliwright.jjuanrivvera.com"><img src="https://img.shields.io/badge/built_with-cliwright-1f6feb" alt="Built with cliwright"></a>
-</p>
+A command-line tool for instructors who manage and grade their own
+[Canvas LMS](https://www.instructure.com/canvas) courses. It reaches only the
+courses you are enrolled to teach or TA and needs no admin rights: every
+account-level, provisioning and cross-instance surface has been removed rather
+than hidden. Every release is signed with [Sigstore](https://www.sigstore.dev/)
+and reproducible — you can rebuild the published binary byte-for-byte from the
+tag. Based on
+[jjuanrivvera/canvas-cli](https://github.com/jjuanrivvera/canvas-cli) (MIT),
+trimmed and re-audited for faculty use.
 
-<p align="center">
-  A powerful command-line interface for <a href="https://www.instructure.com/canvas">Canvas LMS</a>, built with Go.
-</p>
+## Install or update
 
-<p align="center">
-  <a href="https://jjuanrivvera.github.io/canvas-cli/"><strong>Documentation</strong></a> ·
-  <a href="https://jjuanrivvera.github.io/canvas-cli/getting-started/installation/"><strong>Installation</strong></a> ·
-  <a href="https://jjuanrivvera.github.io/canvas-cli/commands/"><strong>Commands</strong></a>
-</p>
-
----
-
-## Features
-
-- **Secure Authentication** - OAuth 2.0 with PKCE (confidential or secret-less public clients), system keyring integration
-- **Multi-Instance** - Manage multiple Canvas instances from one CLI
-- **Smart Rate Limiting** - Adaptive throttling based on API quotas
-- **Multiple Outputs** - Table, JSON, YAML, and CSV formats
-- **Interactive Mode** - REPL shell with command history and completion
-- **80% API Coverage** - 876 of Canvas's 1086 documented endpoints implemented in the service layer, exposed through 93 command groups
-- **Spec-Verified** - Every endpoint path validated against Canvas's official API spec in CI ([details](#api-spec-compliance))
-- **MCP Server** - Use as an AI agent tool via Model Context Protocol
-- **AI Agent Skill** - Bundled skill for Claude Code, Cursor, and other agents (`canvas skills install`)
-- **Signed Releases** - cosign-signed checksums, SBOMs, and a distroless Docker image
-
-## Installation
-
-### Quick Install (macOS/Linux)
-
-Auto-detects your platform and verifies the checksum:
+macOS and Linux, amd64 and arm64:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jjuanrivvera/canvas-cli/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh | sh
 ```
 
-### Homebrew (macOS/Linux)
+The script downloads the release it is pinned to (a `v1.13.0+audited.N` tag),
+checks the archive's SHA-256 against the release's `checksums.txt`, and installs
+the binary to `INSTALL_DIR` if you set it, `/usr/local/bin` if that is writable,
+otherwise `~/.local/bin`. Running it again is how you update. Confirm what you
+got:
 
 ```bash
-brew tap jjuanrivvera/canvas-cli
-brew install canvas-cli
+canvas version    # canvas-cli 1.13.0+audited.N
+canvas doctor     # install, config, auth and connectivity in one pass
 ```
 
-### Scoop (Windows)
+### Verify the signature
 
-```powershell
-scoop install https://raw.githubusercontent.com/jjuanrivvera/scoop-canvas-cli/main/canvas-cli.json
-```
-
-### Go Install
-
-Requires Go 1.25+ (or Go 1.24+ with automatic toolchain download).
+The release workflow signs `checksums.txt` keylessly, so the signer identity is
+this repository's `release.yml` at the tagged ref. Download `checksums.txt`,
+`checksums.txt.sig` and `checksums.txt.pem` from the release, then with
+[cosign](https://github.com/sigstore/cosign) v2:
 
 ```bash
-go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@latest
+cosign verify-blob --certificate checksums.txt.pem --signature checksums.txt.sig \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/chiptoe-svg/canvas-cli/\.github/workflows/release\.yml@refs/tags/v' \
+  checksums.txt
 ```
 
-### Docker
+That regexp is the one in [`.goreleaser.yaml`](.goreleaser.yaml). A signature
+from any other workflow, repository or ref fails it.
+
+### Reproduce the build
+
+Builds use `-trimpath` and take the build date from the commit, so the same tag
+and the Go version in [`go.mod`](go.mod) (1.25.13) produce the same bytes:
 
 ```bash
-docker run --rm ghcr.io/jjuanrivvera/canvas-cli:latest version
+TAG=v1.13.0+audited.1     # the tag you are checking
+git clone --depth 1 --branch "$TAG" https://github.com/chiptoe-svg/canvas-cli.git
+cd canvas-cli
+CGO_ENABLED=0 go build -trimpath \
+  -ldflags "-s -w -X main.Version=${TAG#v} \
+            -X main.Commit=$(git rev-parse HEAD) \
+            -X main.BuildDate=$(TZ=UTC0 git log -1 --format=%cd --date=format:%Y-%m-%dT%H:%M:%SZ)" \
+  ./cmd/canvas
+shasum -a 256 canvas
 ```
 
-Images are published to GHCR for every release (`:latest`, `:v1`, and exact
-versions). Pass credentials via environment variables:
+Compare that digest with the `canvas` binary unpacked from the release archive
+for your platform (`GOOS`/`GOARCH` to build for another).
+
+## First five commands
 
 ```bash
-docker run --rm -e CANVAS_URL -e CANVAS_TOKEN ghcr.io/jjuanrivvera/canvas-cli:latest courses list
+canvas auth login https://your-school.instructure.com   # OAuth 2.0 + PKCE
+canvas courses list                                     # your courses
+canvas assignments list --course-id 123                 # what is in one course
+canvas submissions missing --course-id 123              # who is missing work
+canvas users todo                                       # your grading to-do
 ```
 
-### Binary Download
+`canvas <group> --help` and `canvas <group> <sub> --help` are the authoritative
+flag reference; nothing else claims to be.
 
-Download from [GitHub Releases](https://github.com/chiptoe-svg/canvas-cli/releases).
-Release checksums are signed with [cosign](https://github.com/sigstore/cosign)
-(keyless) and archives ship with SBOMs — verification instructions are in the
-[`.goreleaser.yaml`](.goreleaser.yaml) `signs` section.
+## What it does
 
-## Quick Start
+| Group | What it covers |
+|---|---|
+| `courses` | list, get, update, and `courses settings` |
+| `assignments`, `assignment-groups`, `overrides` | assignments, their groups, per-student and per-section overrides, `upcoming` |
+| `submissions` | list, get, download, grade, bulk-grade, comments, `missing`, `excuse` |
+| `grades` | grade-change history, the gradebook feed, custom columns |
+| `grading-periods`, `grading-standards` | course-level reads and course-level create |
+| `rubrics`, `rubric-associations` | build rubrics and attach them to assignments |
+| `quizzes` | quizzes, questions, submissions, `regrade`, `extensions`, `statistics`, `reports` |
+| `course-extensions` | quiz and assignment accommodations for a named student |
+| `modules`, `pages`, `files`, `folders` | course content and its publish state |
+| `discussions`, `announcements`, `conversations` | course discussion, announcements, messaging students |
+| `enrollments`, `sections`, `groups` | roster, sections, student groups; how TAs and co-instructors are added |
+| `users` | `me`, `list`, `search`, `get`, `profile`, `todo`, `missing-submissions`, `upcoming-events`, `activity-stream` |
+| `calendar`, `appointment-groups` | course calendar and Scheduler slots (office hours, exit interviews) |
+| `analytics`, `outcomes`, `peer-reviews` | course analytics, outcomes, peer-review assignment |
+| `content-shares`, `collaborations`, `course-features` | Direct Share with co-instructors, collaborations, course feature flags |
+| `content-exports`, `content-migrations` | course copy and import; their `get` reports job progress |
+| `schedule` | set available, due and close times in local time — one by `--id`, or in bulk by `--match` |
+| `activity` | the local activity log (below) |
+| `api` | `api get` only: a read-only escape hatch for reads no command covers |
+| `agent`, `skills` | the agent guard hook installer and the bundled agent skill |
+| `auth`, `config`, `context`, `alias`, `cache`, `completion`, `doctor`, `update`, `version` | tool-level plumbing |
+
+The exact command surface is pinned by a test, `commands/surface_test.go`: it
+cannot drift without a reviewed commit.
+
+## Safety
+
+- **`--dry-run` on every command.** It prints the exact HTTP request as a curl
+  line with the token redacted, and sends nothing. For a `--match` or a CSV
+  batch the dry run *is* the plan.
+- **Writes read back and print evidence.** `submissions grade`, `add-comment`
+  and `excuse` re-read the object after writing and print what changed —
+  `grade: 88 → 95`, the new comment's id and author, `excused: not excused →
+  excused` — plus a `verified:` line. `verified: no` exits non-zero. The write's
+  own echo is not evidence; the read-back is.
+- **`api get` is read-only.** There is no `api post`, `put`, `patch` or
+  `delete`. The faculty build cannot write through the raw API at all.
+- **Optional local activity log.** Off by default, and it never contains
+  tokens. When enabled it writes one JSON line per invocation: the command, its
+  arguments with secrets and free-text values redacted, every HTTP request with
+  status and outcome, the objects touched, the exit code and the duration.
+
+  ```bash
+  canvas activity configure --enable     # persist in ~/.canvas-cli/config.yaml
+  canvas activity list --since 7d        # what ran in the last week
+  canvas activity list --writes -o json  # every invocation that changed something
+  ```
+
+  By default only writes are recorded, and the values of `--comment`, `--text`,
+  `--message`, `--body` and `--student` are replaced by `[REDACTED]` — the log
+  says who was graded and what score was posted, not what the feedback said.
+  `configure --capture-bodies` keeps the payloads too; that file then holds
+  student-directed text, so keep it where only you can read it. A write whose
+  response was lost is always logged with `"verification_required": true`,
+  because Canvas may have applied it. The directory is created 0700 and the file
+  0600, and `configure --required` refuses to write to Canvas at all when the
+  log cannot be opened. `canvas activity path` prints the effective settings.
+
+## Using it with an AI agent
+
+The binary ships with an agent skill — what the tool is, the disciplines that
+apply to grading somebody's education record, and the workflow references.
+Installing it from the CLI guarantees it matches the version you are running:
 
 ```bash
-# Authenticate with your Canvas instance
-canvas auth login https://your-school.instructure.com
-
-# List your courses
-canvas courses list
-
-# Get assignments for a course
-canvas assignments list --course-id <course-id>
-
-# Start interactive mode (alias: canvas shell)
-canvas repl
+canvas skills install --global           # write the bundled skill
+canvas skills install --agent cursor     # target a specific agent
 ```
 
-## Command Overview
-
-| Category | Commands |
-|----------|----------|
-| **Auth** | `login`, `logout`, `status` |
-| **Courses** | `list`, `get`, `create`, `update`, `delete` |
-| **Assignments** | `list`, `get`, `create`, `update`, `delete`, `upcoming` (what is due within a window or by a date, per course, local time) |
-| **Submissions** | `list`, `get`, `grade`, `bulk-grade`, `comments`, `missing` (who is missing work, read-only), `excuse` (by student/assignment name, with read-back) |
-| **Users** | `me`, `list`, `get`, `create`, `update` |
-| **Enrollments** | `list`, `get`, `create`, `conclude`, `reactivate`, `accept`, `reject` |
-| **Modules** | `list`, `get`, `create`, `update`, `delete`, `publish`, `items` |
-| **Pages** | `list`, `get`, `create`, `update`, `delete`, `front`, `revisions` |
-| **Discussions** | `list`, `get`, `create`, `entries`, `post`, `reply`, `subscribe` |
-| **Announcements** | `list`, `get`, `create`, `update`, `delete` |
-| **Quizzes** | `list`, `get`, `create`, `update`, `delete`, `questions`, `submissions` |
-| **Schedule** | `schedule` — set available/due/closed times on quizzes and assignments in local time, one by `--id` or in bulk by `--match` |
-| **Grades** | `history`, `feed`, `columns` |
-| **Groups** | `list`, `get`, `create`, `update`, `delete`, `users`, `categories` |
-| **Outcomes** | `list`, `get`, `create`, `update`, `link`, `unlink`, `groups`, `results` |
-| **Rubrics** | `list`, `get`, `create`, `update`, `delete`, `associate` |
-| **Conversations** | `list`, `get`, `create`, `reply`, `archive`, `star`, `mark-read` |
-| **Calendar** | `list`, `get`, `create`, `update`, `delete`, `reserve` |
-| **Files** | `list`, `get`, `upload`, `download`, `delete` |
-| **Sections** | `list`, `get`, `create`, `update`, `delete`, `crosslist` |
-| **Polls** | `polls`, `choices`, `sessions`, `submissions` |
-| **Folders / Files** | `folders`, `files`, multi-context (course / group / user) |
-| **Favorites / Bookmarks** | `favorites`, `bookmarks`, `course-nicknames` |
-| **Account Admin** | `auth-providers`, `csp-settings`, `account-reports`, `enrollment-terms`, `developer-keys`, `grading-period-sets` |
-| **Grading** | `grading-periods`, `grading-standards`, `rubric-associations`, `live-assessments` |
-| **Content** | `content-exports`, `content-migrations`, `blackout-dates`, `course-pacing`, `blueprint` |
-| **Comms / Misc** | `conversations`, `comm-channels`, `content-shares`, `media`, `conferences`, `eportfolios`, `audit` |
-| **Admin** | `admins`, `roles`, `analytics`, `sis-imports`, `appointment-groups` |
-| **Utilities** | `repl`, `doctor`, `webhook`, `api`, `version` |
-
-This is a sample — the CLI has **93 command groups**, and its service layer
-implements **80%** of Canvas's official API. See the
-[full command reference](https://jjuanrivvera.github.io/canvas-cli/commands/)
-for all 540+ commands and their flags.
-
-## API Spec Compliance
-
-Canvas CLI's API paths are validated in CI against Canvas's **official API
-spec** (Swagger 1.2, committed under `testdata/spec/`). A network-free contract
-test harvests every endpoint the CLI calls and asserts it matches a documented
-Canvas endpoint — so a wrong path fails the build. The committed manifest is
-refreshed from a live Canvas host with `make spec-sync`, and `make spec-coverage`
-reports which documented endpoints aren't implemented yet.
-
-## Configuration
-
-```yaml
-# ~/.canvas-cli/config.yaml
-default_instance: myschool
-instances:
-  myschool:
-    url: https://myschool.instructure.com
-    client_id: your-client-id
-settings:
-  default_output_format: table
-  cache_enabled: true
-  timezone: America/New_York   # zone for local-time flags such as --due "4:50pm" (default: $TZ, then system)
-```
-
-See [Authentication Guide](https://jjuanrivvera.github.io/canvas-cli/getting-started/authentication/) for detailed setup.
-
-## Activity Log
-
-An optional local log of what the CLI did: one JSON line per invocation with
-the command, its arguments (secrets redacted), every HTTP request with its
-status and outcome, the Canvas objects touched, the exit code and the
-duration. It is **off by default** and never contains tokens.
+An agent driving `canvas` can still issue destructive commands. The guard
+generates permission rules and a PreToolUse hook that hard-block irreversible
+operations and require approval for writes:
 
 ```bash
-canvas activity configure --enable       # persistently, in ~/.canvas-cli/config.yaml
-canvas activity path                     # resolved path and the effective settings
-canvas activity list --since 7d          # what ran in the last week
-canvas activity list --writes -o json    # every invocation that changed something, in full
-canvas activity archive                  # rename to activity-<UTC timestamp>.jsonl
-canvas activity clear --force            # truncate (refuses without --force)
+canvas agent guard --host claude-code            # review what would be written
+canvas agent guard --host claude-code --write    # install into the project
+canvas agent guard --host claude-code --all-writes --write   # also gate create/update/grade
 ```
 
-`configure` writes the `activity_log` block of the config file; the same keys
-can be edited by hand:
+Hosts: `claude-code`, `codex`, `opencode`. Regenerate after upgrading.
 
-```yaml
-activity_log:
-  enabled: true
-  path: ~/.canvas-cli/activity.jsonl   # optional (default)
-  writes_only: true                    # optional, default true
-  capture_bodies: false                # optional
-  required: false                      # optional
-  max_size_mb: 10                      # optional: archive before exceeding
-```
+## Trust review
 
-Environment variables take precedence over the file: `CANVAS_ACTIVITY_LOG=<path>`
-enables the log and sets its path; `CANVAS_ACTIVITY_WRITES_ONLY`,
-`CANVAS_ACTIVITY_CAPTURE_BODIES` and `CANVAS_ACTIVITY_REQUIRED` (`1`/`true` or
-`0`/`false`) override the matching keys.
+What this fork removed and why is written down, not summarized:
 
-- **The log records writes; reads and dry-runs leave no entry unless
-  `writes_only` is turned off** (`configure --writes-only=false` or
-  `CANVAS_ACTIVITY_WRITES_ONLY=0`). Each entry carries the command line with
-  secrets and free-text values redacted — the value of `--comment`,
-  `--rubric-comment`, `--text`, `--message`, `--body` and `--student` is
-  replaced by `[REDACTED]` — plus the method, path and outcome of every
-  request. Ids, scores and switches are kept, so the log says who was
-  graded and what score was posted, not what the feedback said. A write whose response was lost (timeout,
-  connection dropped) is always logged, with `"outcome": "unknown"` on the
-  request and `"verification_required": true` on the entry, because Canvas
-  may have applied it; other writes carry `"outcome": "ok"` or `"rejected"`.
-- **`capture_bodies`** adds to every write the exact payload sent (`body`)
-  and the parsed response (`response`) — for example the full text of a
-  comment, a message or an announcement the agent wrote. Reads are never
-  captured. Secret-looking keys (token, secret, password, authorization,
-  access_code, api_key — at any depth) and Canvas-shaped tokens or Bearer
-  credentials inside strings are redacted. File- and stdin-driven commands
-  (`submissions bulk-grade`, `assignments|users create|update --json-file`)
-  also record their parsed input under `details.input`, and `quizzes
-  regrade` its per-student verification table under `details`; with
-  `capture_bodies` off, `details` is not written at all. This mode stores
-  student-directed text and names; it is meant for operator audit logs, so
-  keep the file where only the operator can read it.
-- **`required`** is audited mode: before the first write of an invocation the
-  log is prepared (directory created 0700, file created 0600, owned by you,
-  writable), and if that fails the write is refused with
-  `audit log unavailable: <reason>; refusing to write to Canvas` and a
-  non-zero exit. Reads are never blocked. `required` implies `enabled`.
-  Without it, a log that cannot be written only produces a warning.
-- The log directory is created owner-only (0700) and the file 0600. On each
-  run that logs, looser permissions on either — when you own them — are
-  tightened to that and reported once on stderr; they are never loosened.
-  Put the log in a directory of its own: the tightening applies to the
-  parent directory of the file.
-- When the file grows past `max_size_mb` it is archived automatically before
-  the next write. A failure to write the log never fails the command (unless
-  `required` is on).
+- [`docs/superpowers/specs/2026-09-05-faculty-edition-design.md`](docs/superpowers/specs/2026-09-05-faculty-edition-design.md)
+  — the design: every command group kept, every one removed, and the reasoning
+  for each judgment call.
+- The **Faculty edition** section at the top of [`CHANGELOG.md`](CHANGELOG.md)
+  — the same list in release-note form.
 
-## MCP Server Mode
+The claims above are checkable rather than asserted: the command surface is a
+test, the release recipe is a SHA-pinned in-repo workflow
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) so the
+signature identifies that workflow at the tag, and the build reproduces —
+verify all of it with the commands under [Install or update](#install-or-update).
 
-Canvas CLI can also run as an [MCP](https://modelcontextprotocol.io/) server, exposing nearly all of its commands as tools for AI coding agents (Claude Code, Cursor, VS Code Copilot). Only the `canvas mcp` management commands themselves are excluded.
+## Development
 
 ```bash
-# Start as STDIO MCP server
-canvas mcp start
-
-# Start as HTTP MCP server
-canvas mcp stream --port 8080
-
-# Export all tool schemas to JSON
-canvas mcp tools
-
-# Auto-configure in your editor
-canvas mcp claude enable
-canvas mcp vscode enable
-canvas mcp cursor enable
+make build    # bin/canvas
+make test     # the full suite
+make check    # everything CI runs: vet, lint, security, tests, coverage gate
 ```
 
-The same binary, two interfaces. When used as an MCP server, each CLI command becomes an MCP tool with typed parameters derived from the command's flags. Required flags become required schema properties. All output goes through structured JSON.
-
-Sensitive flags (`--show-token`, `--config`) are automatically excluded from MCP exposure.
-
-> **Note for `go install` users**: MCP support requires Go 1.25+ due to the [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk) dependency. Homebrew and binary downloads are not affected by this requirement.
-
-For full setup (Claude Desktop, Claude Code CLI, Cursor, VS Code, OpenCode, Codex), auth precedence, and troubleshooting, see:
-
-- [MCP Integration Guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/mcp/)
-
-## AI Agent Skill
-
-Canvas CLI ships an **agent skill** that teaches AI coding agents (Claude Code,
-Cursor, Codex, Gemini CLI, Windsurf, Copilot, …) how to drive it — commands,
-flags, safety rules (`--dry-run` previews), and common grading/content
-workflows. The skill is bundled in the binary, so installing it from the CLI
-guarantees it matches the version you are running:
-
-```bash
-canvas skills install --global              # write the bundled skill
-canvas skills install --agent cursor        # target a specific agent
-```
-
-The skill wraps this binary, so install the CLI (above) and authenticate first.
-For structured tool access (Claude Desktop, etc.) use the MCP server mode
-described above — the two can coexist.
-
-See the [Agent Skill guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-skill/) for details.
-
-## Agent Safety
-
-When an AI agent drives `canvas`, it can issue destructive commands (`courses delete`, `sections crosslist`, `enrollments conclude`). Use the built-in guard to generate permission rules and a PreToolUse hook that hard-block irreversible operations and require approval for writes:
-
-```bash
-# Review what will be generated
-canvas agent guard --host claude-code
-
-# Install config and hook script into the current project
-canvas agent guard --host claude-code --write
-
-# Strictest: also block create/update/grade
-canvas agent guard --host claude-code --all-writes --write
-```
-
-Supported hosts: `claude-code`, `codex`, `opencode`. Regenerate after upgrading `canvas` so new commands are covered.
-
-See the [Agent Safety guide](https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/) for the hard-block vs ask model, obfuscation caveats, and MCP-only recommendations.
-
-## Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+`main` is the development branch. `release/audited` is what faculty install:
+`main` plus the commit that pins the installer's version. Releases are tags
+`v1.13.0+audited.N` cut from `release/audited`. Contributor guidance is in
+[AGENTS.md](AGENTS.md); see also [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT License](LICENSE)
+[MIT](LICENSE).

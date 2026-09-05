@@ -5,15 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-This file is the single source of truth; `docs/changelog.md` is a copy kept in
-sync by `make docs-gen` and the documentation workflow.
+## Faculty edition — 2026-09-05
+
+This fork is now a CLI for instructors managing and grading their own
+courses. Removed every account-level, admin and power-user surface:
+`account-analytics`, `account-calendars`, `account-content-migrations`,
+`account-ext-tools-favorites`, `account-features`, `account-logins`,
+`account-notifications`, `account-reports`, `accounts`, `admins`, `audit`,
+`auth-providers`, `blackout-dates`, `blueprint`, `bookmarks`, `brand`,
+`comm-channels`, `comm-messages`, `conferences`, `course-nicknames`,
+`course-pacing`, `csp-settings`, `developer-keys`, `enrollment-terms`,
+`eportfolios`, `epub-exports`, `error-reports`, `external-tools`, `favorites`,
+`grading-period-sets`, `history`, `jwts`, `live-assessments`, `media`,
+`observees`, `planner`, `polls`, `progress`, `sis-imports`, `sync`,
+`temporary-enrollment-pairings`, `user-features`, the MCP server, the REPL, the
+webhook listener, telemetry, and the write-capable `api` command (`api get`
+stays). `course-settings` is now `courses settings`. Module path is
+`github.com/chiptoe-svg/canvas-cli`. The docs site is gone; the README and
+the bundled skill are the documentation. `main` is the development branch
+(the former `integration/all`); `release/audited` is what faculty install.
+
+The full reasoning — every group kept, every group removed, and each judgment
+call — is in
+[`docs/superpowers/specs/2026-09-05-faculty-edition-design.md`](docs/superpowers/specs/2026-09-05-faculty-edition-design.md).
+The surviving command surface is pinned by `commands/surface_test.go`.
 
 ## [Unreleased]
 
-### Planned
-
-- Canvas Studio integration
-- GraphQL API support
+*Nothing yet.* (The upstream roadmap items that stood here — Canvas Studio
+integration and GraphQL support — are not plans for this edition.)
 
 ## [1.13.0] - 2026-08-05
 

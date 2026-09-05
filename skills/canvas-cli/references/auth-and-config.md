@@ -1,7 +1,7 @@
 # Canvas CLI — auth, instances, and context
 
-Loaded on demand by the `canvas-cli` skill. Authoritative docs:
-https://jjuanrivvera.github.io/canvas-cli/getting-started/authentication/
+Loaded on demand by the `canvas-cli` skill. The authority on flags is the
+binary itself: `canvas auth --help`, `canvas config --help`.
 
 ## Three auth methods
 

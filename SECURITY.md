@@ -2,12 +2,19 @@
 
 ## Supported Versions
 
-Only the latest minor release line receives security fixes.
+Only the most recent audited release is supported. There is no back-porting:
+a fix ships as the next `v1.13.0+audited.N` tag, and updating means re-running
+the installer.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.12.x  | :white_check_mark: |
-| < 1.12  | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| The latest `v1.13.0+audited.N` release | :white_check_mark: |
+| Any earlier `+audited.N` | :x: |
+| Any build without `+audited` (upstream or package-manager builds) | :x: |
+
+`canvas version` prints what you are running; it must read
+`canvas-cli 1.13.0+audited.N`. The README explains how to verify the release
+signature and reproduce the build.
 
 ## Reporting a Vulnerability
 

@@ -38,8 +38,8 @@ If `canvas version` prints anything else — a plain `1.13.0`, a `dev` build, no
 curl -fsSL https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh | sh
 ```
 
-Never install with Homebrew or `go install`; both fetch unaudited upstream
-builds. If `canvas doctor` reports an auth problem, `canvas auth status` shows
+Never install with Homebrew, a package manager, or the Go toolchain; those
+fetch unaudited upstream builds. If `canvas doctor` reports an auth problem, `canvas auth status` shows
 each configured instance and `canvas auth login --instance <name>` fixes it.
 Multi-instance setup, tokens, and the working context are in
 `references/auth-and-config.md`.

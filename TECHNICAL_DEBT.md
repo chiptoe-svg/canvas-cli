@@ -2,11 +2,12 @@
 
 This document tracks known technical debt in the Canvas CLI project.
 
-**Last Updated:** 2026-06-10
-**Status:** All actionable debt resolved (v1.10 batch). The only tracked item
-is deliberately dormant with an explicit trigger. Items that would sit at
-"Planned" forever were removed (see "Removed Items" for why, so they don't
-get re-added by a future review).
+**Last Updated:** 2026-09-05
+**Status:** All actionable debt resolved. The only tracked item is deliberately
+dormant with an explicit trigger. Items that would sit at "Planned" forever were
+removed (see "Removed Items" for why, so they don't get re-added by a future
+review). Entries describing code the faculty edition deleted were dropped in
+September 2026 — see the "Faculty edition" section of CHANGELOG.md.
 
 ---
 
@@ -19,17 +20,18 @@ get re-added by a future review).
 1. **Cosign Pinned to the v2 Line**
    - **Problem:** `release.yml` pins `cosign-release: v2.6.3` because cosign
      v3 changed the sign-blob/verify-blob bundle format, and both
-     `.goreleaser.yaml` (`signs:`) and the documented verification
-     instructions use the v2 `.sig`/`.pem` flags.
+     `.goreleaser.yaml` (`signs:` and its `release.header`) and the
+     README's verification section use the v2 `.sig`/`.pem` flags.
    - **Why dormant:** v2 verification remains fully supported (v3 clients
      verify v2 signatures), the pin is commented in the workflow, and
      dependabot keeps surfacing installer updates as a reminder. Migrating
      early buys nothing and risks breaking published verify instructions.
    - **Trigger to act:** cosign v2 EOL announcement, or v3 bundles becoming
-     the GoReleaser-documented default. Then migrate `signs:` config and both
-     docs pages together, validate on a snapshot release, unpin.
+     the GoReleaser-documented default. Then migrate the `signs:` config and
+     every published verify instruction together, validate on a snapshot
+     release, unpin.
    - **Files/Areas:** `.github/workflows/release.yml`, `.goreleaser.yaml`,
-     `docs/getting-started/installation.md`, `docs/security.md`
+     `README.md`, `skills/canvas-cli/`
 
 ## Accepted Design Choices (not debt — do not re-add)
 
@@ -68,8 +70,8 @@ get re-added by a future review).
 
 - **Gosec findings backlog** (June 2026) — 283 findings burned down to 0: the
   G104 bulk via a `mustMarkRequired` helper, two real fixes (missing
-  `ReadHeaderTimeout` on the OAuth callback and webhook servers, tightened
-  update-state dir perms), and justified `#nosec` annotations for the rest.
+  `ReadHeaderTimeout` on the OAuth callback server, tightened update-state dir
+  perms), and justified `#nosec` annotations for the rest.
   The CI gosec step is now blocking (`-no-fail` removed).
 - **Binary-level integration tests** (June 2026) — 12-case suite in
   `test/integration` behind the `integration` build tag: compiled binary
@@ -83,8 +85,8 @@ get re-added by a future review).
   `newTestClient(t, serverURL)` helper; 201 exact-pattern call sites migrated
   by script, variant constructions intentionally left explicit.
 - **Package-level flag variables in remaining commands** (June 2026, #37) —
-  `api`, `cache`, `sync`, `telemetry`, `repl`, `completion` migrated to the
-  options-struct pattern; `shell` became an alias of `repl`.
+  the last hold-out commands migrated to the options-struct pattern. Only the
+  root persistent-flag globals remain, by choice (above).
 - **Dependabot configured** (June 2026) — `github-actions` + `gomod` weekly;
   SECURITY.md had advertised this before any config existed.
 - **GitHub Actions on Node 24** (June 2026) — all node-based actions bumped
@@ -130,5 +132,4 @@ with its rationale — a plan that won't be executed is misinformation.
 
 ---
 
-**Next Review:** September 2026
-**Maintained By:** Canvas CLI Development Team
+**Next Review:** March 2027

@@ -1,7 +1,7 @@
 # Canvas CLI — output formats and filtering
 
-Loaded on demand by the `canvas-cli` skill. Authoritative docs:
-https://jjuanrivvera.github.io/canvas-cli/user-guide/output-formats/
+Loaded on demand by the `canvas-cli` skill. The authority on flags is the
+binary itself: `canvas <group> <sub> --help` lists every global flag.
 
 ## Formats
 

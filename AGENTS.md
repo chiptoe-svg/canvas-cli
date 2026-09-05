@@ -1,328 +1,168 @@
 # AGENTS.md
 
-This file provides guidance to AI agents (Claude Code, Cursor, Copilot, etc.) when working with code in this repository.
+Guidance for anyone — human or AI agent (Claude Code, Cursor, Copilot, …) —
+working on this repository. `CLAUDE.md` is a symlink to this file.
 
-## Build & Development Commands
+This is the **faculty edition** of Canvas CLI: a tool for instructors managing
+and grading their own courses. It has no admin capability, and that is a
+property to preserve, not an accident to fix. Before adding anything, read
+[`docs/superpowers/specs/2026-09-05-faculty-edition-design.md`](docs/superpowers/specs/2026-09-05-faculty-edition-design.md)
+— it records every group that was kept, every one that was removed, and why.
+
+## Build & test
 
 ```bash
-# Build
-make build              # Build binary to bin/canvas
-make dev                # Build with fmt and vet
+make build              # bin/canvas
+make dev                # fmt + vet + build
 
-# Test
-make test               # Run all tests
-make test-coverage      # Run tests with coverage report
-go test -v ./internal/api/...  # Run specific package tests
-go test -v -run TestName ./... # Run single test
+make test               # full suite
+make test-coverage      # suite with a coverage report
+make test-integration   # binary-level tests (-tags integration)
+go test ./internal/api/...          # one package
+go test -run TestName ./...         # one test
 
-# Lint & Format
-make fmt                # Format code
-make lint               # Run golangci-lint
-make vet                # Run go vet
+make fmt                # gofmt
+make lint               # golangci-lint
+make vet                # go vet
+make check              # everything CI runs — run this before you push
 
-# Install
-make install            # Install to /usr/local/bin
-make uninstall          # Remove from /usr/local/bin
-
-# Setup
-make setup-hooks        # Install git pre-commit hooks
+make setup-hooks        # pre-commit hook: gofmt, golangci-lint, go vet, go test -short -race
 ```
 
-## Pre-commit Hook
-
-Run `make setup-hooks` to enable. Runs automatically on each commit:
-- `gofmt` - formatting check
-- `golangci-lint` - comprehensive linting (if installed)
-- `go vet` - static analysis
-- `go test -short -race` - quick test pass with race detector
-
-## Architecture
-
-Canvas CLI is a Go CLI for Canvas LMS API, built with Cobra/Viper.
-
-### Project Structure
+## Layout
 
 ```
-cmd/canvas/     → Entry point (main.go)
-commands/       → Cobra command definitions (one file per resource)
+cmd/canvas/     → entry point (main.go); alias expansion via internal/shellparse
+commands/       → Cobra command definitions, one file per resource
   internal/
-    options/    → Option structs for commands (eliminates global state)
-    logging/    → Structured logging for commands
+    options/    → option structs + Validate()
+    logging/    → structured command logging
+    testing/    → cmdtest helpers (mock server wired to getAPIClient)
 internal/
-  api/          → Canvas API client + service layer (Client, *Service structs)
-  auth/         → OAuth 2.0 + PKCE, token storage (keyring/encrypted file)
-  config/       → Viper-based configuration management
-  cache/        → Response caching with TTL
-  batch/        → Concurrent batch operations (worker pool)
+  activity/     → the local activity log (redaction, permissions, audited mode)
+  api/          → Canvas API client + service layer (Client, *Service)
+  auth/         → OAuth 2.0 + PKCE, token storage (keyring / encrypted file)
+  batch/        → concurrent batch operations (worker pool)
+  cache/        → response caching with TTL
+  config/       → Viper-based configuration
   diagnostics/  → canvas doctor checks
   dryrun/       → --dry-run curl rendering
-  output/       → Formatters (table, JSON, YAML, CSV)
-  progress/     → Progress indicators
-  repl/         → Interactive shell
-  shellparse/   → Shell-style argument parsing
-  telemetry/    → Opt-in usage telemetry
-  terminal/     → Terminal capabilities
-  update/       → Self-update checks
-  webhook/      → Webhook listener
-testdata/spec/  → Committed Canvas API spec manifest
-tools/          → Code generators (speccheck)
-.ai/            → Canvas LMS API documentation (gitignored)
+  localtime/    → local-time parsing for --due / --available / --until
+  output/       → table, JSON, YAML, CSV formatters
+  progress/     → progress indicators
+  resolve/      → name → id resolution (students, assignments)
+  shellparse/   → shell-style argument parsing
+  terminal/     → terminal capabilities
+  update/       → self-update checks
+skills/canvas-cli/  → the agent skill bundled into the binary
+testdata/spec/  → committed Canvas API spec manifest
+tools/speccheck → spec sync / coverage tool
 ```
 
-### Key Patterns
+## The command surface is a test
 
-**Service Layer**: Each Canvas resource has a service in `internal/api/`:
-```go
-type ModulesService struct { client *Client }
-func NewModulesService(client *Client) *ModulesService
-```
+`commands/surface_test.go` asserts the exact sorted list of top-level commands,
+the `users` subcommands, and that `api` has only `get`. **Adding or removing a
+command means editing `facultySurface` in the same commit.** That is deliberate:
+the scope of this tool is reviewable in one file and cannot drift in silently.
 
-**Command Pattern (NEW)**: Commands should use options structs instead of global flags:
-```go
-// commands/internal/options/resource.go
-type ResourceListOptions struct {
-    CourseID int64
-    Include  []string
-}
+If a change makes that test fail, the question to answer is not "how do I fix
+the test" but "is this command something an instructor can run with their own
+token, and does the spec say it belongs here?" If the answer is yes, edit the
+list and say so in the commit message.
 
-func (o *ResourceListOptions) Validate() error {
-    return ValidateRequired("course-id", o.CourseID)
-}
+## Write commands read back and print evidence
 
-// commands/resource.go
-func newResourceListCmd() *cobra.Command {
-    opts := &options.ResourceListOptions{}
-    cmd := &cobra.Command{
-        Use: "list",
-        RunE: func(cmd *cobra.Command, args []string) error {
-            if err := opts.Validate(); err != nil {
-                return err
-            }
-            client, _ := getAPIClient()
-            return runResourceList(cmd.Context(), client, opts)
-        },
-    }
-    cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
-    return cmd
-}
-```
+Every command that changes a student's record re-reads the object after writing
+and prints what actually changed, plus a `verified:` line; `verified: no` exits
+non-zero. The write's own response echo is **not** evidence — Canvas can accept
+a request and store something different (a rubric row silently dropped, a grade
+clamped by a grading standard).
 
-**Structured Logging (NEW)**: Commands should use structured logging:
-```go
-import "github.com/chiptoe-svg/canvas-cli/commands/internal/logging"
+`commands/submissions_readback.go` is the pattern: capture the object before,
+write, re-read, diff the requested fields against the read-back, collect
+mismatches, and render `before → after` per field. New write commands follow it.
+A write command with no read-back is incomplete, not merely untested.
 
-func runCommand(ctx context.Context, client *api.Client, opts *Options) error {
-    logger := logging.NewCommandLogger(globalDebugFlag)
+## Spec contract and coverage
 
-    logger.LogCommandStart(ctx, "resource.list", map[string]interface{}{
-        "course_id": opts.CourseID,
-    })
+`internal/api/spec_contract_test.go` is a network-free test that harvests every
+`/api/v1/...` path the service layer calls and asserts each matches a documented
+Canvas endpoint in `testdata/spec/canvas_endpoints.json`. **A wrong path fails
+the build.** Take exact paths and verbs from the committed manifest, and field
+names from `canvas_models.json`; the committed manifest is authoritative.
 
-    // ... perform operation ...
+- `make spec-sync` refreshes the manifest from a live Canvas host
+  (`-host`/`CANVAS_SPEC_HOST`, default `learn.canvas.net`).
+- `make spec-coverage` lists documented-but-unimplemented endpoints. Treat it as
+  information, not a target: this edition implements what faculty need.
 
-    logger.LogCommandComplete(ctx, "resource.list", len(results))
-    return nil
-}
-```
+CI enforces a **total coverage gate of ≥80%** (`go tool cover -func` over
+`./...`) on the ubuntu job. Every new command needs cmdtest coverage — the run
+function *and* the option struct's `Validate()` — or the gate drops. `commands`
+and `commands/internal/options` are where coverage erodes fastest.
 
-**API Client**: `internal/api/client.go` provides `HTTPClient` interface with:
-- Automatic pagination (`GetAllPages`)
-- Adaptive rate limiting based on Canvas quota headers
-- Exponential backoff retry
+## Patterns
 
-### Testing
+**Options struct, not package globals.** Define the struct in
+`commands/internal/options/`, give it `Validate()`, bind flags to its fields in
+the command constructor, and pass it to a `run…(ctx, client, opts)` function.
+The persistent-flag globals in `commands/root.go` are a documented exception
+(see [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md)); do not add more.
 
-Tests use `httptest.NewServer` for mock HTTP servers. Service tests follow pattern:
-```go
-func TestServiceMethod(t *testing.T) {
-    server := httptest.NewServer(...)
-    client := &Client{BaseURL: server.URL, ...}
-    service := NewXxxService(client)
-    // test service methods
-}
-```
+**Structured logging.** `logging.NewCommandLogger(globalDebugFlag)`, then
+`LogCommandStart(ctx, "resource.list", fields)` and
+`LogCommandComplete(ctx, "resource.list", n)`.
 
-Use `t.Fatal()` (not `t.Error()`) when nil checks would cause subsequent panics.
+**Service layer.** One service per Canvas resource in `internal/api/`:
+`type ModulesService struct { client *Client }` with
+`func NewModulesService(client *Client) *ModulesService`. The client handles
+pagination (`GetAllPages`), adaptive rate limiting from Canvas quota headers,
+and exponential-backoff retry.
 
-## Branching & Release
+**Tests** use `httptest.NewServer` mock servers against a real `*Client`. Use
+`t.Fatal` (not `t.Error`) where a nil check would let a later line panic.
 
-### Branch Model (Simplified Git Flow)
+## Branches and releases
 
-```
-main     ──●─────────────────●──────► (tagged releases)
-           │                 ↑↓
-develop  ──●───●───●───●─────●──────► (integration)
-               ↑       ↑
-feature/*  ────┘       │
-fix/*  ────────────────┘
-```
+- **`main`** — the development branch. Work happens here (or on branches merged
+  into it).
+- **`release/audited`** — what faculty install: `main` plus the one commit that
+  pins `install.sh` to the release being cut. Nothing else diverges.
 
-| Branch | Purpose | Merges To |
-|--------|---------|-----------|
-| `main` | Tagged releases only | - |
-| `develop` | Integration (PR target) | `main` on release |
-| `feature/*` | New features | `develop` |
-| `fix/*` | Bug fixes | `develop` |
-| `hotfix/*` | Urgent fixes | `main` AND `develop` |
-
-### When develop syncs with main
-
-1. **After a release**: Merge `main` back to `develop` to capture release commits
-2. **After a hotfix**: Hotfix merges to both `main` and `develop`
-
-### Release Process
-
-Before tagging, on `develop`:
-
-1. **Update CHANGELOG.md** with the new version section
-2. **Update SECURITY.md** supported-versions table if the minor version changes
-
-Then:
+Releases are tags `v1.13.0+audited.N` on `release/audited`. To cut one:
 
 ```bash
-# 1. Merge develop to main
-git checkout main && git merge develop
-
-# 2. Tag and push
-git tag -a v1.x.x -m "Release v1.x.x"
-git push origin main --tags
-
-# 3. Sync main back to develop
-git checkout develop && git merge main
-git push origin develop
+# on release/audited, merged up to main
+vi install.sh                                  # VERSION="${CANVAS_VERSION:-v1.13.0+audited.N}"
+git commit -am "release: pin installer to v1.13.0+audited.N"
+git tag -a "v1.13.0+audited.N" -m "v1.13.0+audited.N"
+git push origin release/audited "v1.13.0+audited.N"
 ```
 
-GitHub Actions automatically builds binaries and creates the release on tag push.
+`.github/workflows/release.yml` builds, signs and publishes. It is deliberately
+self-contained and every action is pinned by commit SHA: that is what makes the
+Sigstore signature meaningful, since the signer identity on `checksums.txt` is
+this file in this repository at the tagged ref. Changing the recipe requires a
+reviewed commit. After the release lands, **verify it as a user would** — the
+cosign command and the byte-identical rebuild in the [README](README.md).
 
-## CI
+Before tagging: add the version's section to `CHANGELOG.md`, and update the
+supported-versions table in `SECURITY.md`.
 
-Single workflow `.github/workflows/ci.yml` runs:
-- Lint (gofmt, go vet, golangci-lint)
-- Security (govulncheck and gosec — both blocking)
-- Test matrix (ubuntu/macos/windows, Go version from go.mod) with a **total
-  coverage gate ≥80%** on ubuntu (`go tool cover -func` over `./...`)
-- Binary-level integration tests (`-tags integration`, ubuntu)
-- Build artifacts (GoReleaser snapshot)
+## Install and update instructions point at one place
 
-Run everything CI runs locally with `make check`.
-
-## API Spec Compliance & Coverage
-
-The CLI is validated against Canvas's **official API spec** (Swagger 1.2),
-committed at `testdata/spec/canvas_endpoints.json` (1086 endpoints) with
-response models at `testdata/spec/canvas_models.json`.
-
-- `internal/api/spec_contract_test.go` is a network-free test (runs in the
-  normal suite) that harvests every `/api/v1/...` path the service layer calls
-  and asserts each matches a documented Canvas endpoint. **A new endpoint with a
-  wrong path fails the build** — this is the regression guard that has already
-  caught several real path bugs.
-- `make spec-sync` regenerates the manifest by fetching the official Swagger
-  from a live Canvas host (`-host`/`CANVAS_SPEC_HOST`, default
-  `learn.canvas.net`; canvas.instructure.com IP-blocks datacenter requests).
-  Do NOT use the gitignored `.ai/canvas-lms-docs` mirror as the source — the
-  committed manifest is authoritative.
-- `make spec-coverage` prints documented-but-unimplemented endpoints (the
-  coverage gap), grouped by resource.
-
-When adding endpoints to maximize coverage:
-1. Take exact paths/verbs from the committed manifest (and field names from
-   `canvas_models.json`) — the contract test enforces the path.
-2. **Add proportional tests.** Every new command needs cmdtest coverage
-   (run function + options `Validate()`) or the 80% gate drops. The `commands`
-   and `commands/internal/options` packages are where coverage erodes fastest.
-3. If parallelizing across resources, **partition strictly by file** and
-   **declare each shared model type in exactly one file**. Multiple agents
-   independently declaring the same struct (e.g. `Feature`, `ContentExport`,
-   `GradingPeriod`) or the same dual-scoped resource (account vs course
-   `grading_standards`) causes redeclaration/merge collisions — the main
-   integration cost of fan-out work.
-
-## Releases
-
-Releases use GoReleaser and auto-publish to GitHub Releases + Homebrew tap.
-
-### Creating a Release
-
-Pre-tag checklist (on `develop`):
-
-1. Update `CHANGELOG.md` with the new version section
-2. Update the supported-versions table in `SECURITY.md` if the minor version
-   changes
+Anything that tells a user how to get or update the binary — the README, the
+bundled skill under `skills/canvas-cli/`, release notes, error messages — names
+exactly one install path:
 
 ```bash
-# 1. Ensure main is up to date
-git checkout main && git merge develop
-
-# 2. Create and push tag
-git tag -a v1.x.x -m "Release v1.x.x"
-git push origin main --tags
-
-# 3. Sync develop
-git checkout develop && git merge main
-git push origin develop
+curl -fsSL https://raw.githubusercontent.com/chiptoe-svg/canvas-cli/release/audited/install.sh | sh
 ```
 
-GoReleaser automatically:
-- Builds binaries for linux/darwin/windows (amd64/arm64)
-- Creates GitHub release with changelog
-- Updates Homebrew formula in `jjuanrivvera/homebrew-canvas-cli`
-
-### Homebrew Tap
-
-The formula is at: https://github.com/jjuanrivvera/homebrew-canvas-cli
-
-**Required secret**: `HOMEBREW_TAP_TOKEN` - a PAT with `repo` scope for the tap repository
-
-## Technical Debt & Remediation
-
-See [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) for tracked technical debt items. The migration away from package-level flag variables is complete; the remaining globals in `commands/root.go` are an accepted design choice documented there.
-
-### Adding New Commands
-
-When adding new commands, follow these patterns:
-
-1. **Create option struct** in `commands/internal/options/`
-2. **Use structured logging** from `commands/internal/logging`
-3. **Avoid global flag variables**
-4. **Add tests** for command logic
-5. **Validate options** before execution
-
-Example:
-```go
-// 1. Define options
-type NewResourceOptions struct {
-    RequiredField string
-    OptionalField int
-}
-
-func (o *NewResourceOptions) Validate() error {
-    return ValidateRequired("required-field", o.RequiredField)
-}
-
-// 2. Create command with logging
-func newNewResourceCmd() *cobra.Command {
-    opts := &options.NewResourceOptions{}
-    cmd := &cobra.Command{
-        Use: "new-resource",
-        RunE: func(cmd *cobra.Command, args []string) error {
-            logger := logging.NewCommandLogger(globalDebugFlag)
-
-            if err := opts.Validate(); err != nil {
-                return err
-            }
-
-            logger.LogCommandStart(cmd.Context(), "new.resource", map[string]interface{}{
-                "required_field": opts.RequiredField,
-            })
-
-            // Implementation
-
-            logger.LogCommandComplete(cmd.Context(), "new.resource", recordCount)
-            return nil
-        },
-    }
-    cmd.Flags().StringVar(&opts.RequiredField, "required-field", "", "Required field")
-    return cmd
-}
-```
+Never a Homebrew tap, never a package manager, never a build from source with
+the Go toolchain, never a direct binary download without checksum verification. Those fetch builds that
+are not the audited one, and the point of this edition is that the binary a
+faculty member runs is the binary that was reviewed. The same rule applies to
+docs an agent might read: if a file tells someone how to install `canvas`, it
+tells them this.
