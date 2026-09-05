@@ -538,3 +538,62 @@ type RateLimitInfo struct {
 	Remaining float64
 	Reset     time.Time
 }
+
+// EpubExport represents a Canvas ePub export job.
+//
+// Moved here from the now-deleted epub_exports.go: content_exports.go
+// (kept) still references this type.
+type EpubExport struct {
+	ID            int64       `json:"id"`
+	CreatedAt     string      `json:"created_at,omitempty"`
+	Course        interface{} `json:"course,omitempty"`
+	DownloadURL   string      `json:"epub_export,omitempty"`
+	WorkflowState string      `json:"workflow_state,omitempty"`
+	User          *User       `json:"user,omitempty"`
+}
+
+// MigrationIssueUpdateParams holds parameters for updating a migration issue.
+//
+// Moved here from the now-deleted content_migrations_account.go:
+// content_migrations.go (kept) still references this type.
+type MigrationIssueUpdateParams struct {
+	WorkflowState string `json:"workflow_state"`
+}
+
+// MediaObject represents a Canvas media object (video/audio).
+//
+// Moved here from the now-deleted media_objects.go: groups.go (kept)
+// still references this type (and the two below it).
+type MediaObject struct {
+	ID               string       `json:"id,omitempty"`
+	MediaID          string       `json:"media_id,omitempty"`
+	MediaType        string       `json:"media_type,omitempty"`
+	Duration         int          `json:"duration,omitempty"`
+	Title            string       `json:"title,omitempty"`
+	UserEnteredTitle string       `json:"user_entered_title,omitempty"`
+	EmbeddedURL      string       `json:"embedded_url,omitempty"`
+	MediaTracks      []MediaTrack `json:"media_tracks,omitempty"`
+}
+
+// MediaTrack represents a media track (subtitle/caption file) for a media object.
+type MediaTrack struct {
+	ID        int64  `json:"id,omitempty"`
+	MediaID   string `json:"media_id,omitempty"`
+	Kind      string `json:"kind,omitempty"`
+	Locale    string `json:"locale,omitempty"`
+	Content   string `json:"content,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+	UpdatedAt string `json:"updated_at,omitempty"`
+	WEBVTTURL string `json:"webvtt_content,omitempty"`
+}
+
+// MediaAttachment represents a Canvas media attachment (file-backed media).
+type MediaAttachment struct {
+	ID           int64        `json:"id"`
+	ContentType  string       `json:"content_type,omitempty"`
+	Filename     string       `json:"filename,omitempty"`
+	DisplayName  string       `json:"display_name,omitempty"`
+	Size         int64        `json:"size,omitempty"`
+	MediaEntryID string       `json:"media_entry_id,omitempty"`
+	MediaObject  *MediaObject `json:"media_object,omitempty"`
+}
