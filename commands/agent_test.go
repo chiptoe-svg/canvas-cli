@@ -364,16 +364,11 @@ func TestEmitCanvasClaudeCode_DenyRulesExactPerCommand(t *testing.T) {
 		if !strings.Contains(out, bashRule) {
 			t.Errorf("expected exact deny Bash rule %q in output", bashRule)
 		}
-		// Each blocked command must have an exact MCP tool name.
-		mcpRule := "mcp__canvas__" + gc.tool
-		if !strings.Contains(out, mcpRule) {
-			t.Errorf("expected exact deny MCP rule %q in output", mcpRule)
-		}
 	}
 
-	// Ensure NO regex-style MCP rules are present (the old pattern was mcp__.*canvas.*_verb).
-	if strings.Contains(out, "mcp__.*canvas.*_") {
-		t.Error("output must not contain regex-style MCP rule (mcp__.*canvas.*_)")
+	// This edition ships no MCP server, so no tool-name rule may be emitted.
+	if strings.Contains(out, "mcp__") {
+		t.Errorf("output must not reference any MCP tool; got: %s", out)
 	}
 }
 
@@ -396,10 +391,10 @@ func TestEmitCanvasClaudeCode_AskRulesExactPerCommand(t *testing.T) {
 		if !strings.Contains(out, bashRule) {
 			t.Errorf("expected exact ask Bash rule %q in output", bashRule)
 		}
-		mcpRule := "mcp__canvas__" + gc.tool
-		if !strings.Contains(out, mcpRule) {
-			t.Errorf("expected exact ask MCP rule %q in output", mcpRule)
-		}
+	}
+
+	if strings.Contains(out, "mcp__") {
+		t.Errorf("output must not reference any MCP tool; got: %s", out)
 	}
 }
 
@@ -633,8 +628,8 @@ func TestNewAgentGuardCmd_UnknownHost(t *testing.T) {
 
 func TestCanvasHookScript_ContainsBlockedPaths(t *testing.T) {
 	cmds := []canvasGuardCmd{
-		{cli: "courses delete", tool: "canvas_courses_delete", verb: "delete"},
-		{cli: "sections crosslist", tool: "canvas_sections_crosslist", verb: "crosslist"},
+		{cli: "courses delete", verb: "delete"},
+		{cli: "sections crosslist", verb: "crosslist"},
 	}
 	script := canvasHookScript(cmds)
 
@@ -644,8 +639,8 @@ func TestCanvasHookScript_ContainsBlockedPaths(t *testing.T) {
 	if !strings.Contains(script, "sections crosslist") {
 		t.Error("hook script should contain cli path 'sections crosslist'")
 	}
-	if !strings.Contains(script, "mcp__canvas__canvas_courses_delete") {
-		t.Error("hook script should contain exact MCP tool name")
+	if strings.Contains(script, "mcp__") {
+		t.Error("hook script must not reference MCP tools: this edition ships no MCP server")
 	}
 	if !strings.Contains(script, "canvas agent guard") {
 		t.Error("hook script should reference canvas agent guard")
@@ -669,7 +664,7 @@ func TestCanvasHookScript_ContainsBlockedPaths(t *testing.T) {
 func TestCanvasHookScript_NoRegexVerbStyle(t *testing.T) {
 	// Verify that the hook uses path-anchored matching, not bare-verb grep.
 	cmds := []canvasGuardCmd{
-		{cli: "courses delete", tool: "canvas_courses_delete", verb: "delete"},
+		{cli: "courses delete", verb: "delete"},
 	}
 	script := canvasHookScript(cmds)
 
@@ -677,9 +672,9 @@ func TestCanvasHookScript_NoRegexVerbStyle(t *testing.T) {
 	if strings.Contains(script, "verbs=") {
 		t.Error("hook script must not contain bare 'verbs=' variable")
 	}
-	// Exact MCP tool list should be present.
-	if !strings.Contains(script, "blocked_tools=") {
-		t.Error("hook script must contain blocked_tools array")
+	// The MCP tool array is gone with the MCP server.
+	if strings.Contains(script, "blocked_tools=") {
+		t.Error("hook script must not contain a blocked_tools array")
 	}
 	// Exact cli path list should be present.
 	if !strings.Contains(script, "blocked_cmds=") {

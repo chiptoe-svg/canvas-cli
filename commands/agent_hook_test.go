@@ -24,8 +24,8 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		t.Skip("bash not found in PATH; skipping hook execution tests")
 	}
 
-	// Generate the hook from the real command tree so the blocked_cmds /
-	// blocked_tools arrays are fully populated.
+	// Generate the hook from the real command tree so the blocked_cmds array
+	// is fully populated.
 	_, _, irreversible := classifyCanvasCommands(rootCmd)
 
 	// Write the hook to a temp file.
@@ -47,8 +47,8 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		return string(b)
 	}
 
-	// helper: build a PreToolUse JSON payload for an MCP tool call.
-	mcpPayload := func(toolName string) string {
+	// helper: build a PreToolUse JSON payload for a non-Bash tool call.
+	otherToolPayload := func(toolName string) string {
 		b, _ := json.Marshal(map[string]any{
 			"tool_name":  toolName,
 			"tool_input": map[string]any{},
@@ -115,16 +115,13 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 			description: "non-canvas Bash command mentioning 'delete' must NOT be denied",
 		},
 		{
-			name:        "mcp_courses_delete_denied",
-			payload:     mcpPayload("mcp__canvas__canvas_courses_delete"),
-			wantDenied:  true,
-			description: "MCP canvas_courses_delete tool must be denied",
-		},
-		{
-			name:        "mcp_courses_list_allowed",
-			payload:     mcpPayload("mcp__canvas__canvas_courses_list"),
+			// Bash is the only surface this edition gates: with no MCP server
+			// there are no canvas tool names, and the hook must let every
+			// other tool through rather than guessing at one.
+			name:        "non_bash_tool_allowed",
+			payload:     otherToolPayload("Read"),
 			wantDenied:  false,
-			description: "MCP canvas_courses_list tool must NOT be denied",
+			description: "a non-Bash tool call must NOT be denied",
 		},
 		{
 			name: "bash_obfuscated_delete_denied",

@@ -33,11 +33,11 @@ Examples:
 	return cmd
 }
 
-// newAPIGetCmd is the GET-only "canvas api" subcommand. Because it can never
-// mutate state, it is safe to advertise to read-only MCP clients: the shared
-// classifier (classifyCanvasCommand) buckets "api get" as a read, so it carries
-// readOnlyHint=true. It gives broad Canvas read coverage from a single tool
-// schema instead of allowlisting every typed read tool. See issue #60.
+// newAPIGetCmd is the only "canvas api" subcommand: this edition has no
+// write-capable raw path. Because it can never mutate state, the shared
+// classifier (classifyCanvasCommand) buckets "api get" as a read, so
+// "canvas agent guard" leaves it ungated. It gives broad Canvas read coverage
+// for endpoints that have no dedicated command yet.
 func newAPIGetCmd() *cobra.Command {
 	opts := &options.APIOptions{}
 

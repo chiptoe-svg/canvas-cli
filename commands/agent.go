@@ -28,8 +28,12 @@ var canvasIrreversibleVerbs = map[string]bool{
 	"void":        true,
 	"cancel":      true,
 	"close":       true,
-	"merge":       true, // user merge — data loss
-	"split":       true, // reverse of merge, but lossy
+	// "merge" and "split" were the user merge/split commands, which this
+	// edition does not ship. The guard classifies by verb, not by command
+	// path, so keeping a removed command's verb costs nothing and keeps the
+	// classification fail-safe should such a verb ever reappear.
+	"merge": true,
+	"split": true,
 }
 
 // canvasReadVerbs is an explicit allowlist of read-only operations. Anything not
@@ -83,13 +87,8 @@ var canvasLocalGroups = map[string]bool{
 	"doctor":     true,
 	"completion": true,
 	"version":    true,
-	"mcp":        true,
 	"skills":     true,
-	"repl":       true,
-	"shell":      true,
 	"update":     true,
-	"telemetry":  true,
-	"webhook":    true,
 	"agent":      true,
 	"help":       true,
 }
@@ -105,18 +104,15 @@ var canvasBulkDestructivePaths = map[string]bool{
 }
 
 // canvasWriteOverridePaths lists full CLI paths whose leaf name collides with
-// a read verb but which actually write. "sync assignments" ends in
-// "assignments" (a read verb via "analytics assignments") yet copies
-// assignments INTO the target course. Checked before the read allowlist so
-// the collision cannot silently allow a write.
-var canvasWriteOverridePaths = map[string]bool{
-	"sync assignments": true,
-}
+// a read verb but which actually write. It is checked before the read
+// allowlist so such a collision cannot silently allow a write. No command in
+// this edition collides, so the map is empty; add an entry here if one ever
+// does.
+var canvasWriteOverridePaths = map[string]bool{}
 
 // canvasGuardCmd represents one classified Canvas operation.
 type canvasGuardCmd struct {
 	cli  string // CLI path without root, e.g. "courses delete"
-	tool string // MCP tool name, e.g. "canvas_courses_delete"
 	verb string // leaf command name, e.g. "delete"
 }
 
@@ -150,13 +146,15 @@ only an explicit allowlist of read verbs (get, list, show, ...) stays allowed,
 so a new or non-obvious mutating command is gated rather than slipping through.
 Pass --all-writes to block writes too.
 
-IMPORTANT: the "canvas api" escape hatch can issue any HTTP verb. The guard
-blocks "canvas api DELETE/PUT/POST/PATCH" patterns on the Bash surface but
-cannot enumerate arbitrary path arguments. For a hard guarantee, run the agent
-MCP-only (no Bash tool) or inside a read-only sandbox.
+IMPORTANT: "canvas api" in this edition is GET-only and cannot write, so the
+escape hatch is read-only by construction. The guard still denies the
+write-method "canvas api" patterns on the Bash surface, which costs nothing
+and covers an older or third-party canvas on PATH. Neither that nor the Bash
+matching defeats variable indirection or shell aliases: for a hard guarantee,
+run the agent inside a read-only sandbox.
 
-Output is printed for review by default; pass --write to install it. See the
-Agent Safety guide: https://jjuanrivvera.github.io/canvas-cli/user-guide/agent-safety/`,
+Output is printed for review by default; pass --write to install it. See
+"Using it with an AI agent" in the README.`,
 		Args: cobra.NoArgs,
 		Example: "  canvas agent guard --host claude-code\n" +
 			"  canvas agent guard --host codex\n" +
@@ -258,19 +256,17 @@ func topLevelGroup(c *cobra.Command) string {
 	return cur.Name()
 }
 
-// canvasClass buckets a single command for both "canvas agent guard" and the
-// MCP tool annotations emitted by applyMCPAnnotations.
+// canvasClass buckets a single command for "canvas agent guard".
 type canvasClass int
 
 const (
-	// canvasClassSkip marks commands that are neither gated nor annotated:
-	// non-runnable parents, hidden/help commands, and the "canvas api"
-	// raw-escape hatch, which can issue any HTTP verb and so must never
-	// advertise readOnlyHint.
+	// canvasClassSkip marks commands that are not gated: non-runnable
+	// parents, hidden/help commands, and the "canvas api" parent, which is
+	// classified through its "get" subcommand instead.
 	canvasClassSkip canvasClass = iota
 	// canvasClassLocal marks commands under local/utility top-level groups
 	// (auth, config, cache, …) that never call the Canvas API. The guard does
-	// not gate them; annotations handle them via canvasLocalReadPaths.
+	// not gate them.
 	canvasClassLocal
 	canvasClassRead
 	canvasClassWrite
@@ -278,12 +274,9 @@ const (
 )
 
 // classifyCanvasCommand buckets one command. It is the single source of truth
-// shared by "canvas agent guard" and the MCP readOnlyHint annotations, so a
-// command can never be gated as a write by the guard while simultaneously
-// advertising itself as read-only to an MCP client.
+// for "canvas agent guard".
 //
-// Classification is purely by verb (leaf command name) — the cobra annotations
-// flow the other way, derived from this function rather than feeding it.
+// Classification is purely by verb (leaf command name).
 func classifyCanvasCommand(root, sub *cobra.Command) (canvasClass, canvasGuardCmd) {
 	if !sub.Runnable() || sub.Hidden || sub.Name() == "help" {
 		return canvasClassSkip, canvasGuardCmd{}
@@ -291,7 +284,6 @@ func classifyCanvasCommand(root, sub *cobra.Command) (canvasClass, canvasGuardCm
 
 	gc := canvasGuardCmd{
 		cli:  strings.TrimPrefix(sub.CommandPath(), root.Name()+" "),
-		tool: strings.ReplaceAll(sub.CommandPath(), " ", "_"),
 		verb: sub.Name(),
 	}
 
@@ -300,9 +292,8 @@ func classifyCanvasCommand(root, sub *cobra.Command) (canvasClass, canvasGuardCm
 	// The "api" raw-escape command is documented separately in the hook script
 	// header and cannot be safely classified by verb.
 	if group == "api" || sub.Name() == "api" {
-		// "canvas api get" is a GET-only sibling that never mutates state, so it
-		// is a genuine read for both the guard and the MCP readOnlyHint. The
-		// general "canvas api" escape hatch (any HTTP verb) stays skipped.
+		// "canvas api get" never mutates state, so it is a genuine read. The
+		// "canvas api" parent itself is not runnable and stays skipped.
 		if group == "api" && sub.Name() == "get" {
 			return canvasClassRead, gc
 		}
@@ -372,7 +363,7 @@ func classifyCanvasCommands(root *cobra.Command) (read, writes, irreversible []c
 }
 
 func sortCanvasGuard(cs []canvasGuardCmd) {
-	sort.Slice(cs, func(i, j int) bool { return cs[i].tool < cs[j].tool })
+	sort.Slice(cs, func(i, j int) bool { return cs[i].cli < cs[j].cli })
 }
 
 func distinctCanvasVerbs(cs []canvasGuardCmd) []string {
