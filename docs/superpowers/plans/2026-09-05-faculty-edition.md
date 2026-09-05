@@ -354,7 +354,7 @@ git commit -m "refactor(api): delete services no command calls"
 - [ ] **Step 1: Rewrite**
 
 ```bash
-grep -rl 'github.com/chiptoe-svg/canvas-cli' --include='*.go' --include='go.mod' --include='Makefile' --include='*.yaml' --include='*.yml' --include='*.md' . | grep -v '^./docs/' | xargs sed -i '' 's#github.com/chiptoe-svg/canvas-cli#github.com/chiptoe-svg/canvas-cli#g'
+grep -rl 'github.com/jjuanrivvera/canvas-cli' --include='*.go' --include='go.mod' --include='Makefile' --include='*.yaml' --include='*.yml' --include='*.md' . | grep -v '^./docs/' | xargs sed -i '' 's#github.com/jjuanrivvera/canvas-cli#github.com/chiptoe-svg/canvas-cli#g'
 gofmt -l .
 go build ./... && go vet ./...
 ```
