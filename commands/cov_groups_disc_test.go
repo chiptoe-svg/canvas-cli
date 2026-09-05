@@ -44,20 +44,6 @@ func TestCovGroups_ListCourseAPIError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-// TestCovGroups_ListAccountAPIError covers the error branch for account-scoped list.
-func TestCovGroups_ListAccountAPIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list groups for account - API error",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/groups": cmdtest.NewErrorResponse(500, "server error"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 // TestCovGroups_ListWithIncludes exercises the include-users/include-permissions branches.
 func TestCovGroups_ListWithIncludes(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
@@ -193,27 +179,6 @@ func TestCovGroups_MembersRemoveAPIError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-// TestCovGroups_CategoriesListAccountContext covers the account branch of runGroupsCategoriesList.
-func TestCovGroups_CategoriesListAccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list group categories by account",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`[
-				{"id": 3, "name": "Account Category", "self_signup": "enabled"}
-			]`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Category") {
-				t.Errorf("Expected 'Account Category' in output")
-			}
-		},
-	}
-	cmd := newGroupsCategoriesListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 // TestCovGroups_CategoriesListAPIError covers the error path in runGroupsCategoriesList.
 func TestCovGroups_CategoriesListAPIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
@@ -239,29 +204,6 @@ func TestCovGroups_CategoriesGetAPIError(t *testing.T) {
 		ExpectError: true,
 	}
 	cmd := newGroupsCategoriesGetCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-// TestCovGroups_CategoriesCreateAccountContext covers the account branch of runGroupsCategoriesCreate.
-func TestCovGroups_CategoriesCreateAccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "create group category in account",
-		Args: []string{"--account-id", "1", "--name", "Account Category"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`{
-				"id": 20,
-				"name": "Account Category",
-				"account_id": 1
-			}`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Category") {
-				t.Errorf("Expected 'Account Category' in output")
-			}
-		},
-	}
-	cmd := newGroupsCategoriesCreateCmd()
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 

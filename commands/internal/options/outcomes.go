@@ -18,7 +18,6 @@ func (o *OutcomesGetOptions) Validate() error {
 // OutcomesCreateOptions contains options for creating an outcome
 type OutcomesCreateOptions struct {
 	CourseID          int64
-	AccountID         int64
 	GroupID           int64
 	Title             string
 	DisplayName       string
@@ -30,8 +29,8 @@ type OutcomesCreateOptions struct {
 
 // Validate validates the options
 func (o *OutcomesCreateOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
+	if err := ValidateRequired("course-id", o.CourseID); err != nil {
+		return err
 	}
 	if o.GroupID <= 0 {
 		return fmt.Errorf("group-id is required and must be greater than 0")
@@ -75,15 +74,14 @@ func (o *OutcomesUpdateOptions) Validate() error {
 
 // OutcomesListOptions contains options for listing outcomes in a group
 type OutcomesListOptions struct {
-	CourseID  int64
-	AccountID int64
-	GroupID   int64
+	CourseID int64
+	GroupID  int64
 }
 
 // Validate validates the options
 func (o *OutcomesListOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
+	if err := ValidateRequired("course-id", o.CourseID); err != nil {
+		return err
 	}
 	if o.GroupID <= 0 {
 		return fmt.Errorf("group-id is required and must be greater than 0")
@@ -94,15 +92,14 @@ func (o *OutcomesListOptions) Validate() error {
 // OutcomesLinkOptions contains options for linking an outcome to a group
 type OutcomesLinkOptions struct {
 	CourseID  int64
-	AccountID int64
 	GroupID   int64
 	OutcomeID int64
 }
 
 // Validate validates the options
 func (o *OutcomesLinkOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
+	if err := ValidateRequired("course-id", o.CourseID); err != nil {
+		return err
 	}
 	if o.GroupID <= 0 {
 		return fmt.Errorf("group-id is required and must be greater than 0")
@@ -116,7 +113,6 @@ func (o *OutcomesLinkOptions) Validate() error {
 // OutcomesUnlinkOptions contains options for unlinking an outcome from a group
 type OutcomesUnlinkOptions struct {
 	CourseID  int64
-	AccountID int64
 	GroupID   int64
 	OutcomeID int64
 	Force     bool
@@ -124,8 +120,8 @@ type OutcomesUnlinkOptions struct {
 
 // Validate validates the options
 func (o *OutcomesUnlinkOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
+	if err := ValidateRequired("course-id", o.CourseID); err != nil {
+		return err
 	}
 	if o.GroupID <= 0 {
 		return fmt.Errorf("group-id is required and must be greater than 0")
@@ -138,28 +134,24 @@ func (o *OutcomesUnlinkOptions) Validate() error {
 
 // OutcomesGroupsListOptions contains options for listing outcome groups
 type OutcomesGroupsListOptions struct {
-	CourseID  int64
-	AccountID int64
+	CourseID int64
 }
 
 // Validate validates the options
 func (o *OutcomesGroupsListOptions) Validate() error {
-	// Either course or account can be specified, but not required
-	// Will use default account if neither is provided
-	return nil
+	return ValidateRequired("course-id", o.CourseID)
 }
 
 // OutcomesGroupsGetOptions contains options for getting an outcome group
 type OutcomesGroupsGetOptions struct {
-	CourseID  int64
-	AccountID int64
-	GroupID   int64
+	CourseID int64
+	GroupID  int64
 }
 
 // Validate validates the options
 func (o *OutcomesGroupsGetOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
+	if err := ValidateRequired("course-id", o.CourseID); err != nil {
+		return err
 	}
 	if o.GroupID <= 0 {
 		return fmt.Errorf("group-id is required and must be greater than 0")

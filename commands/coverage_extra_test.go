@@ -108,32 +108,6 @@ func TestAnalyticsUserCmd_APIError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-func TestAnalyticsDepartmentCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "analytics department - API error",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/analytics/current/statistics": cmdtest.NewErrorResponse(403, "forbidden"),
-		},
-		ExpectError: true,
-	}
-	cmd := newAnalyticsDepartmentCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestAnalyticsDepartmentCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "analytics department - activity type with account context",
-		Args: []string{"--account-id", "1", "--type", "activity"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/analytics/current/activity": cmdtest.NewMockResponse(`[]`),
-		},
-		ExpectError: false,
-	}
-	cmd := newAnalyticsDepartmentCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 // ---------------------------------------------------------------------------
 // announcements.go — API error paths (not covered by existing announcements_test.go)
 // ---------------------------------------------------------------------------

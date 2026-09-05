@@ -67,17 +67,3 @@ type ConfigShowOptions struct {
 func (o *ConfigShowOptions) Validate() error {
 	return nil
 }
-
-// ConfigAccountOptions contains options for setting account ID
-type ConfigAccountOptions struct {
-	InstanceName string
-	AccountID    int64
-	Detect       bool
-}
-
-// Validate validates the options
-func (o *ConfigAccountOptions) Validate() error {
-	// Instance name is optional, will use default if not provided
-	// AccountID validation is done in the run function
-	return nil
-}

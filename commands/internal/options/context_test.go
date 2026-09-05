@@ -35,12 +35,12 @@ func TestContextSetOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "valid account type",
+			name: "account type is no longer supported",
 			opts: &ContextSetOptions{
 				Type: "account",
 				ID:   1,
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "valid course_id alias",
@@ -144,11 +144,11 @@ func TestContextClearOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "valid account type",
+			name: "account type is no longer supported",
 			opts: &ContextClearOptions{
 				Type: "account",
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "invalid type",

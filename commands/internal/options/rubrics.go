@@ -1,26 +1,21 @@
 package options
 
-import "fmt"
-
 // RubricsListOptions contains options for listing rubrics
 type RubricsListOptions struct {
-	CourseID  int64
-	AccountID int64
-	Include   []string
+	CourseID int64
+	Include  []string
 }
 
 // Validate validates the options
 func (o *RubricsListOptions) Validate() error {
-	// No required fields - will use default account if neither is specified
-	return nil
+	return ValidateRequired("course-id", o.CourseID)
 }
 
 // RubricsGetOptions contains options for getting a rubric
 type RubricsGetOptions struct {
-	CourseID  int64
-	AccountID int64
-	RubricID  int64
-	Include   []string
+	CourseID int64
+	RubricID int64
+	Include  []string
 }
 
 // Validate validates the options
@@ -28,10 +23,7 @@ func (o *RubricsGetOptions) Validate() error {
 	if err := ValidateRequired("rubric-id", o.RubricID); err != nil {
 		return err
 	}
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
-	}
-	return nil
+	return ValidateRequired("course-id", o.CourseID)
 }
 
 // RubricsCreateOptions contains options for creating a rubric

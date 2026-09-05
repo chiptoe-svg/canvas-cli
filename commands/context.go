@@ -65,7 +65,6 @@ Valid types:
   course      - Course ID (used for --course-id)
   assignment  - Assignment ID (used for --assignment-id)
   user        - User ID (used for --user-id)
-  account     - Account ID (used for --account-id)
 
 Examples:
   canvas context set course 123
@@ -114,9 +113,6 @@ func runContextSet(ctx context.Context, opts *options.ContextSetOptions) error {
 	case "user", "user_id", "user-id":
 		ctxVal.UserID = opts.ID
 		contextType = "user"
-	case "account", "account_id", "account-id":
-		ctxVal.AccountID = opts.ID
-		contextType = "account"
 	}
 
 	if err := cfg.SetContext(ctxVal); err != nil {
@@ -166,7 +162,7 @@ func runContextShow(ctx context.Context, opts *options.ContextShowOptions) error
 	}
 
 	// Check if any context is set
-	if ctxVal.CourseID == 0 && ctxVal.AssignmentID == 0 && ctxVal.UserID == 0 && ctxVal.AccountID == 0 {
+	if ctxVal.CourseID == 0 && ctxVal.AssignmentID == 0 && ctxVal.UserID == 0 {
 		fmt.Println("No context set.")
 		fmt.Println("\nSet context with: canvas context set <type> <id>")
 		fmt.Println("Valid types: course, assignment, user, account")
@@ -186,10 +182,6 @@ func runContextShow(ctx context.Context, opts *options.ContextShowOptions) error
 	}
 	if ctxVal.UserID > 0 {
 		fmt.Printf("  user_id:       %d\n", ctxVal.UserID)
-		count++
-	}
-	if ctxVal.AccountID > 0 {
-		fmt.Printf("  account_id:    %d\n", ctxVal.AccountID)
 		count++
 	}
 
@@ -260,9 +252,6 @@ func runContextClear(ctx context.Context, opts *options.ContextClearOptions) err
 	case "user", "user_id", "user-id":
 		ctxVal.UserID = 0
 		contextType = "user"
-	case "account", "account_id", "account-id":
-		ctxVal.AccountID = 0
-		contextType = "account"
 	}
 
 	if err := cfg.SetContext(ctxVal); err != nil {
@@ -309,16 +298,4 @@ func GetContextUserID(flagValue int64) int64 {
 		return 0
 	}
 	return cfg.GetContext().UserID
-}
-
-// GetContextAccountID returns the account ID from context if set and flag is not provided
-func GetContextAccountID(flagValue int64) int64 {
-	if flagValue != 0 {
-		return flagValue
-	}
-	cfg, err := config.Load()
-	if err != nil {
-		return 0
-	}
-	return cfg.GetContext().AccountID
 }

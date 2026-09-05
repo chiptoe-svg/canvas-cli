@@ -42,12 +42,7 @@ func TestOutcomesCreateOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &OutcomesCreateOptions{AccountID: 1, GroupID: 2, Title: "Outcome 1"},
-			wantErr: false,
-		},
-		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &OutcomesCreateOptions{GroupID: 2, Title: "Outcome 1"},
 			wantErr: true,
 		},
@@ -118,12 +113,7 @@ func TestOutcomesListOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &OutcomesListOptions{AccountID: 1, GroupID: 2},
-			wantErr: false,
-		},
-		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &OutcomesListOptions{GroupID: 2},
 			wantErr: true,
 		},
@@ -156,12 +146,7 @@ func TestOutcomesLinkOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &OutcomesLinkOptions{AccountID: 1, GroupID: 2, OutcomeID: 3},
-			wantErr: false,
-		},
-		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &OutcomesLinkOptions{GroupID: 2, OutcomeID: 3},
 			wantErr: true,
 		},
@@ -199,7 +184,7 @@ func TestOutcomesUnlinkOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &OutcomesUnlinkOptions{GroupID: 2, OutcomeID: 3},
 			wantErr: true,
 		},
@@ -226,9 +211,11 @@ func TestOutcomesUnlinkOptions_Validate(t *testing.T) {
 }
 
 func TestOutcomesGroupsListOptions_Validate(t *testing.T) {
-	opts := &OutcomesGroupsListOptions{}
-	if err := opts.Validate(); err != nil {
+	if err := (&OutcomesGroupsListOptions{CourseID: 1}).Validate(); err != nil {
 		t.Errorf("OutcomesGroupsListOptions.Validate() error = %v, want nil", err)
+	}
+	if err := (&OutcomesGroupsListOptions{}).Validate(); err == nil {
+		t.Error("OutcomesGroupsListOptions.Validate() = nil, want an error when course-id is missing")
 	}
 }
 
@@ -244,12 +231,7 @@ func TestOutcomesGroupsGetOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &OutcomesGroupsGetOptions{AccountID: 1, GroupID: 2},
-			wantErr: false,
-		},
-		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &OutcomesGroupsGetOptions{GroupID: 2},
 			wantErr: true,
 		},

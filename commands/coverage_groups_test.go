@@ -262,25 +262,6 @@ func TestGroupsMembersRemoveCmd_APIError(t *testing.T) {
 // groups categories list – error paths and account branch
 // ---------------------------------------------------------------------------
 
-func TestGroupsCategoriesListCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list group categories by account",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`[
-				{"id": 3, "name": "Account Category", "self_signup": "enabled"}
-			]`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Category") {
-				t.Error("expected 'Account Category' in output")
-			}
-		},
-	}
-	cmdtest.RunCommandTest(t, newGroupsCategoriesListCmd(), tc)
-}
-
 func TestGroupsCategoriesListCmd_APIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list group categories - API error",
@@ -304,9 +285,9 @@ func TestGroupsCategoriesListCmd_NoContextError(t *testing.T) {
 
 func TestGroupsCategoriesListCmd_EmptyCategories(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
-		Name:          "list group categories - empty account",
-		Args:          []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`[]`)},
+		Name:          "list group categories - empty course",
+		Args:          []string{"--course-id", "1"},
+		MockResponses: map[string]cmdtest.MockResponse{"/api/v1/courses/1/group_categories": cmdtest.NewMockResponse(`[]`)},
 		ExpectError:   false,
 		ExpectOutput:  "No group categories found",
 	}
@@ -341,27 +322,6 @@ func TestGroupsCategoriesGetCmd_APIError(t *testing.T) {
 // ---------------------------------------------------------------------------
 // groups categories create – account-context branch
 // ---------------------------------------------------------------------------
-
-func TestGroupsCategoriesCreateCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "create group category for account",
-		Args: []string{"--account-id", "1", "--name", "Account Category"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewMockResponse(`{
-				"id": 99,
-				"name": "Account Category",
-				"account_id": 1
-			}`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Category") {
-				t.Error("expected 'Account Category' in output")
-			}
-		},
-	}
-	cmdtest.RunCommandTest(t, newGroupsCategoriesCreateCmd(), tc)
-}
 
 func TestGroupsCategoriesCreateCmd_APIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{

@@ -16,7 +16,7 @@ func (o *ContextSetOptions) Validate() error {
 	if o.ID <= 0 {
 		return fmt.Errorf("ID must be a positive number")
 	}
-	validTypes := []string{"course", "course_id", "course-id", "assignment", "assignment_id", "assignment-id", "user", "user_id", "user-id", "account", "account_id", "account-id"}
+	validTypes := []string{"course", "course_id", "course-id", "assignment", "assignment_id", "assignment-id", "user", "user_id", "user-id"}
 	isValid := false
 	for _, t := range validTypes {
 		if o.Type == t {
@@ -50,7 +50,7 @@ func (o *ContextClearOptions) Validate() error {
 	if o.Type == "" {
 		return nil // Empty is valid, means clear all
 	}
-	validTypes := []string{"course", "course_id", "course-id", "assignment", "assignment_id", "assignment-id", "user", "user_id", "user-id", "account", "account_id", "account-id"}
+	validTypes := []string{"course", "course_id", "course-id", "assignment", "assignment_id", "assignment-id", "user", "user_id", "user-id"}
 	isValid := false
 	for _, t := range validTypes {
 		if o.Type == t {

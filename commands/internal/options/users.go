@@ -4,7 +4,6 @@ import "fmt"
 
 // UsersListOptions contains options for listing users
 type UsersListOptions struct {
-	AccountID       int64
 	CourseID        int64
 	SearchTerm      string
 	EnrollmentType  string
@@ -14,10 +13,7 @@ type UsersListOptions struct {
 
 // Validate validates the options
 func (o *UsersListOptions) Validate() error {
-	if o.AccountID > 0 && o.CourseID > 0 {
-		return fmt.Errorf("can only specify one of --account-id or --course-id")
-	}
-	return nil
+	return ValidateRequired("course-id", o.CourseID)
 }
 
 // UsersGetOptions contains options for getting a user

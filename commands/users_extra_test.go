@@ -55,9 +55,9 @@ func TestUsersMeCmd_APIError(t *testing.T) {
 func TestUsersListCmd_APIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list users - API error",
-		Args: []string{"--account-id", "1"},
+		Args: []string{"--course-id", "1"},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/users": cmdtest.NewErrorResponse(500, "server error"),
+			"/api/v1/courses/1/users": cmdtest.NewErrorResponse(500, "server error"),
 		},
 		ExpectError: true,
 	}

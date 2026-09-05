@@ -23,7 +23,7 @@ They can be organized into groups and linked to assignments, quizzes, and rubric
 
 Examples:
   canvas outcomes get 123
-  canvas outcomes groups list --account-id 1
+  canvas outcomes groups list --course-id 123
   canvas outcomes results --course-id 123`,
 }
 
@@ -36,8 +36,8 @@ var outcomesGroupsCmd = &cobra.Command{
 Outcome groups organize learning outcomes into hierarchical structures.
 
 Examples:
-  canvas outcomes groups list --account-id 1
-  canvas outcomes groups get 456 --account-id 1`,
+  canvas outcomes groups list --course-id 123
+  canvas outcomes groups get 456 --course-id 123`,
 }
 
 func init() {
@@ -109,7 +109,7 @@ Calculation methods:
 
 Examples:
   canvas outcomes create --course-id 123 --group-id 456 --title "Problem Solving"
-  canvas outcomes create --account-id 1 --group-id 789 --title "Critical Thinking" --mastery-points 4
+  canvas outcomes create --course-id 123 --group-id 789 --title "Critical Thinking" --mastery-points 4
   canvas outcomes create --course-id 123 --group-id 456 --title "Writing" --calculation-method decaying_average --calculation-int 65`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
@@ -125,8 +125,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
 	cmd.Flags().StringVar(&opts.Title, "title", "", "Outcome title (required)")
 	cmd.Flags().StringVar(&opts.DisplayName, "display-name", "", "Display name")
@@ -199,7 +199,6 @@ func newOutcomesListCmd() *cobra.Command {
 		Long: `List all outcomes in a specific outcome group.
 
 Examples:
-  canvas outcomes list --account-id 1 --group-id 456
   canvas outcomes list --course-id 123 --group-id 456`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
@@ -215,8 +214,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
 	mustMarkRequired(cmd, "group-id")
 
@@ -232,7 +231,6 @@ func newOutcomesLinkCmd() *cobra.Command {
 		Long: `Link an existing outcome to an outcome group.
 
 Examples:
-  canvas outcomes link 789 --account-id 1 --group-id 456
   canvas outcomes link 789 --course-id 123 --group-id 456`,
 		Args: ExactArgsWithUsage(1, "outcome-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -255,8 +253,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
 	mustMarkRequired(cmd, "group-id")
 
@@ -272,7 +270,6 @@ func newOutcomesUnlinkCmd() *cobra.Command {
 		Long: `Remove an outcome link from an outcome group.
 
 Examples:
-  canvas outcomes unlink 789 --account-id 1 --group-id 456
   canvas outcomes unlink 789 --course-id 123 --group-id 456`,
 		Args: ExactArgsWithUsage(1, "outcome-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -295,8 +292,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().Int64Var(&opts.GroupID, "group-id", 0, "Outcome group ID (required)")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "Skip confirmation prompt")
 	mustMarkRequired(cmd, "group-id")
@@ -310,13 +307,9 @@ func newOutcomesGroupsListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List outcome groups",
-		Long: `List all outcome groups in a course or account.
-
-If neither --account-id nor --course-id is specified, uses default account.
+		Long: `List all outcome groups in a course. --course-id is required.
 
 Examples:
-  canvas outcomes groups list                  # Uses default account
-  canvas outcomes groups list --account-id 1
   canvas outcomes groups list --course-id 123`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
@@ -332,8 +325,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -347,7 +340,6 @@ func newOutcomesGroupsGetCmd() *cobra.Command {
 		Long: `Get details of a specific outcome group.
 
 Examples:
-  canvas outcomes groups get 456 --account-id 1
   canvas outcomes groups get 456 --course-id 123`,
 		Args: ExactArgsWithUsage(1, "group-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -370,8 +362,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -476,10 +468,9 @@ func runOutcomesCreate(ctx context.Context, client *api.Client, opts *options.Ou
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "outcomes.create", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"group_id":   opts.GroupID,
-		"title":      opts.Title,
+		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
+		"title":     opts.Title,
 	})
 
 	service := api.NewOutcomesService(client)
@@ -493,20 +484,11 @@ func runOutcomesCreate(ctx context.Context, client *api.Client, opts *options.Ou
 		CalculationInt:    opts.CalculationInt,
 	}
 
-	var link *api.OutcomeLink
-	var err error
-
-	if opts.CourseID > 0 {
-		link, err = service.CreateOutcomeCourse(ctx, opts.CourseID, opts.GroupID, params)
-	} else {
-		link, err = service.CreateOutcomeAccount(ctx, opts.AccountID, opts.GroupID, params)
-	}
-
+	link, err := service.CreateOutcomeCourse(ctx, opts.CourseID, opts.GroupID, params)
 	if err != nil {
 		logger.LogCommandError(ctx, "outcomes.create", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
-			"group_id":   opts.GroupID,
+			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 		})
 		return fmt.Errorf("failed to create outcome: %w", err)
 	}
@@ -576,27 +558,17 @@ func runOutcomesList(ctx context.Context, client *api.Client, opts *options.Outc
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "outcomes.list", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"group_id":   opts.GroupID,
+		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 	})
 
 	service := api.NewOutcomesService(client)
 
-	var links []api.OutcomeLink
-	var err error
-
-	if opts.CourseID > 0 {
-		links, err = service.ListOutcomesInGroupCourse(ctx, opts.CourseID, opts.GroupID, nil)
-	} else {
-		links, err = service.ListOutcomesInGroupAccount(ctx, opts.AccountID, opts.GroupID, nil)
-	}
-
+	links, err := service.ListOutcomesInGroupCourse(ctx, opts.CourseID, opts.GroupID, nil)
 	if err != nil {
 		logger.LogCommandError(ctx, "outcomes.list", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
-			"group_id":   opts.GroupID,
+			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 		})
 		return fmt.Errorf("failed to list outcomes: %w", err)
 	}
@@ -614,26 +586,16 @@ func runOutcomesLink(ctx context.Context, client *api.Client, opts *options.Outc
 
 	logger.LogCommandStart(ctx, "outcomes.link", map[string]interface{}{
 		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
 		"group_id":   opts.GroupID,
 		"outcome_id": opts.OutcomeID,
 	})
 
 	service := api.NewOutcomesService(client)
 
-	var link *api.OutcomeLink
-	var err error
-
-	if opts.CourseID > 0 {
-		link, err = service.LinkOutcomeCourse(ctx, opts.CourseID, opts.GroupID, opts.OutcomeID)
-	} else {
-		link, err = service.LinkOutcomeAccount(ctx, opts.AccountID, opts.GroupID, opts.OutcomeID)
-	}
-
+	link, err := service.LinkOutcomeCourse(ctx, opts.CourseID, opts.GroupID, opts.OutcomeID)
 	if err != nil {
 		logger.LogCommandError(ctx, "outcomes.link", err, map[string]interface{}{
 			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
 			"group_id":   opts.GroupID,
 			"outcome_id": opts.OutcomeID,
 		})
@@ -654,7 +616,6 @@ func runOutcomesUnlink(ctx context.Context, client *api.Client, opts *options.Ou
 
 	logger.LogCommandStart(ctx, "outcomes.unlink", map[string]interface{}{
 		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
 		"group_id":   opts.GroupID,
 		"outcome_id": opts.OutcomeID,
 	})
@@ -671,19 +632,10 @@ func runOutcomesUnlink(ctx context.Context, client *api.Client, opts *options.Ou
 
 	service := api.NewOutcomesService(client)
 
-	var link *api.OutcomeLink
-	var err error
-
-	if opts.CourseID > 0 {
-		link, err = service.UnlinkOutcomeCourse(ctx, opts.CourseID, opts.GroupID, opts.OutcomeID)
-	} else {
-		link, err = service.UnlinkOutcomeAccount(ctx, opts.AccountID, opts.GroupID, opts.OutcomeID)
-	}
-
+	link, err := service.UnlinkOutcomeCourse(ctx, opts.CourseID, opts.GroupID, opts.OutcomeID)
 	if err != nil {
 		logger.LogCommandError(ctx, "outcomes.unlink", err, map[string]interface{}{
 			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
 			"group_id":   opts.GroupID,
 			"outcome_id": opts.OutcomeID,
 		})
@@ -703,36 +655,15 @@ func runOutcomesGroupsList(ctx context.Context, client *api.Client, opts *option
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "outcomes.groups.list", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
+		"course_id": opts.CourseID,
 	})
-
-	// Use default account ID if neither course nor account is specified
-	if opts.CourseID == 0 && opts.AccountID == 0 {
-		defaultID, err := getDefaultAccountID()
-		if err != nil || defaultID == 0 {
-			logger.LogCommandError(ctx, "outcomes.groups.list", err, map[string]interface{}{})
-			return fmt.Errorf("must specify --course-id or --account-id (no default account configured). Use 'canvas config account --detect' to set one")
-		}
-		opts.AccountID = defaultID
-		printVerbose("Using default account ID: %d\n", defaultID)
-	}
 
 	service := api.NewOutcomesService(client)
 
-	var groups []api.OutcomeGroup
-	var err error
-
-	if opts.CourseID > 0 {
-		groups, err = service.ListGroupsCourse(ctx, opts.CourseID, nil)
-	} else {
-		groups, err = service.ListGroupsAccount(ctx, opts.AccountID, nil)
-	}
-
+	groups, err := service.ListGroupsCourse(ctx, opts.CourseID, nil)
 	if err != nil {
 		logger.LogCommandError(ctx, "outcomes.groups.list", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
+			"course_id": opts.CourseID,
 		})
 		return fmt.Errorf("failed to list outcome groups: %w", err)
 	}
@@ -749,27 +680,17 @@ func runOutcomesGroupsGet(ctx context.Context, client *api.Client, opts *options
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "outcomes.groups.get", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"group_id":   opts.GroupID,
+		"course_id": opts.CourseID,
+		"group_id":  opts.GroupID,
 	})
 
 	service := api.NewOutcomesService(client)
 
-	var group *api.OutcomeGroup
-	var err error
-
-	if opts.CourseID > 0 {
-		group, err = service.GetGroupCourse(ctx, opts.CourseID, opts.GroupID)
-	} else {
-		group, err = service.GetGroupAccount(ctx, opts.AccountID, opts.GroupID)
-	}
-
+	group, err := service.GetGroupCourse(ctx, opts.CourseID, opts.GroupID)
 	if err != nil {
 		logger.LogCommandError(ctx, "outcomes.groups.get", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
-			"group_id":   opts.GroupID,
+			"course_id": opts.CourseID,
+			"group_id":  opts.GroupID,
 		})
 		return fmt.Errorf("failed to get outcome group: %w", err)
 	}

@@ -126,46 +126,6 @@ func TestCoursesGetCmd(t *testing.T) {
 	}
 }
 
-func TestCoursesCreateCmd(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "create course successfully",
-			Args: []string{"--account-id", "1", "--name", "New Course", "--code", "NEW101"},
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/courses": cmdtest.NewMockResponse(`{
-					"id": 2,
-					"name": "New Course",
-					"course_code": "NEW101",
-					"workflow_state": "unpublished"
-				}`),
-			},
-			ExpectError: false,
-			ValidateOutput: func(t *testing.T, output string) {
-				if !strings.Contains(output, "New Course") {
-					t.Error("Expected 'New Course' in output")
-				}
-			},
-		},
-		{
-			Name:        "create course - missing account ID",
-			Args:        []string{"--name", "New Course"},
-			ExpectError: true,
-		},
-		{
-			Name:        "create course - missing name",
-			Args:        []string{"--account-id", "1"},
-			ExpectError: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			cmd := newCoursesCreateCmd()
-			cmdtest.RunCommandTest(t, cmd, tc)
-		})
-	}
-}
-
 func TestCoursesUpdateCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
@@ -201,33 +161,6 @@ func TestCoursesUpdateCmd(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.Name, func(t *testing.T) {
 			cmd := newCoursesUpdateCmd()
-			cmdtest.RunCommandTest(t, cmd, tc)
-		})
-	}
-}
-
-func TestCoursesDeleteCmd(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "delete course with confirmation",
-			Args: []string{"1", "--force"},
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/courses/1": cmdtest.NewMockResponse(`{
-					"delete": true
-				}`),
-			},
-			ExpectError: false,
-		},
-		{
-			Name:        "delete course - missing ID",
-			Args:        []string{"--force"},
-			ExpectError: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			cmd := newCoursesDeleteCmd()
 			cmdtest.RunCommandTest(t, cmd, tc)
 		})
 	}

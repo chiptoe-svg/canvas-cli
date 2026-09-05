@@ -104,10 +104,3 @@ func TestConfigShowOptions_Validate(t *testing.T) {
 		t.Errorf("ConfigShowOptions.Validate() error = %v, want nil", err)
 	}
 }
-
-func TestConfigAccountOptions_Validate(t *testing.T) {
-	opts := &ConfigAccountOptions{}
-	if err := opts.Validate(); err != nil {
-		t.Errorf("ConfigAccountOptions.Validate() error = %v, want nil", err)
-	}
-}

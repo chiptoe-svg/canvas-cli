@@ -173,58 +173,6 @@ func TestConfigShowCmd_WithInstance(t *testing.T) {
 	}
 }
 
-func TestConfigAccountCmd_ShowCurrent(t *testing.T) {
-	setupConfigTestHome(t)
-
-	cfg, _ := config.Load()
-	_ = cfg.AddInstance(&config.Instance{Name: "acct", URL: "https://acct.canvas.com"})
-	_ = cfg.SetDefaultInstance("acct")
-	config.ResetCache()
-
-	out := captureRunOutput(func() {
-		cmd := newConfigAccountCmd()
-		cmd.SetArgs([]string{"acct"})
-		if err := cmd.Execute(); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-	})
-
-	if !strings.Contains(out, "acct") {
-		t.Errorf("expected 'acct' in output, got: %q", out)
-	}
-}
-
-func TestConfigAccountCmd_SetAccountID(t *testing.T) {
-	setupConfigTestHome(t)
-
-	cfg, _ := config.Load()
-	_ = cfg.AddInstance(&config.Instance{Name: "inst", URL: "https://inst.canvas.com"})
-	config.ResetCache()
-
-	out := captureRunOutput(func() {
-		cmd := newConfigAccountCmd()
-		cmd.SetArgs([]string{"inst", "42"})
-		if err := cmd.Execute(); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-	})
-
-	if !strings.Contains(out, "42") {
-		t.Errorf("expected account ID 42 in output, got: %q", out)
-	}
-}
-
-func TestConfigAccountCmd_NoDefaultInstance(t *testing.T) {
-	setupConfigTestHome(t)
-
-	cmd := newConfigAccountCmd()
-	cmd.SetArgs([]string{})
-	err := cmd.Execute()
-	if err == nil {
-		t.Error("expected error when no instance name and no default configured")
-	}
-}
-
 func TestValueOrNone(t *testing.T) {
 	if got := valueOrNone(""); got != "(none)" {
 		t.Errorf("expected '(none)', got %q", got)

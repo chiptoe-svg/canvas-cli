@@ -28,19 +28,6 @@ func TestGroupsListCmd_UserContextError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-func TestGroupsListCmd_AccountContextError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list groups by account - API error",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/groups": cmdtest.NewErrorResponse(403, "forbidden"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsListCmd_WithIncludes(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list groups with include-users and include-permissions",
@@ -126,38 +113,12 @@ func TestGroupsCategoriesListCmd_CourseAPIError(t *testing.T) {
 	cmdtest.RunCommandTest(t, cmd, tc)
 }
 
-func TestGroupsCategoriesListCmd_AccountAPIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list group categories by account - API error",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewErrorResponse(403, "forbidden"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsCategoriesListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsCategoriesCreateCmd_CourseAPIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "create group category - course API error",
 		Args: []string{"--course-id", "1", "--name", "Fail Category"},
 		MockResponses: map[string]cmdtest.MockResponse{
 			"/api/v1/courses/1/group_categories": cmdtest.NewErrorResponse(422, "unprocessable"),
-		},
-		ExpectError: true,
-	}
-	cmd := newGroupsCategoriesCreateCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestGroupsCategoriesCreateCmd_AccountAPIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "create group category in account - API error",
-		Args: []string{"--account-id", "1", "--name", "Fail Category"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/group_categories": cmdtest.NewErrorResponse(422, "unprocessable"),
 		},
 		ExpectError: true,
 	}
@@ -211,44 +172,6 @@ func TestGroupsCategoriesGroupsCmd_Empty(t *testing.T) {
 // Courses command additional coverage
 // ---------------------------------------------------------------------------
 
-func TestCoursesListCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list courses in account context",
-		Args: []string{"--account", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/courses": cmdtest.NewMockResponse(`[
-				{
-					"id": 10,
-					"name": "Account Course",
-					"course_code": "AC101",
-					"workflow_state": "available"
-				}
-			]`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Course") {
-				t.Error("Expected 'Account Course' in output")
-			}
-		},
-	}
-	cmd := newCoursesListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestCoursesListCmd_AccountContextError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list courses in account context - API error",
-		Args: []string{"--account", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/courses": cmdtest.NewErrorResponse(403, "forbidden"),
-		},
-		ExpectError: true,
-	}
-	cmd := newCoursesListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestCoursesListCmd_UserContextError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list courses in user context - API error",
@@ -259,44 +182,5 @@ func TestCoursesListCmd_UserContextError(t *testing.T) {
 		ExpectError: true,
 	}
 	cmd := newCoursesListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestCoursesDeleteCmd_Force(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "delete course - conclude (force)",
-		Args: []string{"1", "--event", "conclude", "--force"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/courses/1": cmdtest.NewMockResponse(`{"delete": "true"}`),
-		},
-		ExpectError: false,
-	}
-	cmd := newCoursesDeleteCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestCoursesDeleteCmd_PermanentForce(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "delete course - permanent delete (force)",
-		Args: []string{"1", "--event", "delete", "--force"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/courses/1": cmdtest.NewMockResponse(`{"delete": "true"}`),
-		},
-		ExpectError: false,
-	}
-	cmd := newCoursesDeleteCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-func TestCoursesDeleteCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "delete course - API error",
-		Args: []string{"1", "--event", "conclude", "--force"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/courses/1": cmdtest.NewErrorResponse(404, "course not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newCoursesDeleteCmd()
 	cmdtest.RunCommandTest(t, cmd, tc)
 }

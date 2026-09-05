@@ -20,7 +20,7 @@ var usersCmd = &cobra.Command{
 	Long: `Manage Canvas users including listing, viewing, searching, and managing user information.
 
 Examples:
-  canvas users list --account-id 1
+  canvas users list --course-id 123
   canvas users get 123
   canvas users search "john"
   canvas users me`,
@@ -39,28 +39,14 @@ func newUsersListCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List users in an account or course",
-		Long: `List users in a Canvas account or course.
-
-Specify --account-id or --course-id, or uses default account if configured.
-
-WARNING: Account-level user lists can be very large. Use --limit or --search
-to avoid long wait times.
-
-Account context (admin):
-  canvas users list --limit 100           # First 100 users (recommended)
-  canvas users list --search "john"       # Search in default account
-
-Course context:
-  canvas users list --course-id 123       # All users enrolled in course 123
-  canvas users list --course-id 123 --enrollment-type teacher
+		Short: "List the users enrolled in a course",
+		Long: `List the users enrolled in a course. --course-id is required.
 
 Examples:
-  canvas users list --limit 50
-  canvas users list --account-id 1 --limit 100
   canvas users list --course-id 123
-  canvas users list --search "john"
-  canvas users list --include email,enrollments`,
+  canvas users list --course-id 123 --enrollment-type teacher
+  canvas users list --course-id 123 --search "john"
+  canvas users list --course-id 123 --include email,enrollments`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -73,8 +59,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (for account users)")
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (for course enrollees)")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.SearchTerm, "search", "", "Search by name, login ID, or email")
 	cmd.Flags().StringVar(&opts.EnrollmentType, "enrollment-type", "", "Filter by enrollment type (student, teacher, ta, observer, designer)")
 	cmd.Flags().StringVar(&opts.EnrollmentState, "enrollment-state", "", "Filter by enrollment state (active, invited, rejected, completed, inactive)")
@@ -173,26 +159,11 @@ Examples:
 func runUsersList(ctx context.Context, client *api.Client, opts *options.UsersListOptions) error {
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "users.list", map[string]interface{}{
-		"account_id":       opts.AccountID,
 		"course_id":        opts.CourseID,
 		"search_term":      opts.SearchTerm,
 		"enrollment_type":  opts.EnrollmentType,
 		"enrollment_state": opts.EnrollmentState,
 	})
-
-	// Use default account ID if neither account nor course is specified
-	accountID := opts.AccountID
-	if accountID == 0 && opts.CourseID == 0 {
-		defaultID, err := getDefaultAccountID()
-		if err != nil || defaultID == 0 {
-			logger.LogCommandError(ctx, "users.list", fmt.Errorf("no account or course specified"), map[string]interface{}{
-				"error": "must specify --account-id or --course-id (no default account configured)",
-			})
-			return fmt.Errorf("must specify --account-id or --course-id (no default account configured). Use 'canvas config account --detect' to set one")
-		}
-		accountID = defaultID
-		printVerbose("Using default account ID: %d\n", accountID)
-	}
 
 	// Create users service
 	usersService := api.NewUsersService(client)
@@ -211,17 +182,8 @@ func runUsersList(ctx context.Context, client *api.Client, opts *options.UsersLi
 		spin.Start()
 	}
 
-	var users []api.User
-	var contextName string
-	var err error
-
-	if accountID > 0 {
-		users, err = usersService.List(ctx, accountID, listOpts)
-		contextName = fmt.Sprintf("account %d", accountID)
-	} else {
-		users, err = usersService.ListCourseUsers(ctx, opts.CourseID, listOpts)
-		contextName = fmt.Sprintf("course %d", opts.CourseID)
-	}
+	users, err := usersService.ListCourseUsers(ctx, opts.CourseID, listOpts)
+	contextName := fmt.Sprintf("course %d", opts.CourseID)
 	spin.Stop()
 
 	if err != nil {

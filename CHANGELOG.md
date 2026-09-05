@@ -20,7 +20,15 @@ courses. Removed every account-level, admin and power-user surface:
 `observees`, `planner`, `polls`, `progress`, `sis-imports`, `sync`,
 `temporary-enrollment-pairings`, `user-features`, the MCP server, the REPL, the
 webhook listener, telemetry, and the write-capable `api` command (`api get`
-stays). `course-settings` is now `courses settings`. Module path is
+stays). From `users`: `create`, `merge`, `split`, `logins`, `settings`,
+`update`, `update-settings`, `page-views`, `courses`. Also removed, because
+they are account-scoped and no faculty member can use them: `courses create`,
+`courses delete`, `analytics department`, `config account`, and the
+`--account-id` flag wherever it appeared (`courses list`, `users list`,
+`rubrics list|get`, `groups list`, `groups categories list|create`, `outcomes
+create|list|link|unlink`, `outcomes groups list|get`) — those commands now take
+`--course-id`. The `account` context type is gone with it.
+`course-settings` is now `courses settings`. Module path is
 `github.com/chiptoe-svg/canvas-cli`. The docs site is gone; the README and
 the bundled skill are the documentation. `main` is the development branch
 (the former `integration/all`); `release/audited` is what faculty install.

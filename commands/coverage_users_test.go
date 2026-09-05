@@ -28,14 +28,14 @@ func TestUsersListCmd_WithSearchAndEnrollmentFilters(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "list users with search and enrollment filters",
 		Args: []string{
-			"--account-id", "1",
+			"--course-id", "1",
 			"--search", "alice",
 			"--enrollment-type", "student",
 			"--enrollment-state", "active",
 			"--include", "email,avatar_url",
 		},
 		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/users": cmdtest.NewMockResponse(`[
+			"/api/v1/courses/1/users": cmdtest.NewMockResponse(`[
 				{"id": 7, "name": "Alice Smith", "email": "alice@example.com"}
 			]`),
 		},

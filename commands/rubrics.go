@@ -43,14 +43,10 @@ func newRubricsListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List rubrics",
-		Long: `List all rubrics in a course or account.
-
-If neither --account-id nor --course-id is specified, uses default account.
+		Long: `List all rubrics in a course. --course-id is required.
 
 Examples:
-  canvas rubrics list                          # Uses default account
   canvas rubrics list --course-id 123
-  canvas rubrics list --account-id 1
   canvas rubrics list --course-id 123 --include assessments,associations`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
@@ -66,8 +62,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data (assessments, associations, assignment_associations)")
 
 	return cmd
@@ -83,7 +79,7 @@ func newRubricsGetCmd() *cobra.Command {
 
 Examples:
   canvas rubrics get 456 --course-id 123
-  canvas rubrics get 456 --account-id 1 --include assessments`,
+  canvas rubrics get 456 --course-id 123 --include assessments`,
 		Args: ExactArgsWithUsage(1, "rubric-id"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rubricID, err := strconv.ParseInt(args[0], 10, 64)
@@ -105,8 +101,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringSliceVar(&opts.Include, "include", []string{}, "Include additional data")
 
 	return cmd
@@ -297,20 +293,9 @@ Examples:
 func runRubricsList(ctx context.Context, client *api.Client, opts *options.RubricsListOptions) error {
 	logger := logging.NewCommandLogger(verbose)
 
-	// Use default account ID if neither course nor account is specified
-	if opts.CourseID == 0 && opts.AccountID == 0 {
-		defaultID, err := getDefaultAccountID()
-		if err != nil || defaultID == 0 {
-			return fmt.Errorf("must specify --course-id or --account-id (no default account configured). Use 'canvas config account --detect' to set one")
-		}
-		opts.AccountID = defaultID
-		printVerbose("Using default account ID: %d\n", defaultID)
-	}
-
 	logger.LogCommandStart(ctx, "rubrics.list", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"include":    opts.Include,
+		"course_id": opts.CourseID,
+		"include":   opts.Include,
 	})
 
 	service := api.NewRubricsService(client)
@@ -319,19 +304,10 @@ func runRubricsList(ctx context.Context, client *api.Client, opts *options.Rubri
 		Include: opts.Include,
 	}
 
-	var rubrics []api.Rubric
-	var err error
-
-	if opts.CourseID > 0 {
-		rubrics, err = service.ListCourse(ctx, opts.CourseID, apiOpts)
-	} else {
-		rubrics, err = service.ListAccount(ctx, opts.AccountID, apiOpts)
-	}
-
+	rubrics, err := service.ListCourse(ctx, opts.CourseID, apiOpts)
 	if err != nil {
 		logger.LogCommandError(ctx, "rubrics.list", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
+			"course_id": opts.CourseID,
 		})
 		return fmt.Errorf("failed to list rubrics: %w", err)
 	}
@@ -344,28 +320,18 @@ func runRubricsList(ctx context.Context, client *api.Client, opts *options.Rubri
 func runRubricsGet(ctx context.Context, client *api.Client, opts *options.RubricsGetOptions) error {
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "rubrics.get", map[string]interface{}{
-		"rubric_id":  opts.RubricID,
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"include":    opts.Include,
+		"rubric_id": opts.RubricID,
+		"course_id": opts.CourseID,
+		"include":   opts.Include,
 	})
 
 	service := api.NewRubricsService(client)
 
-	var rubric *api.Rubric
-	var err error
-
-	if opts.CourseID > 0 {
-		rubric, err = service.GetCourse(ctx, opts.CourseID, opts.RubricID, opts.Include)
-	} else {
-		rubric, err = service.GetAccount(ctx, opts.AccountID, opts.RubricID, opts.Include)
-	}
-
+	rubric, err := service.GetCourse(ctx, opts.CourseID, opts.RubricID, opts.Include)
 	if err != nil {
 		logger.LogCommandError(ctx, "rubrics.get", err, map[string]interface{}{
-			"rubric_id":  opts.RubricID,
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
+			"rubric_id": opts.RubricID,
+			"course_id": opts.CourseID,
 		})
 		return fmt.Errorf("failed to get rubric: %w", err)
 	}

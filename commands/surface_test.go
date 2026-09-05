@@ -29,6 +29,8 @@ var facultyUsersSubcommands = []string{
 	"search", "todo", "upcoming-events",
 }
 
+var facultyCoursesSubcommands = []string{"get", "list", "settings", "update"}
+
 var facultyAPISubcommands = []string{"get"}
 
 func commandNames(cmd *cobra.Command) []string {
@@ -55,6 +57,7 @@ func TestFacultySurface(t *testing.T) {
 	rootCmd.InitDefaultHelpCmd()
 	assert.Equal(t, facultySurface, commandNames(rootCmd), "top-level commands")
 	assert.Equal(t, facultyUsersSubcommands, commandNames(findCommand(t, rootCmd, "users")), "users subcommands")
+	assert.Equal(t, facultyCoursesSubcommands, commandNames(findCommand(t, rootCmd, "courses")), "courses subcommands")
 	assert.Equal(t, facultyAPISubcommands, commandNames(findCommand(t, rootCmd, "api")), "api subcommands")
 }
 

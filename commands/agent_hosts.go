@@ -54,8 +54,7 @@ func emitCanvasClaudeCode(cmd *cobra.Command, g canvasGuardPlan, write bool) err
 	settings := map[string]any{
 		"permissions": map[string]any{"deny": deny, "ask": ask},
 		"hooks": map[string]any{
-			// The Bash tool is the only surface a canvas command can run on:
-			// this edition ships no MCP server.
+			// The Bash tool is the only surface a canvas command runs on.
 			"PreToolUse": []any{hookEntry("Bash")},
 		},
 	}

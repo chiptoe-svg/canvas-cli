@@ -3,9 +3,11 @@ package options
 import "testing"
 
 func TestRubricsListOptions_Validate(t *testing.T) {
-	opts := &RubricsListOptions{}
-	if err := opts.Validate(); err != nil {
+	if err := (&RubricsListOptions{CourseID: 1}).Validate(); err != nil {
 		t.Errorf("RubricsListOptions.Validate() error = %v, want nil", err)
+	}
+	if err := (&RubricsListOptions{}).Validate(); err == nil {
+		t.Error("RubricsListOptions.Validate() = nil, want an error when course-id is missing")
 	}
 }
 
@@ -21,17 +23,12 @@ func TestRubricsGetOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &RubricsGetOptions{AccountID: 1, RubricID: 2},
-			wantErr: false,
-		},
-		{
 			name:    "missing rubric ID",
 			opts:    &RubricsGetOptions{CourseID: 1, RubricID: 0},
 			wantErr: true,
 		},
 		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &RubricsGetOptions{RubricID: 2},
 			wantErr: true,
 		},

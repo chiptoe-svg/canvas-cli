@@ -34,7 +34,6 @@ func init() {
 	analyticsCmd.AddCommand(newAnalyticsAssignmentsCmd())
 	analyticsCmd.AddCommand(newAnalyticsStudentsCmd())
 	analyticsCmd.AddCommand(newAnalyticsUserCmd())
-	analyticsCmd.AddCommand(newAnalyticsDepartmentCmd())
 }
 
 func newAnalyticsActivityCmd() *cobra.Command {
@@ -193,52 +192,6 @@ Examples:
 	return cmd
 }
 
-func newAnalyticsDepartmentCmd() *cobra.Command {
-	opts := &options.AnalyticsDepartmentOptions{}
-
-	cmd := &cobra.Command{
-		Use:   "department",
-		Short: "View department analytics",
-		Long: `View department-level analytics for an account.
-
-If --account-id is not specified, uses the default account ID from config.
-
-Analytics types:
-  - statistics: Overall department statistics
-  - activity: Department participation over time
-  - grades: Grade distribution
-
-Examples:
-  canvas analytics department                     # Uses default account
-  canvas analytics department --account-id 1
-  canvas analytics department --type grades --term-id 123`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := opts.Validate(); err != nil {
-				return err
-			}
-
-			accountID, err := resolveAccountID(opts.AccountID, "analytics department")
-			if err != nil {
-				return err
-			}
-			opts.AccountID = accountID
-
-			client, err := getAPIClient()
-			if err != nil {
-				return err
-			}
-
-			return runAnalyticsDepartment(cmd.Context(), client, opts)
-		},
-	}
-
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID (uses default if configured)")
-	cmd.Flags().StringVar(&opts.Type, "type", "statistics", "Analytics type: statistics, activity, grades")
-	cmd.Flags().Int64Var(&opts.TermID, "term-id", 0, "Filter by term ID")
-
-	return cmd
-}
-
 func runAnalyticsActivity(ctx context.Context, client *api.Client, opts *options.AnalyticsActivityOptions) error {
 	logger := logging.NewCommandLogger(verbose)
 	logger.LogCommandStart(ctx, "analytics.activity", map[string]interface{}{
@@ -364,66 +317,5 @@ func runAnalyticsUser(ctx context.Context, client *api.Client, opts *options.Ana
 			"type":      opts.Type,
 		})
 		return fmt.Errorf("invalid analytics type: %s (use: activity, assignments, communication)", opts.Type)
-	}
-}
-
-func runAnalyticsDepartment(ctx context.Context, client *api.Client, opts *options.AnalyticsDepartmentOptions) error {
-	logger := logging.NewCommandLogger(verbose)
-	logger.LogCommandStart(ctx, "analytics.department", map[string]interface{}{
-		"account_id": opts.AccountID,
-		"type":       opts.Type,
-		"term_id":    opts.TermID,
-	})
-
-	service := api.NewAnalyticsService(client)
-
-	apiOpts := &api.DepartmentAnalyticsOptions{}
-	if opts.TermID > 0 {
-		apiOpts.TermID = opts.TermID
-	}
-
-	switch opts.Type {
-	case "statistics":
-		stats, err := service.GetDepartmentStatistics(ctx, opts.AccountID, apiOpts)
-		if err != nil {
-			logger.LogCommandError(ctx, "analytics.department", err, map[string]interface{}{
-				"account_id": opts.AccountID,
-				"type":       opts.Type,
-			})
-			return fmt.Errorf("failed to get department statistics: %w", err)
-		}
-		logger.LogCommandComplete(ctx, "analytics.department", 1)
-		return formatOutput(stats, nil)
-
-	case "activity":
-		activity, err := service.GetDepartmentActivity(ctx, opts.AccountID, apiOpts)
-		if err != nil {
-			logger.LogCommandError(ctx, "analytics.department", err, map[string]interface{}{
-				"account_id": opts.AccountID,
-				"type":       opts.Type,
-			})
-			return fmt.Errorf("failed to get department activity: %w", err)
-		}
-		logger.LogCommandComplete(ctx, "analytics.department", len(activity))
-		return formatEmptyOrOutput(activity, "No activity data found")
-
-	case "grades":
-		grades, err := service.GetDepartmentGrades(ctx, opts.AccountID, apiOpts)
-		if err != nil {
-			logger.LogCommandError(ctx, "analytics.department", err, map[string]interface{}{
-				"account_id": opts.AccountID,
-				"type":       opts.Type,
-			})
-			return fmt.Errorf("failed to get department grades: %w", err)
-		}
-		logger.LogCommandComplete(ctx, "analytics.department", len(grades))
-		return formatEmptyOrOutput(grades, "No grade data found")
-
-	default:
-		logger.LogCommandError(ctx, "analytics.department", fmt.Errorf("invalid analytics type"), map[string]interface{}{
-			"account_id": opts.AccountID,
-			"type":       opts.Type,
-		})
-		return fmt.Errorf("invalid analytics type: %s (use: statistics, activity, grades)", opts.Type)
 	}
 }

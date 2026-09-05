@@ -5,7 +5,6 @@ import "fmt"
 // GroupsListOptions contains options for listing groups
 type GroupsListOptions struct {
 	CourseID           int64
-	AccountID          int64
 	UserID             int64
 	IncludeUsers       bool
 	IncludePermissions bool
@@ -148,16 +147,12 @@ func (o *GroupsMembersRemoveOptions) Validate() error {
 
 // GroupsCategoriesListOptions contains options for listing group categories
 type GroupsCategoriesListOptions struct {
-	CourseID  int64
-	AccountID int64
+	CourseID int64
 }
 
 // Validate validates the options
 func (o *GroupsCategoriesListOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
-	}
-	return nil
+	return ValidateRequired("course-id", o.CourseID)
 }
 
 // GroupsCategoriesGetOptions contains options for getting a group category
@@ -176,7 +171,6 @@ func (o *GroupsCategoriesGetOptions) Validate() error {
 // GroupsCategoriesCreateOptions contains options for creating a group category
 type GroupsCategoriesCreateOptions struct {
 	CourseID         int64
-	AccountID        int64
 	Name             string
 	SelfSignup       string
 	AutoLeader       string
@@ -188,8 +182,8 @@ type GroupsCategoriesCreateOptions struct {
 
 // Validate validates the options
 func (o *GroupsCategoriesCreateOptions) Validate() error {
-	if o.CourseID == 0 && o.AccountID == 0 {
-		return fmt.Errorf("must specify either --course-id or --account-id")
+	if err := ValidateRequired("course-id", o.CourseID); err != nil {
+		return err
 	}
 	if o.Name == "" {
 		return fmt.Errorf("name is required")

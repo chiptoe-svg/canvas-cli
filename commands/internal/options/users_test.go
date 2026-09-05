@@ -9,23 +9,13 @@ func TestUsersListOptions_Validate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "valid - no context",
-			opts:    &UsersListOptions{},
-			wantErr: false,
-		},
-		{
-			name:    "valid - account ID only",
-			opts:    &UsersListOptions{AccountID: 1},
-			wantErr: false,
-		},
-		{
-			name:    "valid - course ID only",
+			name:    "valid - course ID",
 			opts:    &UsersListOptions{CourseID: 1},
 			wantErr: false,
 		},
 		{
-			name:    "both account and course ID",
-			opts:    &UsersListOptions{AccountID: 1, CourseID: 2},
+			name:    "missing course ID",
+			opts:    &UsersListOptions{},
 			wantErr: true,
 		},
 	}

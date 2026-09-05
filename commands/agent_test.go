@@ -694,8 +694,8 @@ func TestClassifyCanvasCommands_RealTree_SanityCheck(t *testing.T) {
 
 	// Verify expected commands exist in the correct buckets.
 	assertContainsPath(t, "read", read, "courses list")
-	assertContainsPath(t, "write", writes, "courses create")
-	assertContainsPath(t, "irreversible", irreversible, "courses delete")
+	assertContainsPath(t, "write", writes, "assignments create")
+	assertContainsPath(t, "irreversible", irreversible, "assignments delete")
 
 	// Verify that cancel/close/merge/split are hard-blocked.
 	for _, path := range []string{"users merge", "sections merge"} {

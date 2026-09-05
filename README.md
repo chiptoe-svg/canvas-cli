@@ -81,7 +81,7 @@ canvas users todo                                       # your grading to-do
 
 | Group | What it covers |
 |---|---|
-| `courses` | list, get, create, update, delete, and `courses settings` |
+| `courses` | list, get, update, and `courses settings` |
 | `assignments`, `assignment-groups`, `overrides` | assignments, their groups, per-student and per-section overrides, `upcoming` |
 | `submissions` | list, get, download, grade, bulk-grade, comments, `missing`, `excuse` |
 | `grades` | grade-change history, the gradebook feed, custom columns |

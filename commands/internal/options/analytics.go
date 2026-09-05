@@ -45,16 +45,3 @@ func (o *AnalyticsUserOptions) Validate() error {
 	}
 	return ValidateRequired("user-id", o.UserID)
 }
-
-// AnalyticsDepartmentOptions contains options for viewing department analytics
-type AnalyticsDepartmentOptions struct {
-	AccountID int64
-	Type      string
-	TermID    int64
-}
-
-// Validate validates the options
-func (o *AnalyticsDepartmentOptions) Validate() error {
-	// Account ID is optional - will be resolved from config if not specified
-	return nil
-}

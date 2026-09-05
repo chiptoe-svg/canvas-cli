@@ -25,7 +25,7 @@ binary does not have it. Flags are not listed — read them from
 
 | Group | Subcommands |
 |---|---|
-| `courses` | `create` `delete` `get` `list` `update`, `settings {get\|late-policy\|permissions\|tabs\|todo\|recent-students\|effective-due-dates}` |
+| `courses` | `get` `list` `update`, `settings {get\|late-policy\|permissions\|tabs\|todo\|recent-students\|effective-due-dates}` |
 | `course-features` | `list` `get-flag` `set-flag` `delete-flag` `enabled` |
 | `assignments` | `create` `delete` `get` `list` `update` `upcoming` |
 | `assignment-groups` | `create` `delete` `get` `list` `update` |
@@ -62,7 +62,7 @@ binary does not have it. Flags are not listed — read them from
 | `groups` | `create` `create-standalone` `delete` `get` `list` `update` `members` `memberships` `users` `invite` `categories` `permissions` `tabs` `activity-stream` `assignment-override` `collaborations` `conferences` `content-exports` `external-feeds` |
 | `conversations` | `create` `get` `list` `reply` `delete` `add-recipients` `archive` `unarchive` `star` `unstar` `mark-read` `mark-all-read` `unread-count` |
 | `appointment-groups` | `create` `delete` `get` `list` `update` `groups` `users` `next` |
-| `analytics` | `activity` `assignments` `students` `user` `department` |
+| `analytics` | `activity` `assignments` `students` `user` |
 
 ## Files, calendar, content transfer
 
@@ -80,7 +80,7 @@ binary does not have it. Flags are not listed — read them from
 | Group | Subcommands |
 |---|---|
 | `auth` | `login` `logout` `status` `token` |
-| `config` | `add` `list` `show` `use` `remove` `account` |
+| `config` | `add` `list` `show` `use` `remove` |
 | `context` | `set` `show` `clear` |
 | `doctor` | (no subcommands) install, config, auth and connectivity diagnostics |
 | `api` | `get` only — read-only raw GET, response wrapped under `.body` |
@@ -103,5 +103,7 @@ stale context silently targets the wrong course.
 
 There is no account administration in this build: no `accounts`, `admins`,
 `roles`, `sis-imports`, `enrollment-terms`, or `developer-keys`, and no way to
-create a Canvas user. `canvas courses list --account-id` still exists as a
-flag but needs admin rights the instructor does not have.
+create a Canvas user. No command takes an account-scoped flag: `courses list`
+returns the courses you are enrolled in, and every other list that could once
+be account-scoped (`users`, `rubrics`, `groups`, `outcomes`) now requires
+`--course-id`.

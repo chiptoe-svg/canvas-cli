@@ -34,11 +34,10 @@ func newGroupsListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List groups",
-		Long: `List groups for a course, account, or user.
+		Long: `List groups for a course or a user.
 
 Examples:
   canvas groups list --course-id 123
-  canvas groups list --account-id 1
   canvas groups list --user-id 456
   canvas groups list  # Lists current user's groups`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -56,7 +55,6 @@ Examples:
 	}
 
 	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
 	cmd.Flags().Int64Var(&opts.UserID, "user-id", 0, "User ID (0 for self)")
 	cmd.Flags().BoolVar(&opts.IncludeUsers, "include-users", false, "Include group users")
 	cmd.Flags().BoolVar(&opts.IncludePermissions, "include-permissions", false, "Include permissions")
@@ -362,11 +360,10 @@ func newGroupsCategoriesListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List group categories",
-		Long: `List group categories for a course or account.
+		Long: `List group categories for a course. --course-id is required.
 
 Examples:
-  canvas groups categories list --course-id 123
-  canvas groups categories list --account-id 1`,
+  canvas groups categories list --course-id 123`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -381,8 +378,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 
 	return cmd
 }
@@ -429,11 +426,11 @@ func newGroupsCategoriesCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a group category",
-		Long: `Create a new group category in a course or account.
+		Long: `Create a new group category in a course. --course-id is required.
 
 Examples:
   canvas groups categories create --course-id 123 --name "Project Teams"
-  canvas groups categories create --account-id 1 --name "Clubs" --self-signup enabled`,
+  canvas groups categories create --course-id 123 --name "Clubs" --self-signup enabled`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
@@ -448,8 +445,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID")
-	cmd.Flags().Int64Var(&opts.AccountID, "account-id", 0, "Account ID")
+	cmd.Flags().Int64Var(&opts.CourseID, "course-id", 0, "Course ID (required)")
+	mustMarkRequired(cmd, "course-id")
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Category name (required)")
 	cmd.Flags().StringVar(&opts.SelfSignup, "self-signup", "", "Self signup (enabled, restricted)")
 	cmd.Flags().StringVar(&opts.AutoLeader, "auto-leader", "", "Auto leader (first, random)")
@@ -672,9 +669,8 @@ func runGroupsList(ctx context.Context, client *api.Client, opts *options.Groups
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "groups.list", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"user_id":    opts.UserID,
+		"course_id": opts.CourseID,
+		"user_id":   opts.UserID,
 	})
 
 	service := api.NewGroupsService(client)
@@ -692,8 +688,6 @@ func runGroupsList(ctx context.Context, client *api.Client, opts *options.Groups
 
 	if opts.CourseID > 0 {
 		groups, err = service.ListCourse(ctx, opts.CourseID, apiOpts)
-	} else if opts.AccountID > 0 {
-		groups, err = service.ListAccount(ctx, opts.AccountID, apiOpts)
 	} else {
 		// Default to user's groups (userID 0 means "self")
 		groups, err = service.ListUser(ctx, opts.UserID, apiOpts)
@@ -701,9 +695,8 @@ func runGroupsList(ctx context.Context, client *api.Client, opts *options.Groups
 
 	if err != nil {
 		logger.LogCommandError(ctx, "groups.list", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
-			"user_id":    opts.UserID,
+			"course_id": opts.CourseID,
+			"user_id":   opts.UserID,
 		})
 		return fmt.Errorf("failed to list groups: %w", err)
 	}
@@ -948,25 +941,15 @@ func runGroupsCategoriesList(ctx context.Context, client *api.Client, opts *opti
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "groups.categories.list", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
+		"course_id": opts.CourseID,
 	})
 
 	service := api.NewGroupsService(client)
 
-	var categories []api.GroupCategory
-	var err error
-
-	if opts.CourseID > 0 {
-		categories, err = service.ListCategoriesCourse(ctx, opts.CourseID, nil)
-	} else {
-		categories, err = service.ListCategoriesAccount(ctx, opts.AccountID, nil)
-	}
-
+	categories, err := service.ListCategoriesCourse(ctx, opts.CourseID, nil)
 	if err != nil {
 		logger.LogCommandError(ctx, "groups.categories.list", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
+			"course_id": opts.CourseID,
 		})
 		return fmt.Errorf("failed to list group categories: %w", err)
 	}
@@ -1008,9 +991,8 @@ func runGroupsCategoriesCreate(ctx context.Context, client *api.Client, opts *op
 	logger := logging.NewCommandLogger(verbose)
 
 	logger.LogCommandStart(ctx, "groups.categories.create", map[string]interface{}{
-		"course_id":  opts.CourseID,
-		"account_id": opts.AccountID,
-		"name":       opts.Name,
+		"course_id": opts.CourseID,
+		"name":      opts.Name,
 	})
 
 	service := api.NewGroupsService(client)
@@ -1025,20 +1007,11 @@ func runGroupsCategoriesCreate(ctx context.Context, client *api.Client, opts *op
 		SISGroupCategoryID: opts.SISCategoryID,
 	}
 
-	var category *api.GroupCategory
-	var err error
-
-	if opts.CourseID > 0 {
-		category, err = service.CreateCategoryCourse(ctx, opts.CourseID, params)
-	} else {
-		category, err = service.CreateCategoryAccount(ctx, opts.AccountID, params)
-	}
-
+	category, err := service.CreateCategoryCourse(ctx, opts.CourseID, params)
 	if err != nil {
 		logger.LogCommandError(ctx, "groups.categories.create", err, map[string]interface{}{
-			"course_id":  opts.CourseID,
-			"account_id": opts.AccountID,
-			"name":       opts.Name,
+			"course_id": opts.CourseID,
+			"name":      opts.Name,
 		})
 		return fmt.Errorf("failed to create category: %w", err)
 	}

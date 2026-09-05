@@ -65,22 +65,6 @@ func TestContextSetCmd_User(t *testing.T) {
 	}
 }
 
-func TestContextSetCmd_Account(t *testing.T) {
-	setupContextTestHome(t)
-
-	out := captureRunOutput(func() {
-		cmd := newContextSetCmd()
-		cmd.SetArgs([]string{"account", "1"})
-		if err := cmd.Execute(); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-	})
-
-	if !strings.Contains(out, "1") {
-		t.Errorf("expected account ID in output, got: %q", out)
-	}
-}
-
 func TestContextSetCmd_InvalidID(t *testing.T) {
 	setupContextTestHome(t)
 
@@ -249,25 +233,5 @@ func TestGetContextUserID_FromConfig(t *testing.T) {
 	got := GetContextUserID(0)
 	if got != 22 {
 		t.Errorf("expected 22 from context, got %d", got)
-	}
-}
-
-func TestGetContextAccountID_WithFlag(t *testing.T) {
-	got := GetContextAccountID(33)
-	if got != 33 {
-		t.Errorf("expected 33, got %d", got)
-	}
-}
-
-func TestGetContextAccountID_FromConfig(t *testing.T) {
-	setupContextTestHome(t)
-
-	cfg, _ := config.Load()
-	_ = cfg.SetContext(&config.Context{AccountID: 44})
-	config.ResetCache()
-
-	got := GetContextAccountID(0)
-	if got != 44 {
-		t.Errorf("expected 44 from context, got %d", got)
 	}
 }

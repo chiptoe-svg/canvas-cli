@@ -237,12 +237,7 @@ func TestGroupsCategoriesListOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &GroupsCategoriesListOptions{AccountID: 1},
-			wantErr: false,
-		},
-		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &GroupsCategoriesListOptions{},
 			wantErr: true,
 		},
@@ -298,12 +293,7 @@ func TestGroupsCategoriesCreateOptions_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid with account ID",
-			opts:    &GroupsCategoriesCreateOptions{AccountID: 1, Name: "Project Groups"},
-			wantErr: false,
-		},
-		{
-			name:    "neither course nor account ID",
+			name:    "missing course ID",
 			opts:    &GroupsCategoriesCreateOptions{Name: "Project Groups"},
 			wantErr: true,
 		},

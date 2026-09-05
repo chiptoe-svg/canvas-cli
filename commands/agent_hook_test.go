@@ -85,10 +85,10 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		description string
 	}{
 		{
-			name:        "bash_courses_delete_denied",
-			payload:     bashPayload("canvas courses delete 5"),
+			name:        "bash_assignments_delete_denied",
+			payload:     bashPayload("canvas assignments delete 5"),
 			wantDenied:  true,
-			description: "direct canvas courses delete must be denied",
+			description: "direct canvas assignments delete must be denied",
 		},
 		{
 			name:        "bash_pages_create_with_delete_title_allowed",
@@ -125,9 +125,9 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		},
 		{
 			name: "bash_obfuscated_delete_denied",
-			// canvas courses de""lete 5 — quotes stripped by deobfuscate become
-			// "canvas courses delete 5"
-			payload:     bashPayload(`canvas courses de""lete 5`),
+			// canvas assignments de""lete 5 — quotes stripped by deobfuscate become
+			// "canvas assignments delete 5"
+			payload:     bashPayload(`canvas assignments de""lete 5`),
 			wantDenied:  true,
 			description: "obfuscated canvas courses de\"\"lete 5 must be denied (jq path)",
 		},
@@ -157,15 +157,15 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		},
 		{
 			name:        "bash_relative_path_binary_denied",
-			payload:     bashPayload("./bin/canvas courses delete 5"),
+			payload:     bashPayload("./bin/canvas assignments delete 5"),
 			wantDenied:  true,
-			description: "path-invoked binary ./bin/canvas courses delete must be denied",
+			description: "path-invoked binary ./bin/canvas assignments delete must be denied",
 		},
 		{
 			name:        "bash_absolute_path_binary_denied",
-			payload:     bashPayload("/usr/local/bin/canvas courses delete 5"),
+			payload:     bashPayload("/usr/local/bin/canvas assignments delete 5"),
 			wantDenied:  true,
-			description: "path-invoked binary /usr/local/bin/canvas courses delete must be denied",
+			description: "path-invoked binary /usr/local/bin/canvas assignments delete must be denied",
 		},
 		{
 			name:        "bash_absolute_path_api_delete_denied",
@@ -175,7 +175,7 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		},
 		{
 			name:        "bash_other_binary_named_like_canvas_allowed",
-			payload:     bashPayload("mycanvas courses delete 5"),
+			payload:     bashPayload("mycanvas assignments delete 5"),
 			wantDenied:  false,
 			description: "a different binary whose name merely ends in 'canvas' must NOT be denied",
 		},
@@ -294,8 +294,8 @@ func TestCanvasHookScript_BashExecutionNoJq(t *testing.T) {
 		wantDenied bool
 	}{
 		{
-			name:       "nojq_courses_delete_denied",
-			payload:    bashPayload("canvas courses delete 5"),
+			name:       "nojq_assignments_delete_denied",
+			payload:    bashPayload("canvas assignments delete 5"),
 			wantDenied: true,
 		},
 		{
@@ -305,7 +305,7 @@ func TestCanvasHookScript_BashExecutionNoJq(t *testing.T) {
 		},
 		{
 			name:       "nojq_obfuscated_delete_denied",
-			payload:    bashPayload(`canvas courses de""lete 5`),
+			payload:    bashPayload(`canvas assignments de""lete 5`),
 			wantDenied: true,
 		},
 		{

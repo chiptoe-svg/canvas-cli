@@ -118,10 +118,3 @@ func TestAnalyticsUserOptions_Validate(t *testing.T) {
 		})
 	}
 }
-
-func TestAnalyticsDepartmentOptions_Validate(t *testing.T) {
-	opts := &AnalyticsDepartmentOptions{}
-	if err := opts.Validate(); err != nil {
-		t.Errorf("AnalyticsDepartmentOptions.Validate() error = %v, want nil", err)
-	}
-}

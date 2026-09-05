@@ -494,31 +494,6 @@ func TestGroupsMembersRemoveCmd(t *testing.T) {
 	}
 }
 
-func TestGroupsListCmd_AccountContext(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "list groups by account",
-		Args: []string{"--account-id", "1"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/accounts/1/groups": cmdtest.NewMockResponse(`[
-				{
-					"id": 5,
-					"name": "Account Group",
-					"members_count": 3
-				}
-			]`),
-		},
-		ExpectError: false,
-		ValidateOutput: func(t *testing.T, output string) {
-			if !strings.Contains(output, "Account Group") {
-				t.Error("Expected 'Account Group' in output")
-			}
-		},
-	}
-
-	cmd := newGroupsListCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
 func TestGroupsGetCmd_APIError(t *testing.T) {
 	tc := cmdtest.CommandTestCase{
 		Name: "get group - API error",

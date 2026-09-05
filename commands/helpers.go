@@ -383,38 +383,6 @@ func ExactArgsWithUsage(n int, argNames ...string) cobra.PositionalArgs {
 	}
 }
 
-// getDefaultAccountID returns the default account ID for the current instance.
-// Returns 0 if no default account ID is configured.
-func getDefaultAccountID() (int64, error) {
-	cfg, err := config.Load()
-	if err != nil {
-		return 0, fmt.Errorf("failed to load config: %w", err)
-	}
-
-	instance, err := cfg.GetDefaultInstance()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get default instance: %w", err)
-	}
-
-	return instance.DefaultAccountID, nil
-}
-
-// resolveAccountID returns the provided account ID if non-zero, otherwise returns the default account ID.
-// Returns an error with helpful guidance if no account ID is available.
-func resolveAccountID(providedID int64, context string) (int64, error) {
-	if providedID != 0 {
-		return providedID, nil
-	}
-
-	defaultID, err := getDefaultAccountID()
-	if err != nil || defaultID == 0 {
-		return 0, fmt.Errorf("--account-id is required (no default account configured). Use 'canvas config account --detect' to set one")
-	}
-
-	printVerbose("Using default account ID: %d for %s\n", defaultID, context)
-	return defaultID, nil
-}
-
 // validateCourseID checks if a course ID exists and returns a user-friendly error if not.
 // Returns the course object if found, nil otherwise (for optional use of course data).
 // The caller's context is forwarded so that signal cancellation propagates correctly.

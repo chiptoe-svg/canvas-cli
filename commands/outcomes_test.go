@@ -45,16 +45,16 @@ func TestOutcomesListCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "list outcomes successfully",
-			Args: []string{"--account-id", "1", "--group-id", "456"},
+			Args: []string{"--course-id", "1", "--group-id", "456"},
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": cmdtest.NewMockResponse(`[]`),
-				"/api/v1/accounts/1/outcome_groups/456/outcomes": cmdtest.NewMockResponse(`[
+				"/api/v1/courses/1/outcome_groups/456/outcomes": cmdtest.NewMockResponse(`[
 					{
 						"outcome": {
 							"id": 1,
 							"title": "Communication",
 							"context_id": 1,
-							"context_type": "Account"
+							"context_type": "Course"
 						}
 					}
 				]`),
@@ -80,9 +80,9 @@ func TestOutcomesGroupsListCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "list outcome groups successfully",
-			Args: []string{"--account-id", "1"},
+			Args: []string{"--course-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/outcome_groups": cmdtest.NewMockResponse(`[
+				"/api/v1/courses/1/outcome_groups": cmdtest.NewMockResponse(`[
 					{
 						"id": 1,
 						"title": "Core Competencies",
@@ -99,9 +99,9 @@ func TestOutcomesGroupsListCmd(t *testing.T) {
 		},
 		{
 			Name: "list outcome groups - empty response",
-			Args: []string{"--account-id", "1"},
+			Args: []string{"--course-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/outcome_groups": cmdtest.NewMockResponse(`[]`),
+				"/api/v1/courses/1/outcome_groups": cmdtest.NewMockResponse(`[]`),
 			},
 			ExpectError:  false,
 			ExpectOutput: "No outcome groups found",
@@ -120,9 +120,9 @@ func TestOutcomesGroupsGetCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "get outcome group successfully",
-			Args: []string{"5", "--account-id", "1"},
+			Args: []string{"5", "--course-id", "1"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/outcome_groups/5": cmdtest.NewMockResponse(`{
+				"/api/v1/courses/1/outcome_groups/5": cmdtest.NewMockResponse(`{
 					"id": 5,
 					"title": "Program Outcomes",
 					"description": "Program-level learning outcomes"
@@ -137,7 +137,7 @@ func TestOutcomesGroupsGetCmd(t *testing.T) {
 		},
 		{
 			Name:        "get outcome group - missing group ID",
-			Args:        []string{"--account-id", "1"},
+			Args:        []string{"--course-id", "1"},
 			ExpectError: true,
 		},
 	}
@@ -153,15 +153,15 @@ func TestOutcomesGroupsGetCmd(t *testing.T) {
 func TestOutcomesCreateCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
-			Name: "create outcome in account group successfully",
-			Args: []string{"--account-id", "1", "--group-id", "456", "--title", "Problem Solving"},
+			Name: "create outcome in course group successfully",
+			Args: []string{"--course-id", "1", "--group-id", "456", "--title", "Problem Solving"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/outcome_groups/456/outcomes": cmdtest.NewMockResponse(`{
+				"/api/v1/courses/1/outcome_groups/456/outcomes": cmdtest.NewMockResponse(`{
 					"outcome": {
 						"id": 77,
 						"title": "Problem Solving"
 					},
-					"context_type": "Account",
+					"context_type": "Course",
 					"context_id": 1
 				}`),
 			},
@@ -174,12 +174,12 @@ func TestOutcomesCreateCmd(t *testing.T) {
 		},
 		{
 			Name:        "create outcome - missing group ID",
-			Args:        []string{"--account-id", "1", "--title", "Test"},
+			Args:        []string{"--course-id", "1", "--title", "Test"},
 			ExpectError: true,
 		},
 		{
 			Name:        "create outcome - missing title",
-			Args:        []string{"--account-id", "1", "--group-id", "456"},
+			Args:        []string{"--course-id", "1", "--group-id", "456"},
 			ExpectError: true,
 		},
 	}
@@ -230,14 +230,14 @@ func TestOutcomesLinkCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "link outcome to group successfully",
-			Args: []string{"789", "--account-id", "1", "--group-id", "456"},
+			Args: []string{"789", "--course-id", "1", "--group-id", "456"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/outcome_groups/456/outcomes/789": cmdtest.NewMockResponse(`{
+				"/api/v1/courses/1/outcome_groups/456/outcomes/789": cmdtest.NewMockResponse(`{
 					"outcome": {
 						"id": 789,
 						"title": "Linked Outcome"
 					},
-					"context_type": "Account",
+					"context_type": "Course",
 					"context_id": 1
 				}`),
 			},
@@ -245,12 +245,12 @@ func TestOutcomesLinkCmd(t *testing.T) {
 		},
 		{
 			Name:        "link outcome - missing group ID",
-			Args:        []string{"789", "--account-id", "1"},
+			Args:        []string{"789", "--course-id", "1"},
 			ExpectError: true,
 		},
 		{
 			Name:        "link outcome - missing outcome ID",
-			Args:        []string{"--account-id", "1", "--group-id", "456"},
+			Args:        []string{"--course-id", "1", "--group-id", "456"},
 			ExpectError: true,
 		},
 	}
@@ -267,9 +267,9 @@ func TestOutcomesUnlinkCmd(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "unlink outcome from group successfully",
-			Args: []string{"789", "--account-id", "1", "--group-id", "456", "--force"},
+			Args: []string{"789", "--course-id", "1", "--group-id", "456", "--force"},
 			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts/1/outcome_groups/456/outcomes/789": cmdtest.NewMockResponse(`{
+				"/api/v1/courses/1/outcome_groups/456/outcomes/789": cmdtest.NewMockResponse(`{
 					"outcome": {
 						"id": 789,
 						"title": "Unlinked Outcome"
@@ -280,12 +280,12 @@ func TestOutcomesUnlinkCmd(t *testing.T) {
 		},
 		{
 			Name:        "unlink outcome - missing group ID",
-			Args:        []string{"789", "--account-id", "1", "--force"},
+			Args:        []string{"789", "--course-id", "1", "--force"},
 			ExpectError: true,
 		},
 		{
 			Name:        "unlink outcome - missing outcome ID",
-			Args:        []string{"--account-id", "1", "--group-id", "456", "--force"},
+			Args:        []string{"--course-id", "1", "--group-id", "456", "--force"},
 			ExpectError: true,
 		},
 	}
