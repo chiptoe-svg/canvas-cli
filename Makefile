@@ -1,4 +1,4 @@
-.PHONY: help build test test-integration clean install uninstall fmt lint vet run deps setup-hooks docs-gen docs-serve docs-build docs-deploy spec-sync spec-coverage
+.PHONY: help build test test-integration clean install uninstall fmt lint vet run deps setup-hooks spec-sync spec-coverage
 
 # Variables
 BINARY_NAME=canvas
@@ -26,12 +26,6 @@ help:
 	@echo "  make deps         - Download dependencies"
 	@echo "  make release      - Build snapshot release for all platforms (GoReleaser)"
 	@echo "  make setup-hooks  - Install git pre-commit hooks"
-	@echo ""
-	@echo "Documentation:"
-	@echo "  make docs-gen     - Generate CLI reference documentation"
-	@echo "  make docs-serve   - Serve documentation locally"
-	@echo "  make docs-build   - Build documentation site"
-	@echo "  make docs-deploy  - Deploy documentation to GitHub Pages"
 	@echo ""
 	@echo "Spec compliance:"
 	@echo "  make spec-sync     - Fetch official Canvas Swagger and regenerate testdata/spec/canvas_endpoints.json"
@@ -145,27 +139,6 @@ setup-hooks:
 	@echo "Setting up git hooks..."
 	@git config core.hooksPath .githooks
 	@echo "✓ Git hooks installed (.githooks/pre-commit)"
-
-# Documentation targets
-docs-gen:
-	@echo "Generating CLI reference documentation..."
-	@go run ./tools/gendocs/main.go
-	@cp CHANGELOG.md docs/changelog.md
-	@echo "✓ CLI docs generated in docs/commands/ (changelog synced)"
-
-docs-serve: docs-gen
-	@echo "Serving documentation at http://localhost:8000..."
-	@mkdocs serve
-
-docs-build: docs-gen
-	@echo "Building documentation site..."
-	@mkdocs build --strict
-	@echo "✓ Documentation built in site/"
-
-docs-deploy: docs-gen
-	@echo "Deploying documentation to GitHub Pages..."
-	@mkdocs gh-deploy --force
-	@echo "✓ Documentation deployed"
 
 # Spec compliance targets.
 # Source of truth: official Canvas Swagger 1.2 API (not .ai/canvas-lms-docs).

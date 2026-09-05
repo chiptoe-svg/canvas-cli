@@ -65,7 +65,7 @@ internal/
   update/       → Self-update checks
   webhook/      → Webhook listener
 testdata/spec/  → Committed Canvas API spec manifest
-tools/          → Code generators (gendocs, speccheck)
+tools/          → Code generators (speccheck)
 .ai/            → Canvas LMS API documentation (gitignored)
 ```
 
@@ -174,8 +174,7 @@ fix/*  ────────────────┘
 
 Before tagging, on `develop`:
 
-1. **Update CHANGELOG.md** with the new version section (and copy to
-   `docs/changelog.md` — `make docs-gen` does this automatically)
+1. **Update CHANGELOG.md** with the new version section
 2. **Update SECURITY.md** supported-versions table if the minor version changes
 
 Then:
@@ -239,45 +238,6 @@ When adding endpoints to maximize coverage:
    `grading_standards`) causes redeclaration/merge collisions — the main
    integration cost of fan-out work.
 
-## Documentation
-
-Documentation is built with MkDocs Material and deployed to GitHub Pages.
-
-**Live site**: https://jjuanrivvera.github.io/canvas-cli/
-
-### Local Development
-
-```bash
-# Install dependencies
-pip install mkdocs-material mkdocs-git-revision-date-localized-plugin
-
-# Generate CLI reference and serve locally
-go run ./tools/gendocs/main.go
-mkdocs serve
-```
-
-### Deployment
-
-Documentation auto-deploys on push to `main` when `docs/**` or `mkdocs.yml` changes.
-
-**Manual trigger** (via GitHub UI):
-1. Go to Actions → Documentation workflow
-2. Click "Run workflow"
-
-**Manual trigger** (via CLI):
-```bash
-gh workflow run docs.yml
-```
-
-**If deployment gets stuck** in "queued" status:
-```bash
-# Force a Pages build
-gh api -X POST repos/jjuanrivvera/canvas-cli/pages/builds
-
-# Check status
-gh api repos/jjuanrivvera/canvas-cli/pages --jq '.status'
-```
-
 ## Releases
 
 Releases use GoReleaser and auto-publish to GitHub Releases + Homebrew tap.
@@ -286,8 +246,7 @@ Releases use GoReleaser and auto-publish to GitHub Releases + Homebrew tap.
 
 Pre-tag checklist (on `develop`):
 
-1. Update `CHANGELOG.md` with the new version section, then run `make docs-gen`
-   to sync `docs/changelog.md`
+1. Update `CHANGELOG.md` with the new version section
 2. Update the supported-versions table in `SECURITY.md` if the minor version
    changes
 
