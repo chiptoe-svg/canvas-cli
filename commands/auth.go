@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	"github.com/jjuanrivvera/canvas-cli/internal/auth"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
-	"github.com/jjuanrivvera/canvas-cli/internal/terminal"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	"github.com/chiptoe-svg/canvas-cli/internal/auth"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/terminal"
 )
 
 // authCmd represents the auth command group

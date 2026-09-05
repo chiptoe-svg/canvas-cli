@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 func TestGetAPIClient_EnvironmentVariables(t *testing.T) {

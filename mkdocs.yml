@@ -4,7 +4,7 @@ site_description: A powerful command-line interface for Canvas LMS
 site_author: Juan Rivera
 
 repo_name: jjuanrivvera/canvas-cli
-repo_url: https://github.com/jjuanrivvera/canvas-cli
+repo_url: https://github.com/chiptoe-svg/canvas-cli
 edit_uri: edit/main/docs/
 
 theme:
@@ -99,7 +99,7 @@ extra:
     property: !ENV GOOGLE_ANALYTICS_KEY
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/jjuanrivvera/canvas-cli
+      link: https://github.com/chiptoe-svg/canvas-cli
   generator: false
 
 extra_css:

@@ -14,7 +14,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // gradeServer is a fake Canvas whose submissions remember what was PUT.

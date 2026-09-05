@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
 )
 
 // courseMock provides a mock response for course validation

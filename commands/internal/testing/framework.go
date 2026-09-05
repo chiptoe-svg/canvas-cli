@@ -16,7 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // CommandTestCase defines a single command test scenario

@@ -12,9 +12,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
-	"github.com/jjuanrivvera/canvas-cli/internal/activity"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
+	"github.com/chiptoe-svg/canvas-cli/internal/activity"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
 )
 
 // useTempActivityLog points the activity log at a temp file via the

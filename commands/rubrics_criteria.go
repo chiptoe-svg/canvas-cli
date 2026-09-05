@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 const criteriaFileUsage = `JSON file of criteria: either a bare array of

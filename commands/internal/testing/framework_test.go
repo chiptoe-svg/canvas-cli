@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
 )
 
 // --- constructor tests (pure functions, no I/O) ---

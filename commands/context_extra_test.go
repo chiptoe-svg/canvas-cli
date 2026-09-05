@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
 )
 
 // setupContextTestHome isolates config for context tests.

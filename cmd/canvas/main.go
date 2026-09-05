@@ -8,9 +8,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jjuanrivvera/canvas-cli/commands"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
-	"github.com/jjuanrivvera/canvas-cli/internal/shellparse"
+	"github.com/chiptoe-svg/canvas-cli/commands"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/shellparse"
 )
 
 var (

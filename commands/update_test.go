@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/update"
+	"github.com/chiptoe-svg/canvas-cli/internal/update"
 )
 
 // Version comparison lives in internal/update; the command must use the same

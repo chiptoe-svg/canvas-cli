@@ -20,11 +20,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
-	"github.com/jjuanrivvera/canvas-cli/internal/activity"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
+	"github.com/chiptoe-svg/canvas-cli/internal/activity"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
 )
 
 func captureStderr(fn func()) string {

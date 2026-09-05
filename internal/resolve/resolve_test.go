@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 var roster = []Student{

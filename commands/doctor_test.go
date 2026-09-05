@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
-	"github.com/jjuanrivvera/canvas-cli/internal/diagnostics"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/diagnostics"
 )
 
 // fakeRunner is a deterministic diagnostics.Runner used to drive the doctor

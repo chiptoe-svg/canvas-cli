@@ -17,7 +17,7 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/cache"
+	"github.com/chiptoe-svg/canvas-cli/internal/cache"
 )
 
 func TestAdaptiveRateLimiter_AdjustRate(t *testing.T) {

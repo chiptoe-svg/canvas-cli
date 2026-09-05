@@ -63,7 +63,7 @@ dockers:
     build_flag_templates:
       - "--label=org.opencontainers.image.title=canvas-cli"
       - "--label=org.opencontainers.image.description=A powerful command-line interface for Canvas LMS"
-      - "--label=org.opencontainers.image.source=https://github.com/jjuanrivvera/canvas-cli"
+      - "--label=org.opencontainers.image.source=https://github.com/chiptoe-svg/canvas-cli"
       - "--label=org.opencontainers.image.version={{ .Version }}"
       - "--label=org.opencontainers.image.licenses=MIT"
 
@@ -79,7 +79,7 @@ sboms:
 #   cosign verify-blob --certificate checksums.txt.pem \
 #     --signature checksums.txt.sig \
 #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-#     --certificate-identity-regexp 'https://github.com/jjuanrivvera/canvas-cli.*' \
+#     --certificate-identity-regexp 'https://github.com/chiptoe-svg/canvas-cli.*' \
 #     checksums.txt
 signs:
   - cmd: cosign
@@ -145,7 +145,7 @@ release:
 
     **Go**
     ```bash
-    go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@v{{.Version}}
+    go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@v{{.Version}}
     ```
 
     **Binary Download**
@@ -168,7 +168,7 @@ homebrew_casks:
       name: homebrew-canvas-cli
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/jjuanrivvera/canvas-cli"
+    homepage: "https://github.com/chiptoe-svg/canvas-cli"
     description: "A powerful command-line interface for Canvas LMS"
     # Strip the macOS quarantine xattr so the unsigned CLI binary runs without a Gatekeeper prompt.
     hooks:
@@ -184,7 +184,7 @@ scoops:
       name: scoop-canvas-cli
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/jjuanrivvera/canvas-cli"
+    homepage: "https://github.com/chiptoe-svg/canvas-cli"
     description: "A powerful command-line interface for Canvas LMS"
     license: MIT
     commit_author:

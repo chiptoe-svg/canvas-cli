@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 const quizSubmissionUpdatedMock = `{

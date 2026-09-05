@@ -6,8 +6,8 @@ package commands
 import (
 	"testing"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
-	"github.com/jjuanrivvera/canvas-cli/internal/diagnostics"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
+	"github.com/chiptoe-svg/canvas-cli/internal/diagnostics"
 )
 
 // ---------------------------------------------------------------------------

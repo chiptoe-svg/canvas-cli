@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
-	"github.com/jjuanrivvera/canvas-cli/internal/update"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/logging"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/update"
 )
 
 var updateCmd = &cobra.Command{

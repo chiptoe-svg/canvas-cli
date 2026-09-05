@@ -13,10 +13,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/activity"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
-	"github.com/jjuanrivvera/canvas-cli/internal/batch"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/activity"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/batch"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
 )
 
 // activityCmd manages the local activity log.

@@ -20,8 +20,8 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/time/rate"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/cache"
-	"github.com/jjuanrivvera/canvas-cli/internal/dryrun"
+	"github.com/chiptoe-svg/canvas-cli/internal/cache"
+	"github.com/chiptoe-svg/canvas-cli/internal/dryrun"
 )
 
 const (

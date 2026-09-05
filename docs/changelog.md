@@ -24,12 +24,12 @@ sync by `make docs-gen` and the documentation workflow.
   coverage from a single tool schema, so read-only MCP clients no longer need to
   allowlist hundreds of individual read tools. The general `canvas api` escape
   hatch (any HTTP verb) stays unannotated and is still filtered out by read-only
-  clients. ([#60](https://github.com/jjuanrivvera/canvas-cli/issues/60))
+  clients. ([#60](https://github.com/chiptoe-svg/canvas-cli/issues/60))
 - `canvas mcp start --readonly`: serve only read-only tools. The flag exposes the
   commands annotated `readOnlyHint: true` and drops the rest (writes and the
   general `api` tool), so `canvas_api_get` is served in place of `canvas_api`.
   This moves the read-only boundary into the binary, holding even for MCP clients
-  that do not filter by annotation themselves. ([#60](https://github.com/jjuanrivvera/canvas-cli/issues/60))
+  that do not filter by annotation themselves. ([#60](https://github.com/chiptoe-svg/canvas-cli/issues/60))
 
 ## [1.12.0] - 2026-08-05
 
@@ -39,7 +39,7 @@ sync by `make docs-gen` and the documentation workflow.
   `openWorldHint`). Clients that enforce a read-only session allow a tool only
   when `readOnlyHint` is strictly `true` and treat a missing annotation as a
   write, so previously every tool was filtered out and the whole server was
-  dropped. 247 of 533 tools are now marked read-only. ([#58](https://github.com/jjuanrivvera/canvas-cli/issues/58))
+  dropped. 247 of 533 tools are now marked read-only. ([#58](https://github.com/chiptoe-svg/canvas-cli/issues/58))
 
   The hints are derived from the same classification `canvas agent guard` uses,
   so a tool cannot advertise itself as read-only while the guard gates it as a
@@ -56,13 +56,13 @@ sync by `make docs-gen` and the documentation workflow.
   longer crash the whole list. A new `CommaSeparatedList` type accepts both the
   array and comma-separated-string shapes. Additionally, a single element that
   fails to decode is now logged and skipped rather than discarding the entire
-  page. ([#55](https://github.com/jjuanrivvera/canvas-cli/issues/55))
+  page. ([#55](https://github.com/chiptoe-svg/canvas-cli/issues/55))
 - `enrollments create` (and every other command that decodes a single object
   from a create/update) no longer fails when Canvas wraps the response in an
   array — some deployments return `[]` or `[obj]` instead of `obj`. Response
   decoding now tolerates an array-wrapped single object across all resources
   (uses the first element; an empty array on success is treated as success).
-  ([#56](https://github.com/jjuanrivvera/canvas-cli/issues/56))
+  ([#56](https://github.com/chiptoe-svg/canvas-cli/issues/56))
 
 ## [1.11.1] - 2026-07-30
 
@@ -75,7 +75,7 @@ sync by `make docs-gen` and the documentation workflow.
   `go test ./commands -run TestDoctorCmd` no longer depends on live network,
   host permissions, or real credentials — and no longer skips under CI. The
   real end-to-end path remains covered by an opt-in smoke test gated behind
-  `CANVAS_DOCTOR_LIVE=1`. ([#28](https://github.com/jjuanrivvera/canvas-cli/issues/28))
+  `CANVAS_DOCTOR_LIVE=1`. ([#28](https://github.com/chiptoe-svg/canvas-cli/issues/28))
 
 ## [1.11.0] - 2026-07-13
 
@@ -86,8 +86,8 @@ sync by `make docs-gen` and the documentation workflow.
   request omits `client_secret` entirely. Canvas validates PKCE on hosted instances since the
   March 2026 release; public-client keys must currently be provisioned by Instructure (they are
   not self-service in the Developer Keys UI). Instances persist this as `public_client: true`
-  in `config.yaml`. ([#48](https://github.com/jjuanrivvera/canvas-cli/issues/48),
-  [#51](https://github.com/jjuanrivvera/canvas-cli/issues/51))
+  in `config.yaml`. ([#48](https://github.com/chiptoe-svg/canvas-cli/issues/48),
+  [#51](https://github.com/chiptoe-svg/canvas-cli/issues/51))
 
 ### Documentation
 
@@ -914,22 +914,22 @@ This release adds comprehensive write command support across all Canvas API reso
 
 ---
 
-[Unreleased]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.9.1...HEAD
-[1.9.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.9.0...v1.9.1
-[1.9.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.1...v1.9.0
-[1.8.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.8.0...v1.8.1
-[1.8.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.7.0...v1.8.0
-[1.7.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.6.1...v1.7.0
-[1.6.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.6.0...v1.6.1
-[1.6.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.3...v1.6.0
-[1.5.3]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.2...v1.5.3
-[1.5.2]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.1...v1.5.2
-[1.5.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.5.0...v1.5.1
-[1.5.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.4.0...v1.5.0
-[1.4.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.3.1...v1.4.0
-[1.3.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.3.0...v1.3.1
-[1.3.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/jjuanrivvera/canvas-cli/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/jjuanrivvera/canvas-cli/releases/tag/v1.0.0
+[Unreleased]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.9.1...HEAD
+[1.9.1]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.8.1...v1.9.0
+[1.8.1]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.8.0...v1.8.1
+[1.8.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.6.1...v1.7.0
+[1.6.1]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.5.3...v1.6.0
+[1.5.3]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.3.1...v1.4.0
+[1.3.1]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/chiptoe-svg/canvas-cli/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/chiptoe-svg/canvas-cli/releases/tag/v1.0.0

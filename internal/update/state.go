@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
 )
 
 // State tracks update-related state

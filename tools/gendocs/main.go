@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra/doc"
 
-	"github.com/jjuanrivvera/canvas-cli/commands"
+	"github.com/chiptoe-svg/canvas-cli/commands"
 )
 
 func main() {

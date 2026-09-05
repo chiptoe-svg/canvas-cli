@@ -11,11 +11,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
-	"github.com/jjuanrivvera/canvas-cli/internal/auth"
-	"github.com/jjuanrivvera/canvas-cli/internal/cache"
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
-	"github.com/jjuanrivvera/canvas-cli/internal/output"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/auth"
+	"github.com/chiptoe-svg/canvas-cli/internal/cache"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/output"
 )
 
 // boolPtr returns a pointer to the given bool value. Use this when an API

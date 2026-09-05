@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/config"
+	"github.com/chiptoe-svg/canvas-cli/internal/config"
 )
 
 // setupAuthTestHome creates an isolated HOME and resets config cache.

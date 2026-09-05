@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
 )
 
 // TestCovQuizzes_UpdateAllFields exercises every opt.*Set branch in runQuizzesUpdate.

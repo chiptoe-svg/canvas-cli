@@ -35,10 +35,10 @@ If you have Go installed:
 
 ```bash
 # Install latest version
-go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
+go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@latest
 
 # Install specific version
-go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@v1.0.0
+go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@v1.0.0
 
 # Verify installation
 canvas version
@@ -50,7 +50,7 @@ canvas version
 
 ### Method 3: Download Binary (All Platforms)
 
-1. Visit the [Releases page](https://github.com/jjuanrivvera/canvas-cli/releases)
+1. Visit the [Releases page](https://github.com/chiptoe-svg/canvas-cli/releases)
 2. Download the appropriate archive for your platform:
    - **macOS (Intel)**: `canvas-cli_darwin_x86_64.tar.gz`
    - **macOS (Apple Silicon)**: `canvas-cli_darwin_arm64.tar.gz`
@@ -91,7 +91,7 @@ cosign verify-blob \
   --certificate checksums.txt.pem \
   --signature checksums.txt.sig \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp 'https://github.com/jjuanrivvera/canvas-cli.*' \
+  --certificate-identity-regexp 'https://github.com/chiptoe-svg/canvas-cli.*' \
   checksums.txt
 
 # 2. Verify your archive against the checksums
@@ -131,7 +131,7 @@ canvas courses list
 
 ```bash
 # Clone the repository
-git clone https://github.com/jjuanrivvera/canvas-cli.git
+git clone https://github.com/chiptoe-svg/canvas-cli.git
 cd canvas-cli
 
 # Build
@@ -257,7 +257,7 @@ brew upgrade canvas-cli
 ### Go
 
 ```bash
-go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
+go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@latest
 ```
 
 ### Binary

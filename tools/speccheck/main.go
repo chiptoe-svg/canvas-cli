@@ -52,7 +52,7 @@ const (
 var coverageOut = filepath.Join(os.TempDir(), "canvas_coverage_gap.md")
 
 // userAgent mimics a browser so Canvas hosts don't block datacenter requests.
-const userAgent = "Mozilla/5.0 (compatible; canvas-cli/speccheck; +https://github.com/jjuanrivvera/canvas-cli)"
+const userAgent = "Mozilla/5.0 (compatible; canvas-cli/speccheck; +https://github.com/chiptoe-svg/canvas-cli)"
 
 // minResourceFraction is the minimum fraction of listed resources that must be
 // successfully fetched before the manifest is written. Guards against silent

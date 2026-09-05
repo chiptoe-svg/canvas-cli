@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
+	cmdtest "github.com/chiptoe-svg/canvas-cli/commands/internal/testing"
 )
 
 // accountsMockResponse is needed because the Canvas client checks the API version on first use.

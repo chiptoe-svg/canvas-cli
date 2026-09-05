@@ -21,7 +21,7 @@ Thank you for your interest in contributing to Canvas CLI! This document provide
 
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/jjuanrivvera/canvas-cli.git
+   git remote add upstream https://github.com/chiptoe-svg/canvas-cli.git
    ```
 
 4. Install dependencies:

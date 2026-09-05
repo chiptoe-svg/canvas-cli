@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/logging"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // gradingPeriodsCmd is the parent command for grading period operations.

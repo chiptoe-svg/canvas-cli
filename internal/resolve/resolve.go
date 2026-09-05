@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // Student is a course member as the resolvers see them.

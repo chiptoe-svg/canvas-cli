@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/jjuanrivvera/canvas-cli/actions/workflows/ci.yml"><img src="https://github.com/jjuanrivvera/canvas-cli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/jjuanrivvera/canvas-cli/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-%E2%89%A580%25-brightgreen" alt="Coverage"></a>
+  <a href="https://github.com/chiptoe-svg/canvas-cli/actions/workflows/ci.yml"><img src="https://github.com/chiptoe-svg/canvas-cli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/chiptoe-svg/canvas-cli/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/coverage-%E2%89%A580%25-brightgreen" alt="Coverage"></a>
   <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
-  <a href="https://github.com/jjuanrivvera/canvas-cli/releases"><img src="https://img.shields.io/github/v/release/jjuanrivvera/canvas-cli" alt="Release"></a>
-  <a href="https://pkg.go.dev/github.com/jjuanrivvera/canvas-cli"><img src="https://pkg.go.dev/badge/github.com/jjuanrivvera/canvas-cli.svg" alt="Go Reference"></a>
+  <a href="https://github.com/chiptoe-svg/canvas-cli/releases"><img src="https://img.shields.io/github/v/release/jjuanrivvera/canvas-cli" alt="Release"></a>
+  <a href="https://pkg.go.dev/github.com/chiptoe-svg/canvas-cli"><img src="https://pkg.go.dev/badge/github.com/chiptoe-svg/canvas-cli.svg" alt="Go Reference"></a>
   <a href="https://deepwiki.com/jjuanrivvera/canvas-cli"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
   <a href="https://cliwright.jjuanrivvera.com"><img src="https://img.shields.io/badge/built_with-cliwright-1f6feb" alt="Built with cliwright"></a>
 </p>
@@ -66,7 +66,7 @@ scoop install https://raw.githubusercontent.com/jjuanrivvera/scoop-canvas-cli/ma
 Requires Go 1.25+ (or Go 1.24+ with automatic toolchain download).
 
 ```bash
-go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
+go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@latest
 ```
 
 ### Docker
@@ -84,7 +84,7 @@ docker run --rm -e CANVAS_URL -e CANVAS_TOKEN ghcr.io/jjuanrivvera/canvas-cli:la
 
 ### Binary Download
 
-Download from [GitHub Releases](https://github.com/jjuanrivvera/canvas-cli/releases).
+Download from [GitHub Releases](https://github.com/chiptoe-svg/canvas-cli/releases).
 Release checksums are signed with [cosign](https://github.com/sigstore/cosign)
 (keyless) and archives ship with SBOMs — verification instructions are in the
 [`.goreleaser.yaml`](.goreleaser.yaml) `signs` section.

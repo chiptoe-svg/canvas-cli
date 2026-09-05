@@ -109,7 +109,7 @@ func newResourceListCmd() *cobra.Command {
 
 **Structured Logging (NEW)**: Commands should use structured logging:
 ```go
-import "github.com/jjuanrivvera/canvas-cli/commands/internal/logging"
+import "github.com/chiptoe-svg/canvas-cli/commands/internal/logging"
 
 func runCommand(ctx context.Context, client *api.Client, opts *Options) error {
     logger := logging.NewCommandLogger(globalDebugFlag)

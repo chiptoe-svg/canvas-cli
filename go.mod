@@ -1,4 +1,4 @@
-module github.com/jjuanrivvera/canvas-cli
+module github.com/chiptoe-svg/canvas-cli
 
 // CI reads this via actions/setup-go (go-version-file: go.mod), which honors
 // the go directive but not a toolchain directive. Keep this on the latest

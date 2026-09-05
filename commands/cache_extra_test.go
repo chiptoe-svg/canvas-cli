@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
 )
 
 // setupCacheTestHome redirects HOME to a temp dir and resets config cache.

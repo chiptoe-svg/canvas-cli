@@ -52,7 +52,7 @@ Canvas CLI is built with:
 
 ```bash
 # Clone the repository
-git clone https://github.com/jjuanrivvera/canvas-cli.git
+git clone https://github.com/chiptoe-svg/canvas-cli.git
 cd canvas-cli
 
 # Install dependencies
@@ -139,5 +139,5 @@ Canvas CLI follows standard Go conventions:
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/jjuanrivvera/canvas-cli/issues) - Bug reports and feature requests
-- [GitHub Discussions](https://github.com/jjuanrivvera/canvas-cli/discussions) - Questions and ideas
+- [GitHub Issues](https://github.com/chiptoe-svg/canvas-cli/issues) - Bug reports and feature requests
+- [GitHub Discussions](https://github.com/chiptoe-svg/canvas-cli/discussions) - Questions and ideas

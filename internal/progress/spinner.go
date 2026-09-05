@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/terminal"
+	"github.com/chiptoe-svg/canvas-cli/internal/terminal"
 )
 
 // Spinner displays an animated spinner on stderr while a long operation runs.

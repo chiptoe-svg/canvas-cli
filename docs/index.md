@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/github/v/release/jjuanrivvera/canvas-cli)](https://github.com/jjuanrivvera/canvas-cli/releases)
+[![Release](https://img.shields.io/github/v/release/jjuanrivvera/canvas-cli)](https://github.com/chiptoe-svg/canvas-cli/releases)
 
 </div>
 
@@ -36,7 +36,7 @@
 === "Go Install"
 
     ```bash
-    go install github.com/jjuanrivvera/canvas-cli/cmd/canvas@latest
+    go install github.com/chiptoe-svg/canvas-cli/cmd/canvas@latest
     ```
 
 === "Docker"
@@ -47,7 +47,7 @@
 
 === "Binary Download"
 
-    Download the latest release from [GitHub Releases](https://github.com/jjuanrivvera/canvas-cli/releases).
+    Download the latest release from [GitHub Releases](https://github.com/chiptoe-svg/canvas-cli/releases).
     Checksums are signed with cosign — see [Installation](getting-started/installation.md) for verification steps.
 
 Then authenticate with Canvas:
@@ -131,8 +131,8 @@ canvas users list --course-id 123 --output json
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/jjuanrivvera/canvas-cli/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/jjuanrivvera/canvas-cli/discussions)
+- **Issues**: [GitHub Issues](https://github.com/chiptoe-svg/canvas-cli/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/chiptoe-svg/canvas-cli/discussions)
 
 ## License
 

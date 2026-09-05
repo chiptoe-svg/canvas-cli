@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // newTestClient creates an api.Client pointed at a test server.

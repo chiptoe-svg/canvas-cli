@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/terminal"
+	"github.com/chiptoe-svg/canvas-cli/internal/terminal"
 )
 
 // generateSecureState generates a cryptographically secure random state parameter

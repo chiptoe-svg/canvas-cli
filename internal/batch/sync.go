@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
-	"github.com/jjuanrivvera/canvas-cli/internal/terminal"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/terminal"
 )
 
 // ConflictResolution defines how to handle conflicts during sync

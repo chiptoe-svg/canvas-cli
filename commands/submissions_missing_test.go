@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // missingCanvas is a fake Canvas for `submissions missing`: two courses, a

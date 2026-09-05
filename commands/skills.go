@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	canvascli "github.com/jjuanrivvera/canvas-cli"
+	canvascli "github.com/chiptoe-svg/canvas-cli"
 )
 
 // agentSkillDirs maps an agent name to {global, project} skills directories,

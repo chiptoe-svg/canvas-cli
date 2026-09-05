@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 // upcomingCanvas is a fake Canvas for `assignments upcoming`: two courses

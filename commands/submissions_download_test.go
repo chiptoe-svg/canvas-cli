@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jjuanrivvera/canvas-cli/commands/internal/options"
-	"github.com/jjuanrivvera/canvas-cli/internal/api"
+	"github.com/chiptoe-svg/canvas-cli/commands/internal/options"
+	"github.com/chiptoe-svg/canvas-cli/internal/api"
 )
 
 func TestSubmissionsDownloadOptionsValidate(t *testing.T) {

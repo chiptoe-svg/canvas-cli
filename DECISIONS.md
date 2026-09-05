@@ -40,4 +40,4 @@ handling — with no network, host-permission, or real-credential dependency.
 - Runtime behavior of `canvas doctor` for real users is unchanged; this is a
   testability refactor only.
 
-Ref: [#28](https://github.com/jjuanrivvera/canvas-cli/issues/28)
+Ref: [#28](https://github.com/chiptoe-svg/canvas-cli/issues/28)
