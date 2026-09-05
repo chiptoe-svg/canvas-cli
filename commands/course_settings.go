@@ -12,23 +12,23 @@ import (
 
 // courseSettingsCmd is the parent command for course settings/utility operations.
 var courseSettingsCmd = &cobra.Command{
-	Use:     "course-settings",
+	Use:     "settings",
 	Aliases: []string{"csettings"},
 	Short:   "Manage course settings and utilities",
 	Long: `Manage Canvas course settings, tabs, permissions, due dates, and late policy.
 
 Examples:
-  canvas course-settings get --course-id 1
-  canvas course-settings todo --course-id 1
-  canvas course-settings tabs --course-id 1
-  canvas course-settings permissions --course-id 1
-  canvas course-settings effective-due-dates --course-id 1
-  canvas course-settings late-policy --course-id 1
-  canvas course-settings recent-students --course-id 1`,
+  canvas courses settings get --course-id 1
+  canvas courses settings todo --course-id 1
+  canvas courses settings tabs --course-id 1
+  canvas courses settings permissions --course-id 1
+  canvas courses settings effective-due-dates --course-id 1
+  canvas courses settings late-policy --course-id 1
+  canvas courses settings recent-students --course-id 1`,
 }
 
 func init() {
-	rootCmd.AddCommand(courseSettingsCmd)
+	coursesCmd.AddCommand(courseSettingsCmd)
 	courseSettingsCmd.AddCommand(newCourseSettingsGetCmd())
 	courseSettingsCmd.AddCommand(newCourseSettingsTodoCmd())
 	courseSettingsCmd.AddCommand(newCourseSettingsTabsCmd())

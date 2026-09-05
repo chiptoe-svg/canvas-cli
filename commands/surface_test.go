@@ -57,3 +57,8 @@ func TestFacultySurface(t *testing.T) {
 	assert.Equal(t, facultyUsersSubcommands, commandNames(findCommand(t, rootCmd, "users")), "users subcommands")
 	assert.Equal(t, facultyAPISubcommands, commandNames(findCommand(t, rootCmd, "api")), "api subcommands")
 }
+
+func TestCoursesSettingsIsNested(t *testing.T) {
+	courses := findCommand(t, rootCmd, "courses")
+	assert.Contains(t, commandNames(courses), "settings")
+}
