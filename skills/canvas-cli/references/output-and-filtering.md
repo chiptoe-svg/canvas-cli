@@ -27,8 +27,8 @@ canvas assignments list --course-id 123 \
   --filter "exam" --columns id,name,due_at --sort -due_at -o csv > exams.csv
 ```
 
-`--limit N` caps how many records list commands return — use it on
-account-level lists, which can be enormous.
+`--limit N` caps how many records a list command returns — use it when you
+only need a sample, and to keep a long roster or submission list out of chat.
 
 ## When to use jq instead
 
@@ -42,7 +42,7 @@ canvas courses list -o json | jq '.[].id'
 canvas courses list -o json | jq '.[] | select(.enrollment_term_id == 5)'
 
 # Counting
-canvas users list --course-id 123 -o json | jq length
+canvas users list --course-id 123 --enrollment-type student -o json | jq length
 
 # Reshaping
 canvas submissions list --course-id 123 --assignment-id 456 -o json \
@@ -56,12 +56,12 @@ post-filtering — check `canvas <resource> list --help`. Examples:
 
 ```bash
 canvas courses list --enrollment-type teacher --state available
-canvas courses list --account-id 1 --search "Biology"
-canvas assignments list --course-id 123 --bucket upcoming
-canvas submissions list --course-id 123 --assignment-id 456 --workflow-state graded
+canvas courses list --include syllabus_body,term        # extra fields from the API
+canvas assignments list --course-id 123 --filter "exam"
+canvas submissions list --course-id 123 --assignment-id 456 --workflow-state submitted
+canvas submissions list --course-id 123 --assignment-id 456 --include submission_comments
 canvas users list --course-id 123 --enrollment-type student
-canvas users list --search "john" --limit 50
-canvas courses list --include syllabus_body,term       # extra fields from the API
+canvas quizzes list --course-id 123 --search "midterm"
 ```
 
 ## Script hygiene

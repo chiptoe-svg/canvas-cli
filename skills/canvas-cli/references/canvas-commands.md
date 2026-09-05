@@ -1,7 +1,9 @@
-# Canvas CLI — command cheatsheet
+# Command surface
 
-Condensed reference loaded on demand by the `canvas-cli` skill. Authoritative
-docs: https://jjuanrivvera.github.io/canvas-cli/
+Every command group in the faculty build and its subcommands, from
+`canvas <group> --help`. This is the whole tool: if something is not here, the
+binary does not have it. Flags are not listed — read them from
+`canvas <group> <sub> --help` rather than guessing.
 
 ## Global flags (any command)
 
@@ -14,100 +16,92 @@ docs: https://jjuanrivvera.github.io/canvas-cli/
 | `--limit N` | Cap list results (0 = unlimited) |
 | `--instance NAME` | Use a specific configured Canvas instance |
 | `--dry-run` | Print the request as a curl command, send nothing |
-| `--show-token` | Don't redact auth in `--dry-run` output |
+| `--show-token` | Do not redact auth in `--dry-run` output |
 | `--no-cache` | Bypass the response cache |
-| `--as-user ID` | Masquerade as another user (admin permission required) |
 | `--quiet` | Data and errors only (for scripts) |
 | `-v, --verbose` | Debug logging to stderr |
 
-## Meta commands
+## Teaching and content
 
-```bash
-canvas version
-canvas doctor                                   # install/auth/connectivity diagnostics
-canvas auth login | status | logout
-canvas auth token set <instance> [--url URL] [--token T] | remove <instance>
-canvas config add <name> --url URL | list | use <name> | show | remove <name>
-canvas context set course|assignment|user|account <id> | show | clear [type]
-canvas alias set <name> "<expansion>" | list | delete <name>
-canvas cache stats | clear
-canvas completion bash|zsh|fish|powershell
-canvas repl                                     # interactive shell
-canvas mcp start | stream | tools | claude|cursor|vscode enable
-canvas skills install [--global] [--agent claude|cursor|…] | path | print
-canvas update check | status
-```
-
-## Resources and notable actions
-
-| Resource | Actions beyond list/get/create/update/delete |
+| Group | Subcommands |
 |---|---|
-| `courses` | — (admin listing via `--account-id`) |
-| `assignments` | `--bucket upcoming\|overdue\|past…`, `--json file` / `--stdin` bodies, `upcoming --course-id N\|--all-active (--within 10d\|--by DATE) [--include-undated] [-o markdown]` (read-only, local time) |
-| `assignment-groups` | — |
-| `overrides` | per-assignment date/audience overrides |
-| `submissions` | `download` (all attempts), `grade`, `bulk-grade --csv`, `comments`, `add-comment`, `delete-comment`, `missing` (read-only report), `excuse --student NAME\|ID --assignment NAME\|ID [--unexcuse]` (read-back) |
-| `grades` | `history`, `feed`, `columns {list\|create\|update\|delete\|data}` |
-| `modules` | `publish`, `unpublish`, `relock`, `items {list\|get\|create\|update\|delete\|done}` |
-| `pages` | `front`, `duplicate`, `revisions`, `revert` |
-| `schedule` | one command: `--course-id N (--id ID \| --match TEXT) [--type quiz\|assignment\|all] --available/--due/--closed <local time> [--date D] [--clear f] [--dry-run] [--force]` |
-| `quizzes` | `questions {…}`, `submissions {list\|get\|update}`, `regrade` |
-| `discussions` | `entries`, `post`, `reply`, `subscribe`, `unsubscribe` |
-| `announcements` | — |
-| `users` | `me`, `search <term>` |
-| `enrollments` | `accept`, `reject`, `conclude`, `reactivate` |
-| `sections` | `crosslist`, `uncrosslist` |
-| `groups` | `members {add\|list\|remove}`, `categories {…}` |
-| `conversations` | `reply`, `archive`, `star`, `mark-read`, `unread-count` |
-| `files` | `upload <path>`, `download <id>`, `quota` |
-| `calendar` | `reserve` (appointment slots) |
-| `rubrics` | `create --criteria-file FILE`, `update ID --criteria-file FILE` (JSON: array of `{description, long_description, points, ratings:[{description, points}]}` or the `get -o json` object; update replaces every row), `associate` |
-| `outcomes` | `groups`, `link`, `unlink`, `results`, `alignments` |
-| `peer-reviews` | — |
-| `analytics` | `activity`, `assignments`, `students`, `user`, `department` |
-| `accounts` | `sub` (sub-accounts) |
-| `admins` | `add`, `remove` |
-| `roles` | `activate`, `deactivate` |
-| `blueprint` | `associations {add\|list\|remove}`, `sync`, `migrations`, `changes` |
-| `content-migrations` | `migrators`, `issues`, `content` |
-| `sis-imports` | `errors`, `abort`, `restore` |
-| `external-tools` | `launch` |
-| `sync` | `course`, `assignments` (cross-instance) |
-| `api` | raw `GET\|POST\|PUT\|DELETE\|PATCH /api/v1/…` with `-d`, `-q`, `--paginate` |
-| `webhook` | `listen`, `events` |
+| `courses` | `create` `delete` `get` `list` `update`, `settings {get\|late-policy\|permissions\|tabs\|todo\|recent-students\|effective-due-dates}` |
+| `course-features` | `list` `get-flag` `set-flag` `delete-flag` `enabled` |
+| `assignments` | `create` `delete` `get` `list` `update` `upcoming` |
+| `assignment-groups` | `create` `delete` `get` `list` `update` |
+| `schedule` | (no subcommands) available/due/closed times, by `--id` or `--match`, local time |
+| `overrides` | `create` `delete` `get` `list` `update` |
+| `modules` | `create` `delete` `get` `list` `update` `publish` `unpublish` `relock`, `items {…}` |
+| `pages` | `create` `delete` `duplicate` `front` `get` `list` `revert` `revisions` `update` |
+| `quizzes` | `create` `delete` `get` `list` `update` `questions` `groups` `submissions` `reports` `statistics` `regrade` `extensions` `ip-filters` `assignment-overrides` |
+| `discussions` | `create` `delete` `get` `list` `update` `entries` `entry-list` `post` `reply` `replies` `update-entry` `delete-entry` `rate-entry` `reorder` `duplicate` `subscribe` `unsubscribe` `view` `mark-read` `mark-unread` `mark-all-read` `mark-entry-read` `mark-entry-unread` `mark-entries-read` `mark-entries-unread` |
+| `announcements` | `create` `delete` `get` `list` `update` |
+| `rubrics` | `create` `delete` `get` `list` `update` `associate` |
+| `rubric-associations` | `assess` `update` `delete` `delete-assessment` |
+| `outcomes` | `create` `get` `list` `update` `groups` `link` `unlink` `results` `alignments` |
+| `peer-reviews` | `create` `delete` `list` |
+| `collaborations` | `list` `members` |
 
-## Common ID-scoping flags
+## Grading
 
-Most course-scoped commands take `--course-id`; only `assignments list`/`get`
-inherit it from `canvas context set course N`. Submission commands additionally
-take `--assignment-id` and `--user-id`. Admin commands take `--account-id`.
+| Group | Subcommands |
+|---|---|
+| `submissions` | `list` `get` `grade` `bulk-grade` `excuse` `missing` `download` `comments` `add-comment` `delete-comment` |
+| `grades` | `columns` `feed` `history` `history-day` `history-submissions` |
+| `grading-periods` | `list` `get` `update` `delete` |
+| `grading-standards` | `create` `delete` `get` `list` |
+| `course-extensions` | `quiz` `assignment` |
 
-## Body input (create/update)
+## People
 
-Flag-based fields are the norm (`--name`, `--points`, `--due-at …`). Where
-supported (e.g. assignments), JSON bodies work too:
+| Group | Subcommands |
+|---|---|
+| `users` | `list` `get` `me` `profile` `search` `todo` `upcoming-events` `activity-stream` `missing-submissions` |
+| `enrollments` | `create` `get` `list` `accept` `reject` `conclude` `reactivate` |
+| `sections` | `create` `delete` `get` `list` `update` `crosslist` `uncrosslist` |
+| `groups` | `create` `create-standalone` `delete` `get` `list` `update` `members` `memberships` `users` `invite` `categories` `permissions` `tabs` `activity-stream` `assignment-override` `collaborations` `conferences` `content-exports` `external-feeds` |
+| `conversations` | `create` `get` `list` `reply` `delete` `add-recipients` `archive` `unarchive` `star` `unstar` `mark-read` `mark-all-read` `unread-count` |
+| `appointment-groups` | `create` `delete` `get` `list` `update` `groups` `users` `next` |
+| `analytics` | `activity` `assignments` `students` `user` `department` |
 
-```bash
-canvas assignments create --course-id 123 --json assignment.json
-echo '{"name":"Quiz","points_possible":10}' | canvas assignments create --course-id 123 --stdin
-```
+## Files, calendar, content transfer
 
-## Quick recipes
+| Group | Subcommands |
+|---|---|
+| `files` | `list` `get` `upload` `download` `copy` `delete` `quota` `licenses` `set-usage-rights` `remove-usage-rights` `reset-verifier` |
+| `folders` | `create` `list` `get` `update` `delete` `copy` `media` `resolve-path` |
+| `calendar` | `create` `delete` `get` `list` `update` `reserve` |
+| `content-exports` | `create` `get` `list` `epub-create` `epub-get` |
+| `content-migrations` | `create` `get` `list` `content` `issues` `migrators` |
+| `content-shares` | `list-sent` `list-received` `get` `delete` |
 
-```bash
-# Roster export
-canvas users list --course-id 123 --enrollment-type student -o csv > students.csv
+## Tool itself
 
-# Find ungraded submissions
-canvas submissions list --course-id 123 --assignment-id 456 --workflow-state submitted
+| Group | Subcommands |
+|---|---|
+| `auth` | `login` `logout` `status` `token` |
+| `config` | `add` `list` `show` `use` `remove` `account` |
+| `context` | `set` `show` `clear` |
+| `doctor` | (no subcommands) install, config, auth and connectivity diagnostics |
+| `api` | `get` only — read-only raw GET, response wrapped under `.body` |
+| `activity` | `list` `archive` `clear` `configure` `path` |
+| `agent` | `guard` — generate permission rules and hooks for an AI agent host |
+| `alias` | `set` `list` `delete` |
+| `cache` | `stats` `clear` |
+| `skills` | `install` `path` `print` |
+| `update` | `check` `status` `enable` `disable` |
+| `completion` | shell completion for bash, zsh, fish, powershell |
+| `version` | (no subcommands) prints the build; the audited one ends `+audited.<n>` |
 
-# Upcoming assignments sorted by due date
-canvas assignments list --course-id 123 --bucket upcoming --sort due_at
+## Scoping
 
-# Publish all of a course's modules (script over JSON)
-canvas modules list --course-id 123 -o json | jq -r '.[].id' \
-  | xargs -I{} canvas modules publish --course-id 123 {}
+Course-scoped commands take `--course-id`. Submission commands add
+`--assignment-id` and `--user-id`. `canvas context set course 12345` fills
+`--course-id` for `assignments list` and `assignments get` only — everywhere
+else pass it explicitly, and run `canvas context show` before acting, because a
+stale context silently targets the wrong course.
 
-# Cross-instance course copy
-canvas sync course prod 12345 staging 67890 --interactive
-```
+There is no account administration in this build: no `accounts`, `admins`,
+`roles`, `sis-imports`, `enrollment-terms`, or `developer-keys`, and no way to
+create a Canvas user. `canvas courses list --account-id` and `--as-user` still
+exist as flags but need admin rights the instructor does not have.
