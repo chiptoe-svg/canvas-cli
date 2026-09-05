@@ -125,7 +125,6 @@ type Client struct {
 	baseURL        string
 	token          string             // Static token (used if tokenSource is nil)
 	tokenSource    oauth2.TokenSource // Auto-refreshing token source (preferred)
-	asUserID       int64              // For admin masquerading
 	rateLimiter    *AdaptiveRateLimiter
 	retryPolicy    *RetryPolicy
 	version        *CanvasVersion
@@ -214,7 +213,6 @@ type ClientConfig struct {
 	RequestsPerSec float64
 	Timeout        time.Duration
 	Logger         *slog.Logger
-	AsUserID       int64 // For admin masquerading (appends as_user_id param)
 	Cache          cache.CacheInterface
 	CacheEnabled   bool
 	UserAgent      string // User-Agent header for API requests (required by Canvas)
@@ -285,7 +283,6 @@ func NewClient(config ClientConfig) (*Client, error) {
 		baseURL:      config.BaseURL,
 		token:        config.Token,
 		tokenSource:  config.TokenSource,
-		asUserID:     config.AsUserID,
 		rateLimiter:  NewAdaptiveRateLimiter(config.RequestsPerSec),
 		retryPolicy:  retryPolicy,
 		logger:       config.Logger,
@@ -379,18 +376,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 		return nil, err
 	}
 
-	// Build full URL with masquerade parameter if set
 	fullURL := c.baseURL + path
-	if c.asUserID > 0 {
-		// Append as_user_id for masquerading
-		parsedURL, err := url.Parse(fullURL)
-		if err == nil {
-			query := parsedURL.Query()
-			query.Set("as_user_id", strconv.FormatInt(c.asUserID, 10))
-			parsedURL.RawQuery = query.Encode()
-			fullURL = parsedURL.String()
-		}
-	}
 
 	// Buffer the body once so each retry attempt gets a fresh reader.
 	// Retrying with the same io.Reader would send an empty body on the second
@@ -542,11 +528,8 @@ func (c *Client) GetQuotaTotal() float64 {
 
 // cacheKey generates a unique cache key for the given path
 func (c *Client) cacheKey(path string) string {
-	// Include base URL and masquerade user to ensure unique keys per instance/user
+	// Include base URL to ensure unique keys per instance
 	key := c.baseURL + path
-	if c.asUserID > 0 {
-		key += fmt.Sprintf(":as_user:%d", c.asUserID)
-	}
 
 	// Hash the key to avoid issues with special characters — MD5 is used as a
 	// fast hash to create a cache key, not for any cryptographic purpose.

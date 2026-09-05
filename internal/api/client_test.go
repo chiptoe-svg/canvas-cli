@@ -420,52 +420,6 @@ func TestClient_CacheKey(t *testing.T) {
 	}
 }
 
-func TestClient_CacheKey_WithMasquerade(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v1/accounts" {
-			w.Write([]byte(`[]`))
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer server.Close()
-
-	testCache := cache.New(5 * time.Minute)
-
-	// Client without masquerade
-	client1, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-		Cache:          testCache,
-		CacheEnabled:   true,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client1: %v", err)
-	}
-
-	// Client with masquerade
-	client2, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "test-token",
-		RequestsPerSec: 10,
-		AsUserID:       999,
-		Cache:          testCache,
-		CacheEnabled:   true,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client2: %v", err)
-	}
-
-	key1 := client1.cacheKey("/api/v1/courses/123")
-	key2 := client2.cacheKey("/api/v1/courses/123")
-
-	// Keys should be different when masquerading
-	if key1 == key2 {
-		t.Errorf("Keys should differ when masquerading: %s == %s", key1, key2)
-	}
-}
-
 func TestClient_SetQuotaTotal(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/accounts" {

@@ -266,7 +266,7 @@ func touchedFromCommand(cmd *cobra.Command, recorder *activity.Recorder) []activ
 		switch {
 		case f.Name == "question":
 			typ = "question"
-		case strings.HasSuffix(f.Name, "-id") && f.Name != "as-user":
+		case strings.HasSuffix(f.Name, "-id"):
 			typ = strings.TrimSuffix(f.Name, "-id")
 		default:
 			return

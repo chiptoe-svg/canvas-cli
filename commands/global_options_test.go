@@ -48,7 +48,6 @@ func TestGetGlobalOptions_WithValues(t *testing.T) {
 	origNoCache := noCache
 	origDryRun := dryRun
 	origLimit := globalLimit
-	origAsUser := asUserID
 	origFilter := filterText
 	origSort := sortField
 	defer func() {
@@ -57,7 +56,6 @@ func TestGetGlobalOptions_WithValues(t *testing.T) {
 		noCache = origNoCache
 		dryRun = origDryRun
 		globalLimit = origLimit
-		asUserID = origAsUser
 		filterText = origFilter
 		sortField = origSort
 	}()
@@ -67,7 +65,6 @@ func TestGetGlobalOptions_WithValues(t *testing.T) {
 	noCache = true
 	dryRun = true
 	globalLimit = 50
-	asUserID = 99
 	filterText = "test"
 	sortField = "-name"
 
@@ -86,9 +83,6 @@ func TestGetGlobalOptions_WithValues(t *testing.T) {
 	}
 	if opts.Limit != 50 {
 		t.Errorf("expected Limit=50, got %d", opts.Limit)
-	}
-	if opts.AsUserID != 99 {
-		t.Errorf("expected AsUserID=99, got %d", opts.AsUserID)
 	}
 	if opts.FilterText != "test" {
 		t.Errorf("expected FilterText=test, got %q", opts.FilterText)

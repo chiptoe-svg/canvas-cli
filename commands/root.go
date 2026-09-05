@@ -18,12 +18,11 @@ var (
 	instanceURL  string
 	outputFormat string
 	verbose      bool
-	noCache      bool  // Disable caching for API requests
-	asUserID     int64 // Masquerading: act as another user
-	globalLimit  int   // Global limit for list operations
-	dryRun       bool  // Print curl commands instead of executing
-	showToken    bool  // Show actual token in dry-run output
-	quiet        bool  // Suppress informational messages
+	noCache      bool // Disable caching for API requests
+	globalLimit  int  // Global limit for list operations
+	dryRun       bool // Print curl commands instead of executing
+	showToken    bool // Show actual token in dry-run output
+	quiet        bool // Suppress informational messages
 	version      string
 	commit       string
 	buildDate    string
@@ -124,7 +123,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&instanceURL, "instance", "", "Canvas instance URL (overrides config)")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "Output format: table, json, yaml, csv")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
-	rootCmd.PersistentFlags().Int64Var(&asUserID, "as-user", 0, "Masquerade as another user (admin feature, requires permission)")
 
 	rootCmd.PersistentFlags().BoolVar(&noCache, "no-cache", false, "Disable caching of API responses")
 	rootCmd.PersistentFlags().IntVar(&globalLimit, "limit", 0, "Limit number of results for list operations (0 = unlimited)")
@@ -142,7 +140,6 @@ func init() {
 	viper.BindPFlag("instance", rootCmd.PersistentFlags().Lookup("instance")) // #nosec G104 -- flag registered above, cannot fail
 	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))     // #nosec G104 -- flag registered above, cannot fail
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))   // #nosec G104 -- flag registered above, cannot fail
-	viper.BindPFlag("as-user", rootCmd.PersistentFlags().Lookup("as-user"))   // #nosec G104 -- flag registered above, cannot fail
 	viper.BindPFlag("no-cache", rootCmd.PersistentFlags().Lookup("no-cache")) // #nosec G104 -- flag registered above, cannot fail
 }
 

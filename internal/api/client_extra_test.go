@@ -85,35 +85,6 @@ func TestClient_GetToken_TokenSourceError(t *testing.T) {
 	}
 }
 
-func TestClient_AsUserID_MasqueradeParam(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v1/accounts" {
-			handleVersionDetection(w)
-			return
-		}
-		if r.URL.Query().Get("as_user_id") != "777" {
-			t.Errorf("expected as_user_id=777, got %q", r.URL.Query().Get("as_user_id"))
-		}
-		json.NewEncoder(w).Encode([]Course{{ID: 1}})
-	}))
-	defer server.Close()
-
-	client, err := NewClient(ClientConfig{
-		BaseURL:        server.URL,
-		Token:          "t",
-		AsUserID:       777,
-		RequestsPerSec: 10,
-	})
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
-
-	var courses []Course
-	if err := client.GetAllPages(context.Background(), "/api/v1/courses", &courses); err != nil {
-		t.Fatalf("GetAllPages with masquerade: %v", err)
-	}
-}
-
 func TestClient_GetAllPagesGeneric_Pagination(t *testing.T) {
 	page1Called := false
 	page2Called := false

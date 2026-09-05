@@ -10,7 +10,6 @@ type GlobalOptions struct {
 	Verbose       bool
 	Quiet         bool
 	NoCache       bool
-	AsUserID      int64
 	Limit         int
 	DryRun        bool
 	ShowToken     bool
@@ -28,7 +27,6 @@ func GetGlobalOptions() *GlobalOptions {
 		Verbose:       verbose,
 		Quiet:         quiet,
 		NoCache:       noCache,
-		AsUserID:      asUserID,
 		Limit:         globalLimit,
 		DryRun:        dryRun,
 		ShowToken:     showToken,

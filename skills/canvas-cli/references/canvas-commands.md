@@ -103,5 +103,5 @@ stale context silently targets the wrong course.
 
 There is no account administration in this build: no `accounts`, `admins`,
 `roles`, `sis-imports`, `enrollment-terms`, or `developer-keys`, and no way to
-create a Canvas user. `canvas courses list --account-id` and `--as-user` still
-exist as flags but need admin rights the instructor does not have.
+create a Canvas user. `canvas courses list --account-id` still exists as a
+flag but needs admin rights the instructor does not have.

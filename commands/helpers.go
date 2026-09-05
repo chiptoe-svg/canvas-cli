@@ -67,7 +67,6 @@ func getAPIClient() (*api.Client, error) {
 			BaseURL:             envURL,
 			Token:               envToken,
 			RequestsPerSec:      requestsPerSec,
-			AsUserID:            asUserID,
 			Cache:               apiCache,
 			CacheEnabled:        cacheEnabled,
 			UserAgent:           getUserAgent(),
@@ -150,7 +149,6 @@ func getAPIClient() (*api.Client, error) {
 			BaseURL:        instance.URL,
 			Token:          secureAPIToken,
 			RequestsPerSec: cfg.Settings.RequestsPerSecond,
-			AsUserID:       asUserID,
 			Cache:          apiCache,
 			CacheEnabled:   cacheEnabled,
 			UserAgent:      getUserAgent(),
@@ -168,7 +166,6 @@ func getAPIClient() (*api.Client, error) {
 			BaseURL:        instance.URL,
 			Token:          instance.Token,
 			RequestsPerSec: cfg.Settings.RequestsPerSecond,
-			AsUserID:       asUserID,
 			Cache:          apiCache,
 			CacheEnabled:   cacheEnabled,
 			UserAgent:      getUserAgent(),
@@ -197,7 +194,6 @@ func getAPIClient() (*api.Client, error) {
 				BaseURL:        instance.URL,
 				TokenSource:    tokenSource,
 				RequestsPerSec: cfg.Settings.RequestsPerSecond,
-				AsUserID:       asUserID,
 				Cache:          apiCache,
 				CacheEnabled:   cacheEnabled,
 				UserAgent:      getUserAgent(),
@@ -211,7 +207,6 @@ func getAPIClient() (*api.Client, error) {
 				BaseURL:        instance.URL,
 				Token:          token.AccessToken,
 				RequestsPerSec: cfg.Settings.RequestsPerSecond,
-				AsUserID:       asUserID,
 				Cache:          apiCache,
 				CacheEnabled:   cacheEnabled,
 				UserAgent:      getUserAgent(),
@@ -226,11 +221,6 @@ func getAPIClient() (*api.Client, error) {
 	client, err := api.NewClient(clientConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
-	}
-
-	// Show masquerading warning if active
-	if asUserID > 0 && verbose {
-		fmt.Fprintf(os.Stderr, "WARNING: Masquerading as user %d. All actions will be recorded in the audit log.\n", asUserID)
 	}
 
 	if verbose && cacheEnabled {

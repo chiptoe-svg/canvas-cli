@@ -156,7 +156,7 @@ func TestGenerateCurl_EmptyBody(t *testing.T) {
 func TestGenerateCurl_URLWithQueryParams(t *testing.T) {
 	opts := CurlOptions{
 		Method: "GET",
-		URL:    "https://canvas.example.com/api/v1/courses?as_user_id=999&include[]=term",
+		URL:    "https://canvas.example.com/api/v1/courses?state[]=available&include[]=term",
 		Headers: []Header{
 			{Key: "Authorization", Value: "Bearer test-token"},
 		},
@@ -166,7 +166,7 @@ func TestGenerateCurl_URLWithQueryParams(t *testing.T) {
 	result := GenerateCurl(opts)
 
 	// Check URL with query params is preserved
-	if !strings.Contains(result, "as_user_id=999") {
+	if !strings.Contains(result, "state[]=available") {
 		t.Errorf("Expected query parameter preserved, got: %s", result)
 	}
 	if !strings.Contains(result, "include[]=term") {

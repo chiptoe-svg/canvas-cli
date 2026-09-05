@@ -134,8 +134,3 @@ release:
     with the Go version in `go.mod` produces the same bytes as the archive here.
   extra_files:
     - glob: ./install.sh
-
-# homebrew_casks (not the deprecated `brews`): casks are the modern GoReleaser path for a
-# pre-built binary and match the rest of the fleet. NOTE: this switches the tap artifact from a
-# Formula to a Cask — delete the stale Formula/canvas-cli.rb from homebrew-canvas-cli after the
-# first cask release, or brew sees a formula+cask name collision.
