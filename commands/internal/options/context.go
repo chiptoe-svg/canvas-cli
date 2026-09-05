@@ -25,7 +25,7 @@ func (o *ContextSetOptions) Validate() error {
 		}
 	}
 	if !isValid {
-		return fmt.Errorf("unknown context type %q. Valid types: course, assignment, user, account", o.Type)
+		return fmt.Errorf("unknown context type %q. Valid types: course, assignment, user", o.Type)
 	}
 	return nil
 }
@@ -59,7 +59,7 @@ func (o *ContextClearOptions) Validate() error {
 		}
 	}
 	if !isValid {
-		return fmt.Errorf("unknown context type %q. Valid types: course, assignment, user, account", o.Type)
+		return fmt.Errorf("unknown context type %q. Valid types: course, assignment, user", o.Type)
 	}
 	return nil
 }

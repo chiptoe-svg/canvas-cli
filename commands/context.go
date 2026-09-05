@@ -22,7 +22,7 @@ func newContextCmd() *cobra.Command {
 		Long: `Manage the current working context for Canvas CLI.
 
 Context allows you to store default values for course_id, assignment_id,
-user_id, and account_id. Commands that support context use the stored value
+and user_id. Commands that support context use the stored value
 when the corresponding flag is not provided.
 
 Currently 'canvas assignments list' and 'canvas assignments get' use the
@@ -165,7 +165,7 @@ func runContextShow(ctx context.Context, opts *options.ContextShowOptions) error
 	if ctxVal.CourseID == 0 && ctxVal.AssignmentID == 0 && ctxVal.UserID == 0 {
 		fmt.Println("No context set.")
 		fmt.Println("\nSet context with: canvas context set <type> <id>")
-		fmt.Println("Valid types: course, assignment, user, account")
+		fmt.Println("Valid types: course, assignment, user")
 		logger.LogCommandComplete(ctx, "context.show", 0)
 		return nil
 	}

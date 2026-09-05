@@ -16,7 +16,7 @@ import (
 var analyticsCmd = &cobra.Command{
 	Use:   "analytics",
 	Short: "View Canvas analytics",
-	Long: `View analytics data for courses, students, and departments.
+	Long: `View analytics data for courses and students.
 
 Analytics provide insights into participation, assignment performance,
 and engagement metrics.
