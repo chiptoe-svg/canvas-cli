@@ -43,10 +43,12 @@ Open pull requests against `main`.
 ## Before you push
 
 ```bash
-make check    # vet, lint, security, tests, coverage gate, spec checks
+make check    # go vet, golangci-lint, gofmt, gosec if installed,
+              # go test -race, and the integration tests
 ```
 
-CI runs the same things plus the OS matrix. A red `make check` is a red PR.
+CI runs those plus the OS matrix, govulncheck, and the ≥80% coverage gate. A
+red `make check` is a red PR, but a green one is not the whole of CI.
 
 New code needs tests: a new command needs cmdtest coverage of its run function
 *and* its option struct's `Validate()`, or the ≥80% total coverage gate drops.

@@ -48,23 +48,22 @@ from any other workflow, repository or ref fails it.
 
 ### Reproduce the build
 
-Builds use `-trimpath` and take the build date from the commit, so the same tag
-and the Go version in [`go.mod`](go.mod) (1.25.13) produce the same bytes:
+Builds use `-trimpath` and take the build date from the commit, so the tag plus
+the Go version in [`go.mod`](go.mod) reproduce the released bytes exactly:
 
 ```bash
 TAG=v1.13.0+audited.1     # the tag you are checking
 git clone --depth 1 --branch "$TAG" https://github.com/chiptoe-svg/canvas-cli.git
 cd canvas-cli
-CGO_ENABLED=0 go build -trimpath \
+CGO_ENABLED=0 GOTOOLCHAIN=go1.25.13 go build -trimpath \
   -ldflags "-s -w -X main.Version=${TAG#v} \
             -X main.Commit=$(git rev-parse HEAD) \
-            -X main.BuildDate=$(TZ=UTC0 git log -1 --format=%cd --date=format:%Y-%m-%dT%H:%M:%SZ)" \
+            -X main.BuildDate=$(TZ=UTC0 git log -1 --format=%cd --date=format-local:%Y-%m-%dT%H:%M:%SZ)" \
   ./cmd/canvas
 shasum -a 256 canvas
 ```
 
-Compare that digest with the `canvas` binary unpacked from the release archive
-for your platform (`GOOS`/`GOARCH` to build for another).
+Compare it with `canvas` from the release archive (`GOOS`/`GOARCH` for others).
 
 ## First five commands
 
@@ -76,18 +75,17 @@ canvas submissions missing --course-id 123              # who is missing work
 canvas users todo                                       # your grading to-do
 ```
 
-`canvas <group> --help` and `canvas <group> <sub> --help` are the authoritative
-flag reference; nothing else claims to be.
+`canvas <group> <sub> --help` is the authoritative flag reference.
 
 ## What it does
 
 | Group | What it covers |
 |---|---|
-| `courses` | list, get, update, and `courses settings` |
+| `courses` | list, get, create, update, delete, and `courses settings` |
 | `assignments`, `assignment-groups`, `overrides` | assignments, their groups, per-student and per-section overrides, `upcoming` |
 | `submissions` | list, get, download, grade, bulk-grade, comments, `missing`, `excuse` |
 | `grades` | grade-change history, the gradebook feed, custom columns |
-| `grading-periods`, `grading-standards` | course-level reads and course-level create |
+| `grading-periods`, `grading-standards` | course-level reads; `grading-periods` updates and deletes, `grading-standards` creates and deletes |
 | `rubrics`, `rubric-associations` | build rubrics and attach them to assignments |
 | `quizzes` | quizzes, questions, submissions, `regrade`, `extensions`, `statistics`, `reports` |
 | `course-extensions` | quiz and assignment accommodations for a named student |
@@ -131,9 +129,10 @@ cannot drift without a reviewed commit.
   canvas activity list --writes -o json  # every invocation that changed something
   ```
 
-  By default only writes are recorded, and the values of `--comment`, `--text`,
-  `--message`, `--body` and `--student` are replaced by `[REDACTED]` — the log
-  says who was graded and what score was posted, not what the feedback said.
+  By default only writes are recorded, and the values of `--comment`,
+  `--rubric-comment`, `--text`, `--message`, `--body` and `--student` are
+  replaced by `[REDACTED]` — the log says who was graded and what score was
+  posted, not what the feedback said.
   `configure --capture-bodies` keeps the payloads too; that file then holds
   student-directed text, so keep it where only you can read it. A write whose
   response was lost is always logged with `"verification_required": true`,
@@ -185,7 +184,8 @@ verify all of it with the commands under [Install or update](#install-or-update)
 ```bash
 make build    # bin/canvas
 make test     # the full suite
-make check    # everything CI runs: vet, lint, security, tests, coverage gate
+make check    # go vet, golangci-lint, gofmt, gosec if installed,
+              # go test -race, and the integration tests
 ```
 
 `main` is the development branch. `release/audited` is what faculty install:
