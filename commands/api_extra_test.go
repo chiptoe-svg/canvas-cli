@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
 )
 
@@ -35,116 +37,21 @@ func runAPICmdTest(t *testing.T, tc cmdtest.CommandTestCase) {
 	cmdtest.RunCommandTest(t, rootCmd, tc)
 }
 
-func TestAPICmd_GetRequest(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "GET request returns data",
-			Args: prependAPI([]string{"GET", "/api/v1/courses"}),
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts": accountsMockResponse,
-				"/api/v1/courses":  cmdtest.NewMockResponse(`[{"id":1,"name":"Test Course"}]`),
-			},
-			ExpectError: false,
-			ValidateOutput: func(t *testing.T, output string) {
-				if !strings.Contains(output, "Test Course") && !strings.Contains(output, "status_code") {
-					t.Errorf("expected 'Test Course' or 'status_code' in output, got: %s", output)
-				}
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			runAPICmdTest(t, tc)
-		})
-	}
-}
-
-func TestAPICmd_PostRequest(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "POST request with JSON body",
-			Args: prependAPI([]string{"POST", "/api/v1/courses", "--data", `{"course":{"name":"New Course"}}`}),
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts": accountsMockResponse,
-				"/api/v1/courses":  cmdtest.NewMockResponse(`{"id":99,"name":"New Course"}`),
-			},
-			ExpectError: false,
-			ValidateOutput: func(t *testing.T, output string) {
-				if !strings.Contains(output, "status_code") && !strings.Contains(output, "99") {
-					t.Errorf("expected status or ID in output, got: %s", output)
-				}
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			runAPICmdTest(t, tc)
-		})
-	}
-}
-
-func TestAPICmd_InvalidMethod(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name:          "unsupported HTTP method",
-			Args:          prependAPI([]string{"TRACE", "/api/v1/courses"}),
-			MockResponses: map[string]cmdtest.MockResponse{},
-			ExpectError:   true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			runAPICmdTest(t, tc)
-		})
-	}
-}
-
-func TestAPICmd_InvalidJSONBody(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "invalid JSON in --data",
-			Args: prependAPI([]string{"POST", "/api/v1/courses", "--data", `not-json`}),
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts": accountsMockResponse,
-			},
-			ExpectError: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			runAPICmdTest(t, tc)
-		})
-	}
-}
-
-func TestAPICmd_BothDataFlags(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "cannot use both --data and --data-file",
-			Args: prependAPI([]string{"POST", "/api/v1/courses", "--data", `{}`, "--data-file", "some.json"}),
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts": accountsMockResponse,
-			},
-			ExpectError: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			runAPICmdTest(t, tc)
-		})
-	}
+// TestAPICmd_HasNoWritePath pins that "canvas api" is a pure command group:
+// no RunE of its own, only "get" registered, and no body flags.
+func TestAPICmd_HasNoWritePath(t *testing.T) {
+	cmd := newAPICmd()
+	assert.Nil(t, cmd.RunE, "the api parent must not execute requests itself")
+	assert.Equal(t, []string{"get"}, commandNames(cmd))
+	assert.Nil(t, cmd.Flags().Lookup("data"))
+	assert.Nil(t, cmd.Flags().Lookup("data-file"))
 }
 
 func TestAPICmd_QueryParams(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "GET with query params",
-			Args: prependAPI([]string{"GET", "/api/v1/courses", "-q", "per_page=10"}),
+			Args: prependAPI([]string{"get", "/api/v1/courses", "-q", "per_page=10"}),
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": accountsMockResponse,
 				"/api/v1/courses":  cmdtest.NewMockResponse(`[{"id":1}]`),
@@ -153,7 +60,7 @@ func TestAPICmd_QueryParams(t *testing.T) {
 		},
 		{
 			Name: "invalid query param format",
-			Args: prependAPI([]string{"GET", "/api/v1/courses", "-q", "badformat"}),
+			Args: prependAPI([]string{"get", "/api/v1/courses", "-q", "badformat"}),
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": accountsMockResponse,
 				"/api/v1/courses":  cmdtest.NewMockResponse(`[]`),
@@ -173,7 +80,7 @@ func TestAPICmd_CustomHeaders(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "GET with custom header",
-			Args: prependAPI([]string{"GET", "/api/v1/courses", "-H", "X-Custom:value"}),
+			Args: prependAPI([]string{"get", "/api/v1/courses", "-H", "X-Custom:value"}),
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": accountsMockResponse,
 				"/api/v1/courses":  cmdtest.NewMockResponse(`[]`),
@@ -182,7 +89,7 @@ func TestAPICmd_CustomHeaders(t *testing.T) {
 		},
 		{
 			Name: "invalid header format",
-			Args: prependAPI([]string{"GET", "/api/v1/courses", "-H", "badheader"}),
+			Args: prependAPI([]string{"get", "/api/v1/courses", "-H", "badheader"}),
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": accountsMockResponse,
 				"/api/v1/courses":  cmdtest.NewMockResponse(`[]`),
@@ -202,7 +109,7 @@ func TestAPICmd_RawOutput(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "GET with raw output flag",
-			Args: prependAPI([]string{"GET", "/api/v1/courses", "--raw"}),
+			Args: prependAPI([]string{"get", "/api/v1/courses", "--raw"}),
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": accountsMockResponse,
 				"/api/v1/courses":  cmdtest.NewMockResponse(`[{"id":1}]`),
@@ -227,7 +134,7 @@ func TestAPICmd_ShowHeaders(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{
 			Name: "GET with show-headers flag",
-			Args: prependAPI([]string{"GET", "/api/v1/courses", "--show-headers"}),
+			Args: prependAPI([]string{"get", "/api/v1/courses", "--show-headers"}),
 			MockResponses: map[string]cmdtest.MockResponse{
 				"/api/v1/accounts": accountsMockResponse,
 				"/api/v1/courses":  cmdtest.NewMockResponse(`[]`),
@@ -243,29 +150,8 @@ func TestAPICmd_ShowHeaders(t *testing.T) {
 	}
 }
 
-func TestAPICmd_DeleteRequest(t *testing.T) {
-	tests := []cmdtest.CommandTestCase{
-		{
-			Name: "DELETE request",
-			Args: prependAPI([]string{"DELETE", "/api/v1/courses/1"}),
-			MockResponses: map[string]cmdtest.MockResponse{
-				"/api/v1/accounts":  accountsMockResponse,
-				"/api/v1/courses/1": cmdtest.NewMockResponse(`{"deleted":true}`),
-			},
-			ExpectError: false,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			runAPICmdTest(t, tc)
-		})
-	}
-}
-
-// TestAPIGetCmd_ReadOnly covers the GET-only "canvas api get" sibling (#60):
-// it dispatches, returns data, and — unlike "canvas api" — does not accept a
-// request body.
+// TestAPIGetCmd_ReadOnly covers the GET-only "canvas api get" command (#60):
+// it dispatches, returns data, and does not accept a request body.
 func TestAPIGetCmd_ReadOnly(t *testing.T) {
 	tests := []cmdtest.CommandTestCase{
 		{

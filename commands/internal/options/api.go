@@ -1,9 +1,7 @@
 package options
 
-// APIOptions contains options for the raw API command
+// APIOptions contains options for the read-only "api get" command
 type APIOptions struct {
-	Data        string
-	DataFile    string
 	Query       []string
 	Headers     []string
 	Paginate    bool

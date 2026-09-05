@@ -3,8 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
+	"net/http"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -19,67 +18,25 @@ func init() {
 }
 
 func newAPICmd() *cobra.Command {
-	opts := &options.APIOptions{}
-
 	cmd := &cobra.Command{
-		Use:   "api <METHOD> <PATH>",
-		Short: "Make raw API requests to Canvas",
-		Long: `Make raw API requests to any Canvas API endpoint.
-
-This command provides direct access to the Canvas API for advanced use cases
-or endpoints not yet supported by dedicated commands.
-
-Methods: GET, POST, PUT, DELETE, PATCH, HEAD
+		Use:   "api",
+		Short: "Read any Canvas endpoint this CLI has no command for yet",
+		Long: `Read-only escape hatch: GET any path under /api/v1/ and print the
+JSON. Use it to look at something no command covers; if you need it more
+than once, ask for a command. This CLI cannot write through this path.
 
 Examples:
-  # List all courses
-  canvas api GET /api/v1/courses
-
-  # Create a course (with JSON body)
-  canvas api POST /api/v1/accounts/1/courses -d '{"course":{"name":"Test Course"}}'
-
-  # Search users with query parameters
-  canvas api GET /api/v1/users -q "search_term=john" -q "per_page=50"
-
-  # Update an assignment
-  canvas api PUT /api/v1/courses/123/assignments/456 -d '{"assignment":{"name":"Updated"}}'
-
-  # Delete an assignment
-  canvas api DELETE /api/v1/courses/123/assignments/456
-
-  # Get all pages of a paginated endpoint
-  canvas api GET /api/v1/courses --paginate
-
-  # Read body from file
-  canvas api POST /api/v1/accounts/1/courses --data-file course.json`,
-		Args: ExactArgsWithUsage(2, "method", "path"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getAPIClient()
-			if err != nil {
-				return err
-			}
-			return runAPICommand(cmd, args, client, opts)
-		},
+  canvas api get /api/v1/courses/123/settings
+  canvas api get "/api/v1/courses/123/assignments?bucket=upcoming"`,
 	}
-
-	cmd.Flags().StringVarP(&opts.Data, "data", "d", "", "JSON data for request body")
-	cmd.Flags().StringVar(&opts.DataFile, "data-file", "", "Read JSON data from file")
-	cmd.Flags().StringArrayVarP(&opts.Query, "query", "q", nil, "Query parameters (key=value, repeatable)")
-	cmd.Flags().StringArrayVarP(&opts.Headers, "header", "H", nil, "Custom headers (key:value, repeatable)")
-	cmd.Flags().BoolVar(&opts.Paginate, "paginate", false, "Follow pagination links (GET only)")
-	cmd.Flags().BoolVar(&opts.RawOutput, "raw", false, "Output raw response without formatting")
-	cmd.Flags().BoolVar(&opts.ShowHeaders, "show-headers", false, "Include response headers in output")
-
 	cmd.AddCommand(newAPIGetCmd())
-
 	return cmd
 }
 
-// newAPIGetCmd is a GET-only sibling of "canvas api". Because it can never
+// newAPIGetCmd is the GET-only "canvas api" subcommand. Because it can never
 // mutate state, it is safe to advertise to read-only MCP clients: the shared
 // classifier (classifyCanvasCommand) buckets "api get" as a read, so it carries
-// readOnlyHint=true while the general "canvas api" escape hatch (any HTTP verb)
-// stays unannotated. It gives broad Canvas read coverage from a single tool
+// readOnlyHint=true. It gives broad Canvas read coverage from a single tool
 // schema instead of allowlisting every typed read tool. See issue #60.
 func newAPIGetCmd() *cobra.Command {
 	opts := &options.APIOptions{}
@@ -88,10 +45,6 @@ func newAPIGetCmd() *cobra.Command {
 		Use:   "get <PATH>",
 		Short: "Make a read-only GET request to Canvas",
 		Long: `Make a raw GET request to any Canvas API endpoint.
-
-A GET-only sibling of "canvas api": it never mutates state, so it is exposed to
-read-only MCP clients (it carries the readOnlyHint annotation). For other verbs,
-use "canvas api <METHOD> <PATH>".
 
 Examples:
   # List all courses
@@ -108,8 +61,7 @@ Examples:
 			if err != nil {
 				return err
 			}
-			// Force the method to GET; reuse the shared runner.
-			return runAPICommand(cmd, []string{"GET", args[0]}, client, opts)
+			return runAPICommand(cmd, args[0], client, opts)
 		},
 	}
 
@@ -122,23 +74,14 @@ Examples:
 	return cmd
 }
 
-func runAPICommand(cmd *cobra.Command, args []string, client *api.Client, opts *options.APIOptions) error {
+// runAPICommand performs a read-only GET request against path. It is the
+// shared runner for "canvas api get"; the CLI has no write-capable path.
+func runAPICommand(cmd *cobra.Command, path string, client *api.Client, opts *options.APIOptions) error {
 	logger := logging.NewCommandLogger(verbose)
 	ctx := cmd.Context()
 
-	method := strings.ToUpper(args[0])
-	path := args[1]
-
-	// Validate method
-	switch method {
-	case "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD":
-		// Valid
-	default:
-		return fmt.Errorf("unsupported HTTP method: %s (use GET, POST, PUT, DELETE, PATCH, or HEAD)", method)
-	}
-
 	logger.LogCommandStart(ctx, "api.request", map[string]interface{}{
-		"method": method,
+		"method": http.MethodGet,
 		"path":   path,
 	})
 
@@ -146,50 +89,7 @@ func runAPICommand(cmd *cobra.Command, args []string, client *api.Client, opts *
 
 	// Build request options
 	reqOpts := &api.RawRequestOptions{
-		Paginate: opts.Paginate && method == "GET",
-	}
-
-	// Parse body from --data or --data-file.
-	// Use Flags().Changed() rather than empty-string checks so that stale
-	// values from a previous cobra Execute() call do not leak between tests.
-	dataChanged := cmd.Flags().Changed("data")
-	dataFileChanged := cmd.Flags().Changed("data-file")
-
-	if dataChanged && dataFileChanged {
-		return fmt.Errorf("cannot use both --data and --data-file")
-	}
-
-	if dataChanged {
-		var body interface{}
-		if err := json.Unmarshal([]byte(opts.Data), &body); err != nil {
-			return fmt.Errorf("invalid JSON in --data: %w", err)
-		}
-		reqOpts.Body = body
-	}
-
-	if dataFileChanged {
-		var reader io.Reader
-		if opts.DataFile == "-" {
-			reader = cmd.InOrStdin()
-		} else {
-			file, err := os.Open(opts.DataFile)
-			if err != nil {
-				return fmt.Errorf("failed to open data file: %w", err)
-			}
-			defer file.Close()
-			reader = file
-		}
-
-		data, err := io.ReadAll(reader)
-		if err != nil {
-			return fmt.Errorf("failed to read data file: %w", err)
-		}
-
-		var body interface{}
-		if err := json.Unmarshal(data, &body); err != nil {
-			return fmt.Errorf("invalid JSON in data file: %w", err)
-		}
-		reqOpts.Body = body
+		Paginate: opts.Paginate,
 	}
 
 	// Parse query parameters.
@@ -224,10 +124,10 @@ func runAPICommand(cmd *cobra.Command, args []string, client *api.Client, opts *
 	}
 
 	// Make the request
-	resp, err := service.Request(ctx, method, path, reqOpts)
+	resp, err := service.Request(ctx, http.MethodGet, path, reqOpts)
 	if err != nil {
 		logger.LogCommandError(ctx, "api.request", err, map[string]interface{}{
-			"method": method,
+			"method": http.MethodGet,
 			"path":   path,
 		})
 		return err
