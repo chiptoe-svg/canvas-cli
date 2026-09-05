@@ -8,7 +8,7 @@ someone's education record: the discipline matters as much as the commands.
 ```bash
 canvas users todo                                          # what Canvas says needs grading
 canvas assignments list --course-id 123 --filter "Essay"   # assignment ids
-canvas assignments get 456 --course-id 123 --include rubric -o json
+canvas assignments get 456 --course-id 123 -o json
 canvas submissions list --course-id 123 --assignment-id 456 \
   --workflow-state submitted --include submission_comments,user -o json
 canvas submissions get --course-id 123 --assignment-id 456 --user-id 789 \

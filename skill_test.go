@@ -53,7 +53,10 @@ func TestSkillMentionsOnlyFacultyCommands(t *testing.T) {
 		rubric-associations rubrics schedule sections skills submissions update users version`) {
 		allowed[name] = true
 	}
-	re := regexp.MustCompile("`canvas ([a-z][a-z-]*)")
+	// Both forms count: a backtick-quoted mention in prose, and a command
+	// line at the start of a line inside a ```bash fence — which is where
+	// most of the command lines in the bundle actually live.
+	re := regexp.MustCompile("(?m)(?:`|^\\s*)canvas ([a-z][a-z-]*)")
 	err := fs.WalkDir(SkillFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".md") {
 			return err

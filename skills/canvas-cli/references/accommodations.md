@@ -82,8 +82,9 @@ show them both values before writing, or ask which zone they mean. Getting this
 wrong by a time zone is the most common way an accommodation lands on the wrong
 day.
 
-A student with an override no longer appears under the base due date in
-`canvas assignments upcoming` — that command reports base dates only.
+`canvas assignments upcoming` reports base dates only and does not consult
+overrides, so a student with an extension still shows under the original due
+date there. Read the override back instead of trusting that listing.
 
 ## Confirm it landed
 

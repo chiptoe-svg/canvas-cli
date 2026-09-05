@@ -1,8 +1,7 @@
 # Term setup
 
-Getting a course ready before students arrive: check what the shell already
-holds, move the dates, publish the content, staff the course, and open the
-office-hour calendar.
+Getting a course ready before students arrive: check what the shell holds, move
+the dates, publish the content, staff the course, open the office-hour calendar.
 
 ## Start from what is there
 
@@ -14,18 +13,18 @@ canvas courses settings late-policy --course-id 123
 canvas courses settings tabs --course-id 123
 ```
 
-A course copied from last term keeps the old dates, the old announcements and
-often the old late policy. Read all four before proposing anything, and tell
-the instructor what looks stale rather than fixing it silently. `canvas courses
-settings effective-due-dates --course-id 123` shows the dates Canvas will
-actually apply per student, overrides included.
+A course copied from last term keeps the old dates, announcements and often the
+old late policy. Read all four before proposing anything, and tell the
+instructor what looks stale rather than fixing it silently. `canvas courses
+settings effective-due-dates --course-id 123` shows the dates Canvas will apply
+per student, overrides included.
 
 ## Move the dates
 
 `canvas schedule` sets the three availability times Canvas keeps on quizzes and
 assignments — available from (`unlock_at`), due (`due_at`), closed (`lock_at`)
-— in the instructor's local zone. Pass the wall-clock time they said; never
-convert to UTC yourself. A date-only `--due`/`--closed` means 11:59 PM that
+— in the instructor's local zone. Pass the wall-clock time they said, never a
+UTC conversion of your own. A date-only `--due`/`--closed` means 11:59 PM that
 day; a time-only value applies to each matched item's own date unless `--date`
 moves them all to one day.
 
@@ -50,16 +49,14 @@ in local and UTC, and the exact requests. Show it to the instructor — a
 `--match` that swept in one extra quiz is only cheap to catch there. Without
 `--force`, `--match` prompts anyway. Nothing is written unless available ≤ due
 ≤ closed holds on every item after merging with its current values. Every item
-is read back; done means `yes` under VERIFIED on every row and a summary ending
-`0 mismatched, 0 failed`.
+is read back; done means `yes` under VERIFIED on every row and a summary
+ending `0 mismatched, 0 failed`.
 
 ## Publish the content
 
 ```bash
 canvas modules list --course-id 123 --include items
-canvas modules publish --course-id 123 9 --dry-run
-canvas modules publish --course-id 123 9
-
+canvas modules publish --course-id 123 9 --dry-run   # then again without it
 canvas pages list --course-id 123
 canvas pages create --course-id 123 --title "Syllabus" \
   --body "<p>…</p>" --published --dry-run
@@ -68,7 +65,7 @@ canvas pages update --course-id 123 syllabus --body "<p>…</p>" --dry-run
 
 Publishing a module makes it visible to students immediately, so confirm the
 module and its items before the real run. `canvas pages create --front-page`
-sets the course home page. Page bodies are HTML, not markdown.
+sets the home page; page bodies are HTML, not markdown.
 
 ## Announce it
 
@@ -79,7 +76,7 @@ canvas announcements create --course-id 123 --title "Welcome to GC 1010" \
 ```
 
 An announcement notifies the whole class the moment it posts: show the exact
-title and message text and get an explicit yes first. `--delayed-at
+title and message and get an explicit yes first. `--delayed-at
 "2026-09-01T09:00:00Z"` stages one instead of posting now.
 
 ## Staff the course
@@ -94,26 +91,30 @@ canvas enrollments create --course-id 123 --user-id 457 --type TeacherEnrollment
 ```
 
 This enrolls an account that already exists — the faculty build cannot create
-Canvas users, so if the TA has no account the registrar or a Canvas admin must
-make one. Confirm the resolved user id and name before enrolling: `canvas users
-search` matches across the whole instance, and a wrong id gives a stranger
-access to student records. `--state active` skips the invitation; leave it off
-to send one. `--section-id` limits the enrollment to one section.
+Canvas users, so if the TA has none the registrar or a Canvas admin must make
+one. `canvas users search` is Canvas's messageable-users search
+(`/api/v1/search/recipients`), scoped to people the instructor already shares a
+course or group with, so a new TA in none of their courses returns nothing.
+Then ask the instructor for the TA's Canvas user id — the number in the URL of
+that person's Canvas People page — or search a course they do share with
+`canvas users list --course-id 123 --search "rivera"`. `enrollments create`
+needs the numeric `--user-id` either way, and a wrong id gives a stranger
+access to student records, so confirm the id and the name first. `--state
+active` skips the invitation; `--section-id` limits it to one section.
 
 ## Office hours and interview slots
 
 ```bash
 canvas appointment-groups create --context course_123 --title "Office Hours" \
   --description "15-minute slots" --participants-per-slot 1 --max-slots 2 \
-  --location "Room 214" --dry-run          # then again with --publish
+  --location "Room 214" --dry-run          # then the same line without --dry-run
 canvas appointment-groups list --scope manageable --context course_123 \
   --include appointments,participant_count
 ```
 
 `--context` takes context codes (`course_123`) and is how the group is scoped
-to a course; `--sub-context` narrows it to sections. `--publish` makes it
-visible to students, so create it unpublished while the times still need work.
-The individual time slots are added in the Canvas calendar UI — the CLI creates
-and publishes the group, not its slots — so hand that step back to the
-instructor. The `list` above confirms it: the group, its appointments, and how
-many students have reserved.
+to a course; `--sub-context` narrows it to sections. Leave `--publish` off
+until the slots exist: the individual time slots are added in the Canvas
+calendar UI — the CLI creates the group, not its slots — so hand that step back
+to the instructor, then publish. The `list` above confirms it: the group, its
+appointments, and how many students have reserved.
