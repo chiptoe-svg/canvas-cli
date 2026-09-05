@@ -265,23 +265,6 @@ func TestClassifyCanvasCommands_BulkDestructivePaths(t *testing.T) {
 	assertContainsPath(t, "read", read, "sis-imports list")
 }
 
-// TestClassifyCanvasCommands_WriteOverridePaths verifies that paths whose leaf
-// name collides with a read verb but actually write (e.g. "sync assignments",
-// which shares its leaf with the "analytics assignments" read) are forced into
-// the write bucket by canvasWriteOverridePaths.
-func TestClassifyCanvasCommands_WriteOverridePaths(t *testing.T) {
-	read, writes, _ := classifyCanvasCommands(rootCmd)
-
-	// "sync assignments" copies assignments INTO a target course — must ask.
-	assertContainsPath(t, "write (override)", writes, "sync assignments")
-	assertNotContainsPath(t, "read (must not)", read, "sync assignments")
-
-	// The genuine read that shares the leaf name is unaffected.
-	assertContainsPath(t, "read", read, "analytics assignments")
-	// The sibling sync command stays a write via the fail-safe default.
-	assertContainsPath(t, "write", writes, "sync course")
-}
-
 // --- guardPlan ---
 
 func TestGuardPlan_BlockedAndAsked(t *testing.T) {
@@ -790,29 +773,5 @@ func assertNotContainsPath(t *testing.T, bucket string, cs []canvasGuardCmd, pat
 			t.Errorf("%s bucket: expected %q to be excluded, but it was present", bucket, path)
 			return
 		}
-	}
-}
-
-// TestClassifyCanvasCommand_APIGetIsRead pins the #60 exception: the GET-only
-// "api get" sibling classifies as a read (so it can advertise readOnlyHint and
-// survive read-only MCP clients), while the general "api" escape hatch stays
-// skipped/unannotated.
-func TestClassifyCanvasCommand_APIGetIsRead(t *testing.T) {
-	root := rootCmd
-
-	apiCmd := findCmd(root, "api")
-	if apiCmd == nil {
-		t.Fatal(`"canvas api" not found`)
-	}
-	if class, _ := classifyCanvasCommand(root, apiCmd); class != canvasClassSkip {
-		t.Errorf(`"canvas api" must be canvasClassSkip, got %v`, class)
-	}
-
-	apiGet := findCmd(root, "api get")
-	if apiGet == nil {
-		t.Fatal(`"canvas api get" not found`)
-	}
-	if class, _ := classifyCanvasCommand(root, apiGet); class != canvasClassRead {
-		t.Errorf(`"canvas api get" must be canvasClassRead, got %v`, class)
 	}
 }

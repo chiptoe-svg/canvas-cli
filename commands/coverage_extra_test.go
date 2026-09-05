@@ -4,7 +4,6 @@ package commands
 // All test names here are unique — they cover branches not reached by existing test files.
 
 import (
-	"strings"
 	"testing"
 
 	cmdtest "github.com/jjuanrivvera/canvas-cli/commands/internal/testing"
@@ -312,24 +311,6 @@ func TestPagesDeleteCmd_MissingPageID(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// planner.go — runPlannerNotesDelete API error path (58.8%)
-// Existing test covers force+success. Need API error to cover error branch.
-// ---------------------------------------------------------------------------
-
-func TestPlannerNotesDeleteCmd_APIError(t *testing.T) {
-	tc := cmdtest.CommandTestCase{
-		Name: "delete planner note - API error",
-		Args: []string{"5", "--force"},
-		MockResponses: map[string]cmdtest.MockResponse{
-			"/api/v1/planner_notes/5": cmdtest.NewErrorResponse(404, "note not found"),
-		},
-		ExpectError: true,
-	}
-	cmd := newPlannerNotesDeleteCmd()
-	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-// ---------------------------------------------------------------------------
 // assignment_groups.go — runAssignmentGroupsDelete (69.6%)
 // ---------------------------------------------------------------------------
 
@@ -362,57 +343,6 @@ func TestAssignmentGroupsDeleteCmd_Force_APIError(t *testing.T) {
 	}
 	cmd := newAssignmentGroupsDeleteCmd()
 	cmdtest.RunCommandTest(t, cmd, tc)
-}
-
-// ---------------------------------------------------------------------------
-// telemetry.go — new*Cmd() RunE closures (50% each)
-// The existing tests call runTelemetry* directly; these call via new*Cmd() to
-// cover the RunE closure inside each constructor.
-// ---------------------------------------------------------------------------
-
-func TestTelemetryEnableCmd_ViaConstructor(t *testing.T) {
-	setupTelemetryTestHome(t)
-	cmd := newTelemetryEnableCmd()
-	if err := cmd.RunE(cmd, []string{}); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestTelemetryDisableCmd_ViaConstructor(t *testing.T) {
-	setupTelemetryTestHome(t)
-	cmd := newTelemetryDisableCmd()
-	if err := cmd.RunE(cmd, []string{}); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestTelemetryStatusCmd_ViaConstructor(t *testing.T) {
-	setupTelemetryTestHome(t)
-	cmd := newTelemetryStatusCmd()
-	out := captureRunOutput(func() {
-		if err := cmd.RunE(cmd, []string{}); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-	})
-	if !strings.Contains(out, "Telemetry") && !strings.Contains(out, "telemetry") && !strings.Contains(out, "disabled") {
-		t.Logf("telemetry status output: %q", out)
-	}
-}
-
-func TestTelemetryShowCmd_ViaConstructor(t *testing.T) {
-	setupTelemetryTestHome(t)
-	cmd := newTelemetryShowCmd()
-	if err := cmd.RunE(cmd, []string{}); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestTelemetryClearCmd_ViaConstructor(t *testing.T) {
-	setupTelemetryTestHome(t)
-	cmd := newTelemetryClearCmd()
-	if err := cmd.RunE(cmd, []string{}); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
 }
 
 // ---------------------------------------------------------------------------

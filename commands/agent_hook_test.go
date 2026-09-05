@@ -184,13 +184,13 @@ func TestCanvasHookScript_BashExecution(t *testing.T) {
 		},
 		{
 			name:        "bash_glued_separator_denied",
-			payload:     bashPayload("canvas favorites courses reset;true"),
+			payload:     bashPayload("canvas content-shares delete;true"),
 			wantDenied:  true,
 			description: "no-arg irreversible command with a shell separator glued to the verb must be denied",
 		},
 		{
 			name:        "bash_glued_pipe_denied",
-			payload:     bashPayload("canvas course-nicknames delete-all|cat"),
+			payload:     bashPayload("canvas folders delete|cat"),
 			wantDenied:  true,
 			description: "irreversible command with a pipe glued to the verb must be denied",
 		},

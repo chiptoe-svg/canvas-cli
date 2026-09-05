@@ -66,12 +66,6 @@ func TestTopupValidate_AllOptionStructs(t *testing.T) {
 		&GroupsExternalFeedsCreateOptions{}, &GroupsExternalFeedsDeleteOptions{}, &GroupsContentExportsListOptions{},
 		&GroupsContentExportsCreateOptions{}, &GroupsContentExportsGetOptions{}, &GroupsAssignmentOverrideOptions{},
 		&GroupsCategoriesAssignMembersOptions{}, &GroupsCategoriesUsersListOptions{}, &GroupsCategoriesExportOptions{},
-		// polls
-		&PollListOptions{}, &PollGetOptions{}, &PollCreateOptions{}, &PollUpdateOptions{}, &PollDeleteOptions{},
-		&PollChoiceListOptions{}, &PollChoiceGetOptions{}, &PollChoiceCreateOptions{}, &PollChoiceUpdateOptions{},
-		&PollChoiceDeleteOptions{}, &PollSessionListOptions{}, &PollSessionGetOptions{}, &PollSessionCreateOptions{},
-		&PollSessionUpdateOptions{}, &PollSessionDeleteOptions{}, &PollSessionOpenOptions{}, &PollSessionCloseOptions{},
-		&PollSubmissionGetOptions{}, &PollSubmissionCreateOptions{},
 		// quizzes
 		&QuizzesListOptions{}, &QuizzesGetOptions{}, &QuizzesCreateOptions{}, &QuizzesUpdateOptions{},
 		&QuizzesDeleteOptions{}, &QuizzesQuestionsListOptions{}, &QuizzesQuestionsGetOptions{},

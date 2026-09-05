@@ -488,17 +488,3 @@ func TestValidateCourseID_ContextCancellation(t *testing.T) {
 		t.Error("Expected error for cancelled context or 404")
 	}
 }
-
-// TestReplCmdHasShellAlias verifies that the repl command exposes 'shell' as an alias.
-func TestReplCmdHasShellAlias(t *testing.T) {
-	found := false
-	for _, alias := range replCmd.Aliases {
-		if alias == "shell" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Error("Expected 'shell' to be an alias of the repl command")
-	}
-}

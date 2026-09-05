@@ -96,11 +96,6 @@ func Execute(v, c, bd string) error {
 	rootCmd.Version = version
 	rootCmd.SetVersionTemplate("canvas-cli version {{.Version}}\n")
 
-	// Stamp MCP tool annotations. Done here rather than in an init() because
-	// the tree is assembled across many packages' init() functions; ophis reads
-	// cmd.Annotations when the "mcp" subcommand runs, so this is early enough.
-	applyMCPAnnotations(rootCmd)
-
 	return runWithActivityLog(func() (*cobra.Command, error) { return rootCmd.ExecuteC() })
 }
 
@@ -112,8 +107,6 @@ func ExecuteContext(ctx context.Context, v, c, bd string) error {
 
 	rootCmd.Version = version
 	rootCmd.SetVersionTemplate("canvas-cli version {{.Version}}\n")
-
-	applyMCPAnnotations(rootCmd)
 
 	return runWithActivityLog(func() (*cobra.Command, error) { return rootCmd.ExecuteContextC(ctx) })
 }
