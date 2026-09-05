@@ -327,7 +327,7 @@ func TestCanvasHookScript_BashExecutionNoJq(t *testing.T) {
 			// flattening the anchor can never match and the branch is
 			// silently fail-open.
 			name:       "nojq_glued_json_key_denied",
-			payload:    bashPayload("canvas users merge 1 2"),
+			payload:    bashPayload("canvas enrollments conclude 1"),
 			wantDenied: true,
 		},
 	}
